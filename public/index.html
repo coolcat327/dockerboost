@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#06111e" />
+    <link rel="icon" type="image/svg+xml" href="/docker-icon.svg" />
+    <title>DockerBoost · Docker 镜像加速站</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/app.css" />
+    <script defer src="/app.bundle.js"></script>
+  </head>
+  <body>
+    <div class="ambient ambient-one"></div><div class="ambient ambient-two"></div>
+    <main class="shell">
+      <nav class="nav"><a class="brand" href="#top" aria-label="DockerBoost 首页"><img class="docker-mark" src="/docker-icon.svg" alt="" aria-hidden="true" /><span>docker<span>boost</span></span></a><div class="language-switch" aria-label="Language"><button class="language active" data-language="zh-CN" type="button">中文</button><i>/</i><button class="language" data-language="en" type="button">EN</button></div></nav>
+
+      <section class="hero" id="top">
+        <div class="hero-copy"><h1 class="reveal" data-i18n="heroTitle">镜像拉取，更快一点</h1></div>
+        <div class="hero-visual reveal" aria-hidden="true"><div class="logo-flare"></div><div class="logo-floor"></div><div class="logo-ribbon ribbon-one"></div><div class="logo-ribbon ribbon-two"></div><div class="boost-visual" aria-label="DockerBoost image accelerator">
+<div class="boost-glow"></div>
+<svg class="boost-svg" viewBox="0 0 720 420" role="img" aria-labelledby="boost-title boost-desc" xmlns="http://www.w3.org/2000/svg">
+<title id="boost-title">DockerBoost image accelerator</title><desc id="boost-desc">Container blocks represent the DockerBoost image downloader.</desc>
+<defs><linearGradient id="boost-bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#08263b"/><stop offset="1" stop-color="#031625"/></linearGradient><linearGradient id="boost-blue" gradientUnits="userSpaceOnUse" x1="170" y1="150" x2="385" y2="265"><stop stop-color="#12bfff"/><stop offset="1" stop-color="#0074e8"/></linearGradient><filter id="boost-filter"><feGaussianBlur stdDeviation="8" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
+<path d="M70 70 640 50l-40 70h50l-65 105H120l40-65H80Z" fill="url(#boost-bg)" opacity=".7"/>
+<path class="tech-line" d="M165 90h395l-40 65M155 270h415l40-70" fill="none" stroke="#149dda" stroke-width="1"/>
+<g class="speed-lines" stroke="#0db8ff" stroke-linecap="round"><path d="M70 185h95" stroke-width="3"/><path d="M95 205h70" stroke-width="2" opacity=".6"/><path d="M115 225h50" stroke-width="2" opacity=".3"/></g>
+<g class="docker-logo"><path class="whale-tail" d="M320 181c13-5 23-15 30-27 7 12 17 21 32 27-7 13-19 22-33 28-9-10-19-17-31-20-5-2-9-5-12-8Z" fill="url(#boost-blue)"/><g class="containers" fill="url(#boost-blue)"><rect class="container" x="200" y="140" width="34" height="32" rx="3"/><rect class="container" x="240" y="140" width="34" height="32" rx="3"/><rect class="container" x="280" y="140" width="34" height="32" rx="3"/><rect class="container" x="240" y="102" width="34" height="32" rx="3"/><rect class="container" x="280" y="102" width="34" height="32" rx="3"/><rect class="container" x="280" y="64" width="34" height="32" rx="3"/></g><path d="M170 180h170c-2 40-28 70-67 83-35 12-75 6-96-20-12-15-17-41-7-63Z" fill="url(#boost-blue)"/></g>
+<g class="boost-brand"><text x="425" y="212" fill="#1bb9f8" font-size="40" font-family="Arial,sans-serif" font-weight="700">Docker</text><text x="570" y="212" fill="#12a8ed" font-size="40" font-family="Arial,sans-serif" font-weight="700">Boost</text></g><line x1="150" y1="290" x2="625" y2="290" stroke="#108ec0" stroke-width="1" opacity=".35"/>
+</svg></div></div>
+      </section>
+
+      <section class="workspace" id="workspace">
+        <div class="toolbar-wrap"><div class="tool-tabs" role="tablist" aria-label="Docker 操作"><button class="tool-tab active" role="tab" aria-selected="true" data-tab="setup"><span>01</span>配置</button><button class="tool-tab" role="tab" aria-selected="false" data-tab="pull"><span>02</span>拉取</button><button class="tool-tab" role="tab" aria-selected="false" data-tab="download"><span>03</span>下载</button></div></div>
+
+        <div class="tool-stage panel">
+          <section class="tool-panel active" data-panel="setup" role="tabpanel"><div class="panel-copy"><span class="panel-kicker">DAEMON CONFIGURATION</span><h3>让每次 <code>docker pull</code> 都走加速入口</h3><p>写入前会备份现有 <code>daemon.json</code>；如需撤销，可使用右侧恢复命令。</p></div><div class="setup-grid"><div class="command-block"><div class="command-meta"><span data-setup-meta="apply">备份并写入配置</span><button class="copy-all" data-copy="setup-command"><b>⧉</b> 复制全部</button></div><code id="setup-command"></code></div><div class="command-block"><div class="command-meta"><span data-setup-meta="restore">恢复备份</span><button class="copy-all" data-copy="restore-command"><b>⧉</b> 复制全部</button></div><code id="restore-command"></code></div></div><div class="manual-fallback"><p data-setup-fallback>若上述命令未成功：请在 Docker daemon 实际使用的配置文件中合并下方的 <code>registry-mirrors</code> 字段；若该文件不存在，也请按你的 Docker 自定义配置路径创建。</p><code id="manual-mirror"></code></div></section>
+
+          <section class="tool-panel" data-panel="pull" role="tabpanel"><div class="panel-copy"><span class="panel-kicker">PULL COMMAND BUILDER</span><h3>输入一个镜像，生成完整拉取命令</h3><p>自动选择最快可用镜像源，也可手动指定。</p></div><form id="image-form" class="image-form"><div class="source-fields"><label for="pull-source">镜像源</label><select id="pull-source"><option value="auto">自动（最快可用）</option></select></div><div class="image-fields"><label for="image">镜像名（不含镜像源域名，可直接粘贴 docker pull 命令解析 tag）</label><input id="image" autocomplete="off" placeholder="例如 nginx:latest 或 redis:7-alpine" /></div><div class="architecture-fields"><label for="pull-architecture">目标架构</label><select id="pull-architecture" disabled><option value="">正在读取镜像架构…</option></select></div><button class="generate-button" type="submit">生成命令</button></form><div class="command-block"><div class="command-meta"><span>拉取 + 标签</span><button class="copy-all" data-copy="pull-all-command"><b>⧉</b> 复制全部</button></div><code id="pull-all-command"></code></div></section>
+
+          <section class="tool-panel" data-panel="download" role="tabpanel"><div class="panel-copy"><span class="panel-kicker">PUBLIC IMAGE LOOKUP</span><h3>查找镜像，确认后生成下载命令</h3><p>选择镜像源和目标 CPU 架构，验证公开 Docker Hub 镜像。</p></div><div class="download-image"><div class="source-fields"><label for="download-source">镜像源</label><select id="download-source"><option value="auto">自动（最快可用）</option></select></div><div class="image-fields"><label for="download-image">镜像名（不含镜像源域名，可直接粘贴 docker pull 命令解析 tag）</label><input id="download-image" autocomplete="off" placeholder="例如 nginx:latest" /></div><div class="architecture-fields"><label for="lookup-architecture">目标架构</label><select id="lookup-architecture" disabled><option value="">正在读取镜像架构…</option></select></div><button id="lookup-button" class="generate-button" type="button">查找镜像</button></div><div id="lookup-result" class="lookup-result hidden"><div class="lookup-status" id="lookup-status"></div><div class="command-block"><div class="command-meta"><span>下载 + 导入</span><button class="copy-all" data-copy="load-command"><b>⧉</b> 复制全部</button></div><code id="load-command"></code></div></div><p class="command-note">仅支持 Docker Hub 公开镜像。</p></section>
+        </div>
+      </section>
+
+      <footer><span>DOCKERBOOST / DOCKER HUB MIRROR</span><span>PUBLIC IMAGES ONLY · <a href="/api/health">STATUS</a></span></footer>
+    </main>
+    <div id="toast" role="status" aria-live="polite"></div>
+  </body>
+</html>

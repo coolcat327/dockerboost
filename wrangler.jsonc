@@ -1,0 +1,19 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "dockerboost",
+  "main": "src/worker/index.ts",
+  "build": {
+    "command": "npm run build",
+    "watch_dir": ["src/client", "public", "scripts"]
+  },
+  "compatibility_date": "2026-09-18",
+  "workers_dev": true,
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application"
+  },
+  "vars": {
+    "IMAGE_SOURCES": "[{\"id\":\"mirror-gcr\",\"label\":\"mirror.gcr.io\",\"url\":\"https://mirror.gcr.io\"},{\"id\":\"ghcr\",\"label\":\"ghcr.io\",\"url\":\"https://ghcr.io\"},{\"id\":\"quay\",\"label\":\"quay.io\",\"url\":\"https://quay.io\"},{\"id\":\"k8s\",\"label\":\"registry.k8s.io\",\"url\":\"https://registry.k8s.io\"},{\"id\":\"gitlab\",\"label\":\"registry.gitlab.com\",\"url\":\"https://registry.gitlab.com\"},{\"id\":\"mcr\",\"label\":\"mcr.microsoft.com\",\"url\":\"https://mcr.microsoft.com\"},{\"id\":\"ecr-public\",\"label\":\"public.ecr.aws\",\"url\":\"https://public.ecr.aws\"}]"
+  }
+}
