@@ -29,4 +29,5 @@ test('keeps native registry repository paths and rejects missing namespaces', ()
 
 test('creates safe archive filenames', () => {
   assert.equal(archiveFilename('owner/image:1.0', 'linux/arm64'), 'owner_image_1.0_linux_arm64.tar');
+  assert.equal(archiveFilename('library/postgres:18', 'linux/arm64/v8'), 'postgres_18_linux_arm64_v8.tar');
 });

@@ -51,5 +51,6 @@ export function imageReference(value, { source, acceleratedSource, mirrorHost, s
 }
 
 export function archiveFilename(image, platform) {
-  return `${image}_${platform}`.replaceAll(/[/:@]/g, '_') + '.tar';
+  const displayImage = image.replace(/^library\//, '');
+  return `${displayImage}_${platform}`.replaceAll(/[/:@]/g, '_') + '.tar';
 }

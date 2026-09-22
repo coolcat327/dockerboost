@@ -79,6 +79,15 @@ test('download script resolves platforms without fetching layers', async (t) => 
   assert.ok(paths.every(path => path.includes('/manifests/')));
 });
 
+test('download script omits Docker Hub library namespace from archive filenames', async (t) => {
+  const config = { digest: `sha256:${'a'.repeat(64)}`, size: 3 };
+  const layer = { digest: `sha256:${'b'.repeat(64)}`, size: 3 };
+  t.mock.method(globalThis, 'fetch', async () => Response.json({ schemaVersion: 2, config, layers: [layer] }));
+  const response = await request('/api/download-script?image=library/postgres:18&platform=linux/arm64/v8');
+  assert.equal(response.status, 200);
+  assert.match(await response.text(), /postgres_18_linux_arm64_v8.tar/);
+});
+
 test('automatic source selection returns the first successful configured source', async (t) => {
   const sourceEnv = {
     ...env,

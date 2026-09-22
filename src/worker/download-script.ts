@@ -10,7 +10,7 @@ export function downloadScript(origin: string, repository: string, image: string
     }
   }
   const path = (blob: BlobDescriptor) => `blobs/sha256/${blob.digest.slice(7)}`;
-  const filename = `${image}_${platform}`.replaceAll(/[/:@]/g, '_') + '.tar';
+  const filename = `${image.replace(/^library\//, '')}_${platform}`.replaceAll(/[/:@]/g, '_') + '.tar';
   const metadata = JSON.stringify([{ Config: path(config), RepoTags: image.includes('@') ? [] : [image], Layers: layers.map(path) }]);
   const totalBytes = blobs.reduce((sum, blob) => sum + blob.size, 0);
   const base = `${origin}/v2/${repository}`;

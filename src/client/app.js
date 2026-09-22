@@ -218,7 +218,7 @@ import { archiveFilename, imageReference, sourceExamples } from './image-referen
       [pullArchitecture, lookupArchitecture].forEach((select) => replaceOptions(select, platforms, locale().noPlatforms));
       buildPull();
       buildDownload();
-      lookupStatus.textContent = `${image.original} · ${resolvedSource} · ${lookupArchitecture.value}`;
+      lookupStatus.textContent = `${resolvedSource} · ${image.original} · ${lookupArchitecture.value}`;
       lookupResult.classList.remove('hidden');
     } catch (error) {
       if (controller.signal.aborted) return;
@@ -301,7 +301,7 @@ import { archiveFilename, imageReference, sourceExamples } from './image-referen
   lookupArchitecture.addEventListener('change', () => {
     try {
       buildDownload();
-      lookupStatus.textContent = `${normalise(downloadImage.value, requestedSource() === 'auto' ? resolvedSource : requestedSource()).original} · ${lookupArchitecture.value}`;
+      lookupStatus.textContent = `${resolvedSource} · ${normalise(downloadImage.value, requestedSource() === 'auto' ? resolvedSource : requestedSource()).original} · ${lookupArchitecture.value}`;
       lookupResult.classList.remove('hidden');
     } catch { /* wait for a valid name */ }
   });
