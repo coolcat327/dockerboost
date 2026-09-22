@@ -16,6 +16,11 @@ test('health, static fallback, method guards and retired archive route', async (
   }
 });
 
+test('source list has a short cache', async () => {
+  const sources = await request('/api/sources');
+  assert.equal(sources.headers.get('cache-control'), 'public, max-age=300, s-maxage=3600');
+});
+
 test('platform response preserves upstream bytes and headers', async (t) => {
   const raw = '{ "schemaVersion": 2, "manifests": [] }';
   t.mock.method(globalThis, 'fetch', async (url) => {
@@ -25,6 +30,23 @@ test('platform response preserves upstream bytes and headers', async (t) => {
   const response = await request('/api/platforms?image=nginx:latest');
   assert.equal(await response.text(), raw);
   assert.equal(response.headers.get('x-upstream'), 'retained');
+});
+
+test('single-platform responses include the platform without a second browser request', async (t) => {
+  const config = { digest: `sha256:${'a'.repeat(64)}`, size: 3 };
+  const paths = [];
+  t.mock.method(globalThis, 'fetch', async (url) => {
+    paths.push(new URL(url).pathname);
+    return paths.length === 1
+      ? Response.json({ schemaVersion: 2, config })
+      : Response.json({ os: 'linux', architecture: 'arm64', variant: 'v8' });
+  });
+  const response = await request('/api/platforms?image=nginx:latest');
+  assert.deepEqual((await response.json()).platforms, ['linux/arm64/v8']);
+  assert.deepEqual(paths, [
+    '/v2/library/nginx/manifests/latest',
+    `/v2/library/nginx/blobs/${config.digest}`
+  ]);
 });
 
 test('blob proxy forwards ranges without buffering the response', async (t) => {

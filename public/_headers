@@ -1,0 +1,11 @@
+/app-*.css
+  Cache-Control: public, max-age=31536000, immutable
+
+/app.bundle-*.js
+  Cache-Control: public, max-age=31536000, immutable
+
+/browser-export-worker-*.js
+  Cache-Control: public, max-age=31536000, immutable
+
+/docker-icon-*.svg
+  Cache-Control: public, max-age=31536000, immutable

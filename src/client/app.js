@@ -5,6 +5,8 @@ import { archiveFilename, imageReference, sourceExamples } from './image-referen
 
 (() => {
   const origin = window.location.origin;
+  const browserExportWorker = document.querySelector('meta[name="browser-export-worker"]')?.content;
+  const iconUrl = document.querySelector('link[rel="icon"]')?.href;
   const sessionId = crypto.randomUUID();
   const mirrorHost = window.location.host;
   const tabs = [...document.querySelectorAll('.tool-tab')];
@@ -33,12 +35,12 @@ import { archiveFilename, imageReference, sourceExamples } from './image-referen
   const progressFill = document.createElement('span');
   progressFill.className = 'download-progress-fill';
   const progressIcon = document.createElement('img');
-  progressIcon.src = '/docker-icon.svg';
   progressIcon.classList.add('download-progress-icon');
   progressIcon.setAttribute('aria-hidden', 'true');
   progressTrack.append(progressFill, progressIcon);
   progressRow.append(progressTrack);
   const showProgress = (percent, running = true) => {
+    if (!progressIcon.getAttribute('src')) progressIcon.src = iconUrl || '/docker-icon.svg';
     progressTrack.hidden = false;
     progressTrack.style.setProperty('--progress', `${Math.max(0, Math.min(100, percent))}%`);
     progressTrack.setAttribute('aria-valuenow', String(Math.round(percent)));
@@ -67,7 +69,7 @@ import { archiveFilename, imageReference, sourceExamples } from './image-referen
     showProgress(0);
     let worker;
     try {
-      worker = new Worker('/browser-export-worker.js');
+      worker = new Worker(browserExportWorker || '/browser-export-worker.js');
       const image = normalise(downloadImage.value, requestedSource() === 'auto' ? resolvedSource : requestedSource());
       const result = await runExport(worker, { repository: image.repository, reference: image.reference, repoTag: image.original, source: resolvedSource, platform: lookupArchitecture.value, filename: archiveFilename(image.original, lookupArchitecture.value), sessionId }, (progress) => {
         if (progress.phase === 'download' && progress.total) showProgress(progress.completed / progress.total * 90);
@@ -94,15 +96,15 @@ import { archiveFilename, imageReference, sourceExamples } from './image-referen
       heroTitle: '镜像拉取，更快一点', loadingPlatforms: '正在读取镜像架构…', noPlatforms: '未找到可用架构', waitingPlatforms: '待获取',
       tabs: ['配置', '拉取', '下载'],
       setup: { kicker: 'DAEMON CONFIGURATION', title: '让每次 <code>docker pull</code> 都走加速入口', description: '仅在现有 <code>daemon.json</code> 上合并配置；写入前会自动备份，如需撤销可使用右侧命令。', applyMeta: '备份并写入配置', restoreMeta: '恢复备份', fallback: '若上述命令未成功，或默认配置文件不存在：不会创建任何文件。请在 Docker daemon 实际使用的配置文件中手动合并下方的 <code>registry-mirrors</code> 字段。', copy: '复制全部' },
-      pull: { kicker: 'PULL COMMAND BUILDER', title: '输入一个镜像，生成完整拉取命令', description: '自动选择最快可用镜像源，也可手动指定。镜像名不包含镜像源域名。', label: '镜像名（不含镜像源域名，可直接粘贴 docker pull 命令解析 tag）', source: '镜像源', automatic: '自动（最快可用）', architecture: '目标架构', action: '生成命令', meta: '拉取 + 标签', copy: '复制全部' },
-      download: { kicker: 'PUBLIC IMAGE DOWNLOAD', title: '下载镜像', description: '选择镜像源和目标 CPU 架构后，可直接在浏览器下载，或复制下方命令到终端', label: '镜像名（不含镜像源域名，可直接粘贴 docker pull 命令解析 tag）', source: '镜像源', automatic: '自动（最快可用）', architecture: '目标架构', action: '浏览器下载', browser: '浏览器下载', meta: '终端下载', copy: '复制全部', note: '仅支持公开镜像' }
+      pull: { kicker: 'PULL COMMAND BUILDER', title: '输入一个镜像，生成完整拉取命令', description: '自动选择最快可用镜像源，也可手动指定。镜像名不包含镜像源域名。', label: '镜像名', labelDetail: '（可粘贴 docker pull 命令解析）', source: '镜像源', automatic: '自动（最快可用）', architecture: '目标架构', action: '生成命令', meta: '拉取 + 标签', copy: '复制全部' },
+      download: { kicker: 'PUBLIC IMAGE DOWNLOAD', title: '下载镜像', description: '选择镜像源和目标 CPU 架构后，可直接在浏览器下载，或复制下方命令到终端', label: '镜像名', labelDetail: '（可粘贴 docker pull 命令解析）', source: '镜像源', automatic: '自动（最快可用）', architecture: '目标架构', action: '浏览器下载', browser: '浏览器下载', meta: '终端下载', copy: '复制全部', note: '仅支持公开镜像' }
     },
     en: {
       heroTitle: 'Pull images. Move faster.', loadingPlatforms: 'Loading image architectures…', noPlatforms: 'No architecture available', waitingPlatforms: 'Awaiting lookup',
       tabs: ['Setup', 'Pull', 'Download'],
       setup: { kicker: 'DAEMON CONFIGURATION', title: 'Route every <code>docker pull</code> through your mirror.', description: 'Only an existing <code>daemon.json</code> is updated; it is backed up first and can be restored with the command on the right.', applyMeta: 'Back up and write', restoreMeta: 'Restore backup', fallback: 'If the command does not succeed, or the default configuration file is missing, no file is created. Manually merge the <code>registry-mirrors</code> field below into the configuration file your Docker daemon actually uses.', copy: 'Copy all' },
-      pull: { kicker: 'PULL COMMAND BUILDER', title: 'Enter an image and generate the complete command.', description: 'Automatically select the fastest available source, or choose one manually. Do not include the source hostname in the image name.', label: 'Image name (a docker pull command is accepted)', source: 'Image source', automatic: 'Automatic (fastest available)', architecture: 'Target architecture', action: 'Generate command', meta: 'Pull + tag', copy: 'Copy all' },
-      download: { kicker: 'PUBLIC IMAGE DOWNLOAD', title: 'Download an image.', description: 'Choose an image source and CPU architecture, then download it in the browser or copy the command below to your terminal.', label: 'Image name (without source hostname)', source: 'Image source', automatic: 'Automatic (fastest available)', architecture: 'Target architecture', action: 'Download in browser', browser: 'Download in browser', meta: 'Terminal download', copy: 'Copy all', note: 'Only public images are supported.' }
+      pull: { kicker: 'PULL COMMAND BUILDER', title: 'Enter an image and generate the complete command.', description: 'Automatically select the fastest available source, or choose one manually. Do not include the source hostname in the image name.', label: 'Image name', labelDetail: ' (a docker pull command is accepted)', source: 'Image source', automatic: 'Automatic (fastest available)', architecture: 'Target architecture', action: 'Generate command', meta: 'Pull + tag', copy: 'Copy all' },
+      download: { kicker: 'PUBLIC IMAGE DOWNLOAD', title: 'Download an image.', description: 'Choose an image source and CPU architecture, then download it in the browser or copy the command below to your terminal.', label: 'Image name', labelDetail: ' (a docker pull command is accepted)', source: 'Image source', automatic: 'Automatic (fastest available)', architecture: 'Target architecture', action: 'Download in browser', browser: 'Download in browser', meta: 'Terminal download', copy: 'Copy all', note: 'Only public images are supported.' }
     }
   };
 
@@ -120,7 +122,7 @@ import { archiveFilename, imageReference, sourceExamples } from './image-referen
       setText(`${panel} .panel-copy p`, locale[name].description, true);
       if (locale[name].meta) setText(`${panel} .command-meta span`, locale[name].meta);
       document.querySelectorAll(`${panel} .copy-all`).forEach((button) => { button.innerHTML = copyLabel(locale[name].copy); });
-      if (locale[name].label) setText(`${panel} .image-fields label`, locale[name].label);
+      if (locale[name].label) setText(`${panel} .image-fields label`, `<span>${locale[name].label}</span><span class="image-label-detail">${locale[name].labelDetail || ''}</span>`, true);
       if (locale[name].source) setText(`${panel} .source-fields label`, locale[name].source);
       if (locale[name].architecture) setText(`${panel} .architecture-fields label`, locale[name].architecture);
       if (locale[name].action) setText(`${panel} .generate-button`, locale[name].action);
@@ -137,6 +139,7 @@ import { archiveFilename, imageReference, sourceExamples } from './image-referen
 
   const flash = (message) => { toast.textContent = message; toast.classList.add('show'); setTimeout(() => toast.classList.remove('show'), 1800); };
   let platformRequestToken = 0;
+  let platformRequestController;
   let resolvedSource = 'mirror-gcr';
   let configuredSources = [];
   const locale = () => translations[document.documentElement.lang] || translations['zh-CN'];
@@ -183,6 +186,9 @@ import { archiveFilename, imageReference, sourceExamples } from './image-referen
     browserDownload.setAttribute('aria-disabled', 'true');
   };
   const requestPlatforms = async (value) => {
+    platformRequestController?.abort();
+    const controller = new AbortController();
+    platformRequestController = controller;
     const token = ++platformRequestToken;
     if (!value.trim()) {
       resetPlatformOptions();
@@ -195,15 +201,15 @@ import { archiveFilename, imageReference, sourceExamples } from './image-referen
         select.replaceChildren(new Option(locale().loadingPlatforms, ''));
       });
       const lookupImage = image.source === 'auto' ? image.original : image.upstream;
-      const response = await fetch(`/api/platforms?image=${encodeURIComponent(lookupImage)}&source=${encodeURIComponent(image.source)}`);
+      const response = await fetch(`/api/platforms?image=${encodeURIComponent(lookupImage)}&source=${encodeURIComponent(image.source)}`, { signal: controller.signal });
       const manifest = await response.json();
       if (platformRequestToken !== token) return;
       if (!response.ok) throw new Error(manifest.error || '无法读取镜像架构');
       resolvedSource = response.headers.get('x-dockerboost-source') || requestedSource();
       const resolvedImage = normalise(value, resolvedSource);
-      let platforms = platformsFromManifest(manifest);
-      if (!Array.isArray(manifest.manifests) && manifest.config?.digest) {
-        const configResponse = await fetch(`/v2/${resolvedImage.repository}/blobs/${manifest.config.digest}?source=${encodeURIComponent(resolvedSource)}`);
+      let platforms = Array.isArray(manifest.platforms) ? manifest.platforms : platformsFromManifest(manifest);
+      if (!platforms.length && !Array.isArray(manifest.manifests) && manifest.config?.digest) {
+        const configResponse = await fetch(`/v2/${resolvedImage.repository}/blobs/${manifest.config.digest}?source=${encodeURIComponent(resolvedSource)}`, { signal: controller.signal });
         if (!configResponse.ok) throw new Error(`无法读取镜像配置 (${configResponse.status})`);
         const config = await configResponse.json();
         if (platformRequestToken !== token) return;
@@ -215,6 +221,7 @@ import { archiveFilename, imageReference, sourceExamples } from './image-referen
       lookupStatus.textContent = `${image.original} · ${resolvedSource} · ${lookupArchitecture.value}`;
       lookupResult.classList.remove('hidden');
     } catch (error) {
+      if (controller.signal.aborted) return;
       if (platformRequestToken !== token) return;
       [pullArchitecture, lookupArchitecture].forEach((select) => {
         select.disabled = true;
@@ -224,6 +231,8 @@ import { archiveFilename, imageReference, sourceExamples } from './image-referen
       loadCommand.textContent = locale().waitingPlatforms;
       lookupStatus.textContent = error instanceof Error ? error.message : '无法读取镜像信息';
       lookupResult.classList.remove('hidden');
+    } finally {
+      if (platformRequestController === controller) platformRequestController = undefined;
     }
   };
   const buildPull = () => {
@@ -274,7 +283,7 @@ import { archiveFilename, imageReference, sourceExamples } from './image-referen
   const syncImageInputs = (source, target) => {
     target.value = source.value;
     clearTimeout(platformTimer);
-    platformTimer = setTimeout(() => requestPlatforms(source.value), 350);
+    platformTimer = setTimeout(() => requestPlatforms(source.value), 500);
   };
   pullImage.addEventListener('input', () => syncImageInputs(pullImage, downloadImage));
   downloadImage.addEventListener('input', () => syncImageInputs(downloadImage, pullImage));

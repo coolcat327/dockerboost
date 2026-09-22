@@ -1,4 +1,4 @@
-import type { Env } from './types';
+import type { Env, ImageConfig, Manifest } from './types';
 import { downloadScript } from './download-script';
 import { parseImage, resolveImage } from './images';
 import { registryFetch, registryPublicFetch, proxyHeaders, passthrough, OCI_ACCEPT } from './registry';
@@ -29,12 +29,39 @@ async function platformManifest(request: Request, env: Env) {
   return registryPublicFetch(env, `/v2/${image.repo}/manifests/${image.reference}`, { headers: { accept: OCI_ACCEPT } }, source);
 }
 
+async function platformResponse(request: Request, env: Env) {
+  const response = await platformManifest(request, env);
+  if (!response.ok) return response;
+  const manifest = await response.clone().json<Manifest>().catch(() => undefined);
+  if (!manifest?.config || Array.isArray(manifest.manifests)) return response;
+
+  const url = new URL(request.url);
+  const { source, image } = requestedImage(url);
+  const resolvedSource = response.headers.get("x-dockerboost-source") || source;
+  const nativeImage = parseImage(url.searchParams.get('image') || '', false);
+  const repository = usesDockerHubNaming(resolvedSource) ? image.repo : nativeImage.repo;
+  const configResponse = await registryPublicFetch(env, `/v2/${repository}/blobs/${manifest.config.digest}`, {}, resolvedSource);
+  if (!configResponse.ok) return response;
+  const config = await configResponse.json<ImageConfig>().catch(() => undefined);
+  if (!config?.os || !config.architecture) return response;
+
+  const headers = new Headers(response.headers);
+  headers.set("content-type", "application/json; charset=utf-8");
+  headers.delete("content-length");
+  headers.delete("content-encoding");
+  headers.delete("etag");
+  return Response.json({ ...manifest, platforms: [[config.os, config.architecture, config.variant].filter(Boolean).join("/")] }, { headers });
+}
+
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
     try {
       if (url.pathname === "/api/health") return Response.json({ ok: true, registry: new URL(registrySources(env)[0].url).hostname, sources: registrySources(env).map(({ id, label }) => ({ id, label })) });
-      if (url.pathname === "/api/sources") return Response.json({ sources: registrySources(env).map(({ id, label, url }) => ({ id, label, host: new URL(url).hostname })) });
+      if (url.pathname === "/api/sources") return Response.json(
+        { sources: registrySources(env).map(({ id, label, url }) => ({ id, label, host: new URL(url).hostname })) },
+        { headers: { "cache-control": "public, max-age=300, s-maxage=3600" } }
+      );
       if (url.pathname === "/api/download-script") {
         if (request.method !== "GET") return new Response("Method Not Allowed", { status: 405 });
         const { source, image } = requestedImage(url);
@@ -52,7 +79,7 @@ export default {
       }
       if (url.pathname === "/api/platforms") {
         if (request.method !== "GET") return new Response("Method Not Allowed", { status: 405 });
-        return await platformManifest(request, env);
+        return await platformResponse(request, env);
       }
       if (url.pathname === "/v2" || url.pathname.startsWith("/v2/")) {
         const proxy = sourceProxyTarget(env, url.pathname);
