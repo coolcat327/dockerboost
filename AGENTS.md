@@ -39,6 +39,7 @@ npm run deploy    # 通过 Wrangler 部署；需要 Cloudflare 凭据
 - 修改浏览器功能时编辑 `src/client/` 或 `public/`，不要编辑生成的 `dist/app.bundle.js`、`dist/browser-export-worker.js` 或 `dist/app.css`；需要时以 `npm run build` 重新生成它们。
 - CSS 保持 `src/client/styles/index.css` 中既有的级联顺序，除非任务明确要求改变样式层级或布局。
 - 修改 Worker 行为时优先保持 `src/worker/index.ts` 的路由契约，以及 Registry 响应的流式透传行为；镜像源变更集中在 `wrangler.jsonc` 的 `IMAGE_SOURCES` 或对应的 `src/worker/sources.ts` 逻辑中。
+- Registry 普通 `/v2/<repo>/...` 路径保留完整仓库名；显式源使用 Docker 镜像名合法的保留前缀 `/v2/dkbst/<source-id>/...`，前端生成的拉取地址必须与之同步。各元数据接口的 `auto` 源解析须使用一致的仓库路径规则。
 - 保持 TypeScript 严格类型检查可通过；客户端 JavaScript、Worker TypeScript 与测试各自使用项目现有的模块写法。
 - 不要提交密钥、令牌或本地 `.env*` / `.dev.vars*` 文件。
 

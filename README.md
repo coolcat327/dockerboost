@@ -65,11 +65,13 @@ docker load -i nginx_latest_linux_amd64.tar
 | --- | --- |
 | /api/health | 健康检查和默认源信息 |
 | /api/sources | 可供手动选择的镜像源 |
-| /api/platforms?image=...&source=auto | 原样返回 manifest/index，由前端解析架构；`auto` 并发选择首个成功源 |
+| /api/platforms?image=...&source=auto | 返回 manifest/index；单架构镜像会附加 `platforms` 字段；`auto` 并发选择首个成功源 |
 | /api/inspect?image=...&platform=...&source=... | 镜像层数和目标架构，保留兼容 |
 | /api/download-script?image=...&platform=...&source=... | 生成终端下载脚本 |
-| /v2/* | Registry 请求与 blob 流式透传；`/v2/<source-id>/*` 可明确指定源 |
+| /v2/* | Registry 请求与 blob 流式透传；普通路径保留完整仓库名，`/v2/dkbst/<source-id>/*` 可明确指定源 |
 | /api/save | 已停用，返回 410；改用浏览器或终端下载 |
+
+`image` 可使用 `nginx:latest`、`owner/image:tag` 或已配置的源域名（如 `ghcr.io/owner/image:tag`）；带域名的引用会固定到对应源，不能与 `source` 参数指定的其他源混用。`docker.io/...` 固定使用 `mirror-gcr`。`auto` 在各元数据接口中对 Docker Hub 镜像使用 `library/` 简写规则，对其他源使用原生仓库路径。显式源拉取地址使用 `dkbst/<source-id>/...`；旧的 `/<source-id>/...` 地址现在按普通仓库名解释，需要重新复制页面生成的命令。有效 API 仅接受 GET，未知 `/api/*` 返回 JSON 404；请求无效、镜像不存在和上游不可用分别返回 400、404、502/504。
 
 ## 部署
 

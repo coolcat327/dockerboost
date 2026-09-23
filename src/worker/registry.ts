@@ -1,5 +1,6 @@
 import type { Env, RegistrySource } from './types';
 import { registrySource, registrySources } from './sources';
+import { HttpError } from './errors';
 
 export const OCI_ACCEPT = [
   "application/vnd.oci.image.index.v1+json",
@@ -26,7 +27,11 @@ export function proxyHeaders(request: Request) {
 export async function registryFetch(env: Env, path: string, init: RequestInit = {}, sourceId?: string) {
   const source = sourceId ? registrySource(env, sourceId) : registrySources(env)[0];
   const url = new URL(path, source.url);
-  return fetch(url, { ...init, headers: init.headers, redirect: "follow" });
+  try {
+    return await fetch(url, { ...init, headers: init.headers, redirect: "follow" });
+  } catch {
+    throw new HttpError('镜像源不可用', 502);
+  }
 }
 
 async function publicFetchFromSource(env: Env, path: RegistryPath, init: RequestInit, source: RegistrySource) {

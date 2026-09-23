@@ -28,10 +28,13 @@ function explicitSource(raw, sources) {
  * Callers receive both the original reference and its Worker-facing repository.
  */
 export function imageReference(value, { source, acceleratedSource, mirrorHost, sources = [] }) {
+  const qualifiedDockerHub = value.trim().startsWith('docker.io/');
   const raw = value.trim().replace(/^docker\.io\//, '');
   if (!raw || /[^a-zA-Z0-9._/@:-]/.test(raw)) throw new Error('请输入有效的镜像名');
   const matchedSource = explicitSource(raw, sources);
-  const effectiveSource = matchedSource?.id || source;
+  const indicatedSource = qualifiedDockerHub ? 'mirror-gcr' : matchedSource?.id;
+  if (indicatedSource && source !== 'auto' && source !== indicatedSource) throw new Error('镜像地址与指定镜像源不一致');
+  const effectiveSource = indicatedSource || source;
   const input = matchedSource ? raw.slice(matchedSource.host.length + 1) : raw;
   const digestIndex = input.indexOf('@');
   const lastSlash = input.lastIndexOf('/');
@@ -47,7 +50,7 @@ export function imageReference(value, { source, acceleratedSource, mirrorHost, s
     : repositoryName;
   const original = raw.includes('@') ? raw : raw.lastIndexOf(':') > raw.lastIndexOf('/') ? raw : `${raw}:latest`;
   const acceleratedReference = digestIndex >= 0 ? `${repository}@${reference}` : `${repository}:${reference}`;
-  return { original, repository, reference, source: effectiveSource, upstream: acceleratedReference, accelerated: `${mirrorHost}/${acceleratedSource}/${acceleratedReference}` };
+  return { original, repository, reference, source: effectiveSource, upstream: acceleratedReference, accelerated: `${mirrorHost}/dkbst/${acceleratedSource}/${acceleratedReference}` };
 }
 
 export function archiveFilename(image, platform) {

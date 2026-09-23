@@ -11,9 +11,13 @@ test('health, static fallback, method guards and retired archive route', async (
   assert.equal((await (await request('/api/health')).json()).registry, 'mirror.gcr.io');
   assert.equal(await (await request('/')).text(), 'static page');
   assert.equal((await request('/api/save')).status, 410);
-  for (const path of ['/api/platforms', '/api/inspect', '/api/download-script']) {
-    assert.equal((await request(path, { method: 'POST' })).status, 405);
+  for (const path of ['/api/health', '/api/sources', '/api/platforms', '/api/inspect', '/api/download-script']) {
+    const response = await request(path, { method: 'POST' });
+    assert.equal(response.status, 405);
+    assert.equal(response.headers.get('allow'), 'GET');
   }
+  assert.equal((await request('/api/missing')).status, 404);
+  assert.equal((await request('/api/missing')).headers.get('content-type'), 'application/json');
 });
 
 test('source list has a short cache', async () => {
@@ -129,12 +133,80 @@ test('automatic source selection uses native repository paths outside Docker Hub
   ]);
 });
 
-test('source-prefixed registry requests are rewritten to the configured upstream', async (t) => {
+test('reserved source paths select the upstream without stealing ordinary namespaces', async (t) => {
   const sourceEnv = { ...env, IMAGE_SOURCES: JSON.stringify([{ id: 'hub', label: 'Hub', url: 'https://upstream.example' }]) };
+  const paths = [];
   t.mock.method(globalThis, 'fetch', async (url) => {
-    assert.equal(String(url), 'https://upstream.example/v2/library/nginx/manifests/latest');
+    paths.push(String(url));
     return new Response('manifest');
   });
-  const response = await worker.fetch(new Request('https://example.com/v2/hub/library/nginx/manifests/latest'), sourceEnv);
+  const response = await worker.fetch(new Request('https://example.com/v2/dkbst/hub/library/nginx/manifests/latest'), sourceEnv);
   assert.equal(await response.text(), 'manifest');
+  await worker.fetch(new Request('https://example.com/v2/hub/team/app/manifests/latest?source=hub'), sourceEnv);
+  assert.deepEqual(paths, [
+    'https://upstream.example/v2/library/nginx/manifests/latest',
+    'https://upstream.example/v2/hub/team/app/manifests/latest'
+  ]);
+  assert.equal((await worker.fetch(new Request('https://example.com/v2/dkbst/hub/team/app/manifests/latest?source=other'), sourceEnv)).status, 400);
+});
+
+test('auto source uses the same native repository for platforms, inspection, and script blobs', async (t) => {
+  const sourceEnv = { ...env, IMAGE_SOURCES: JSON.stringify([
+    { id: 'mirror-gcr', label: 'Mirror', url: 'https://mirror.example' },
+    { id: 'k8s', label: 'K8S', url: 'https://k8s.example' }
+  ]) };
+  const config = { digest: `sha256:${'a'.repeat(64)}`, size: 3 };
+  const layer = { digest: `sha256:${'b'.repeat(64)}`, size: 3 };
+  const paths = [];
+  t.mock.method(globalThis, 'fetch', async (url) => {
+    const parsed = new URL(url);
+    paths.push(`${parsed.hostname}${parsed.pathname}`);
+    if (parsed.hostname !== 'k8s.example' || parsed.pathname.includes('/library/')) return new Response('missing', { status: 404 });
+    if (parsed.pathname.endsWith('/manifests/v1')) return Response.json({ schemaVersion: 2, config, layers: [layer] });
+    if (parsed.pathname.endsWith(`/blobs/${config.digest}`)) return Response.json({ os: 'linux', architecture: 'amd64' });
+    return new Response('missing', { status: 404 });
+  });
+  const base = 'https://example.com';
+  const query = 'image=kube-proxy:v1&source=auto';
+  const platforms = await worker.fetch(new Request(`${base}/api/platforms?${query}`), sourceEnv);
+  assert.equal(platforms.status, 200);
+  assert.deepEqual((await platforms.json()).platforms, ['linux/amd64']);
+  const inspection = await worker.fetch(new Request(`${base}/api/inspect?${query}`), sourceEnv);
+  assert.equal(inspection.status, 200);
+  assert.equal((await inspection.json()).source, 'k8s');
+  const script = await worker.fetch(new Request(`${base}/api/download-script?${query}`), sourceEnv);
+  assert.equal(script.status, 200);
+  assert.match(await script.text(), /\/v2\/kube-proxy\/blobs\/sha256:/);
+  assert.ok(paths.some((path) => path === 'k8s.example/v2/kube-proxy/manifests/v1'));
+  assert.ok(!paths.some((path) => path === 'k8s.example/v2/library/kube-proxy/manifests/v1'));
+});
+
+test('qualified registry references pin their source and preserve the native repository', async (t) => {
+  const paths = [];
+  t.mock.method(globalThis, 'fetch', async (url) => {
+    paths.push(String(url));
+    return Response.json({ schemaVersion: 2, manifests: [] });
+  });
+  const response = await request('/api/platforms?image=ghcr.io%2Fteam%2Fapp%3A1&source=auto');
+  assert.equal(response.status, 200);
+  assert.deepEqual(paths, ['https://ghcr.io/v2/team/app/manifests/1']);
+  const hub = await request('/api/platforms?image=docker.io%2Fnginx%3Alatest&source=auto');
+  assert.equal(hub.status, 200);
+  assert.equal(paths.at(-1), 'https://mirror.gcr.io/v2/library/nginx/manifests/latest');
+  assert.equal((await request('/api/platforms?image=ghcr.io%2Fteam%2Fapp%3A1&source=k8s')).status, 400);
+  assert.equal((await request('/api/platforms?image=docker.io%2Fnginx%3Alatest&source=k8s')).status, 400);
+  assert.equal((await request('/api/platforms?image=unknown.example%2Fteam%2Fapp%3A1')).status, 400);
+});
+
+test('API errors retain distinct client, missing, and upstream statuses', async (t) => {
+  t.mock.method(globalThis, 'fetch', async () => new Response('missing', { status: 404 }));
+  assert.equal((await request('/api/inspect?image=nginx:latest&source=mirror-gcr')).status, 404);
+  const missingPlatform = await request('/api/platforms?image=nginx:latest&source=mirror-gcr');
+  assert.equal(missingPlatform.status, 404);
+  assert.match((await missingPlatform.json()).error, /404/);
+  assert.equal((await request('/api/inspect?image=%21')).status, 400);
+  assert.equal((await request('/api/inspect?image=..%2Fadmin')).status, 400);
+  t.mock.restoreAll();
+  t.mock.method(globalThis, 'fetch', async () => { throw new Error('offline'); });
+  assert.equal((await request('/api/inspect?image=nginx:latest&source=mirror-gcr')).status, 502);
 });

@@ -1,4 +1,5 @@
 import type { Env, RegistrySource } from './types';
+import { HttpError } from './errors';
 
 export const AUTO_SOURCE = 'auto';
 export const DOCKER_HUB_MIRROR_SOURCE = 'mirror-gcr';
@@ -33,7 +34,7 @@ export function registrySources(env: Env): RegistrySource[] {
 
 export function registrySource(env: Env, id: string): RegistrySource {
   const source = registrySources(env).find((item) => item.id === id);
-  if (!source) throw new Error('不支持的镜像源');
+  if (!source) throw new HttpError('不支持的镜像源', 400);
   return source;
 }
 
@@ -45,9 +46,10 @@ export function usesDockerHubNaming(source: string) {
   return source === AUTO_SOURCE || source === DOCKER_HUB_MIRROR_SOURCE;
 }
 
-/** Removes an explicit source prefix from a Docker Registry v2 request path. */
+/** Only the reserved namespace carries an explicit source; ordinary namespaces remain intact. */
 export function sourceProxyTarget(env: Env, pathname: string) {
-  const match = pathname.match(/^\/v2\/([a-z0-9-]+)(\/.*)$/);
-  const source = match?.[1] && registrySources(env).find((item) => item.id === match[1]);
-  return source ? { source: source.id, path: `/v2${match![2]}` } : { source: undefined, path: pathname };
+  if (!pathname.startsWith('/v2/dkbst/')) return { source: undefined, path: pathname };
+  const match = pathname.match(/^\/v2\/dkbst\/([a-z0-9-]+)(\/.*)$/);
+  if (!match) throw new HttpError('无效的镜像源路径', 400);
+  return { source: registrySource(env, match[1]).id, path: `/v2${match[2]}` };
 }
