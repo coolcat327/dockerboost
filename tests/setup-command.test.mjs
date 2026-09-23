@@ -4,7 +4,7 @@ import { spawnSync } from 'node:child_process';
 import { chmodSync, existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { createSetupCommand } from '../src/client/setup-command.js';
+import { createSetupCommand } from '../src/client/features/setup/setup-command.js';
 
 test('pasting setup command without jq leaves the current shell open', () => {
   const dir = mkdtempSync(join(tmpdir(), 'dockerboost-setup-'));

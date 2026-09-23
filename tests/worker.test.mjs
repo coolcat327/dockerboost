@@ -23,6 +23,26 @@ test('health, static fallback, method guards and retired archive route', async (
 test('source list has a short cache', async () => {
   const sources = await request('/api/sources');
   assert.equal(sources.headers.get('cache-control'), 'public, max-age=300, s-maxage=3600');
+  const first = (await sources.json()).sources[0];
+  assert.equal(first.naming, 'docker-hub');
+  assert.equal(first.requiresNamespace, false);
+  assert.equal(first.example, 'nginx:latest');
+});
+
+test('a configured source controls repository naming and the client source metadata', async (t) => {
+  const sourceEnv = { ...env, IMAGE_SOURCES: JSON.stringify([
+    { id: 'custom', label: 'Custom', url: 'https://custom.example', naming: 'docker-hub', requiresNamespace: false, example: 'alpine:3' }
+  ]) };
+  const response = await worker.fetch(new Request('https://example.com/api/sources'), sourceEnv);
+  assert.deepEqual((await response.json()).sources, [
+    { id: 'custom', label: 'Custom', host: 'custom.example', naming: 'docker-hub', requiresNamespace: false, example: 'alpine:3' }
+  ]);
+  t.mock.method(globalThis, 'fetch', async (url) => {
+    assert.equal(String(url), 'https://custom.example/v2/library/alpine/manifests/3');
+    return Response.json({ schemaVersion: 2, manifests: [] });
+  });
+  const manifest = await worker.fetch(new Request('https://example.com/api/platforms?image=alpine:3&source=custom'), sourceEnv);
+  assert.equal(manifest.status, 200);
 });
 
 test('platform response preserves upstream bytes and headers', async (t) => {

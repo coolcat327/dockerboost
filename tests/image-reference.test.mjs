@@ -1,8 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { archiveFilename, imageReference } from '../src/client/image-reference.js';
+import { archiveFilename, imageReference } from '../src/client/shared/image-reference.js';
 
-const context = { mirrorHost: 'docker.example', acceleratedSource: 'mirror-gcr', sources: [{ id: 'ghcr', label: 'ghcr.io', host: 'ghcr.io' }, { id: 'k8s', label: 'registry.k8s.io', host: 'registry.k8s.io' }] };
+const context = { mirrorHost: 'docker.example', acceleratedSource: 'mirror-gcr', sources: [
+  { id: 'mirror-gcr', label: 'mirror.gcr.io', host: 'mirror.gcr.io', naming: 'docker-hub', requiresNamespace: false },
+  { id: 'ghcr', label: 'ghcr.io', host: 'ghcr.io', naming: 'native', requiresNamespace: true },
+  { id: 'k8s', label: 'registry.k8s.io', host: 'registry.k8s.io', naming: 'native', requiresNamespace: false }
+] };
 
 test('normalizes Docker Hub shorthand and preserves tags', () => {
   const image = imageReference('redis:7-alpine', { ...context, source: 'auto' });
@@ -26,6 +30,13 @@ test('keeps native registry repository paths and rejects missing namespaces', ()
   assert.equal(image.repository, 'owner/image');
   assert.equal(image.accelerated, 'docker.example/dkbst/ghcr/owner/image@sha256:abc');
   assert.throws(() => imageReference('redis', { ...context, source: 'ghcr' }), /ghcr\.io/);
+});
+
+test('uses configured repository rules for a newly added source', () => {
+  const sources = [...context.sources, { id: 'custom', label: 'custom.example', host: 'custom.example', naming: 'docker-hub', requiresNamespace: false }];
+  const image = imageReference('alpine:3', { ...context, sources, source: 'custom', acceleratedSource: 'custom' });
+  assert.equal(image.repository, 'library/alpine');
+  assert.equal(image.accelerated, 'docker.example/dkbst/custom/library/alpine:3');
 });
 
 test('qualified registry hosts select their source and reject conflicting selectors', () => {

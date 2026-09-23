@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createTransferRate, formatDuration, formatTransferSpeed } from '../src/client/download-speed.js';
+import { createTransferRate, formatDuration, formatTransferSpeed } from '../src/client/features/download/download-speed.js';
 
 test('formats transfer speed in a readable unit', () => {
   assert.equal(formatTransferSpeed(1536), '1.5 KB/s');

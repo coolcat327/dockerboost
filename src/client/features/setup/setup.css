@@ -1,0 +1,17 @@
+/* Configuration commands and manual fallback. */
+[data-panel="setup"] .setup-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
+[data-panel="setup"] .setup-grid .command-block { margin-top: 27px; }
+[data-panel="setup"] .setup-grid .command-block code { min-height: 0; }
+[data-panel="setup"] #setup-command { white-space: pre; overflow-x: auto; overflow-wrap: normal; }
+[data-panel="setup"] .manual-fallback { margin-top: 24px; padding: 18px 20px; border-left: 2px solid #2a9dce; background: #071a29; }
+[data-panel="setup"] .manual-fallback p { margin: 0 0 8px; color: #87a7ba; font-size: 14px; line-height: 1.8; }
+[data-panel="setup"] .manual-fallback p code { color: #d4efff; font-family: 'DM Mono', monospace; }
+[data-panel="setup"] .manual-fallback > code { display: block; color: #5acfff; font: 14px/1.8 'DM Mono', monospace; white-space: pre-wrap; overflow-wrap: anywhere; }
+@media (max-width: 960px) {
+  [data-panel="setup"] .setup-grid { grid-template-columns: 1fr; gap: 0; }
+  [data-panel="setup"] .setup-grid .command-block { margin-top: 16px; }
+  [data-panel="setup"] .setup-grid .command-block:first-child { margin-top: 27px; }
+}
+@media (max-width: 600px) {
+  [data-panel="setup"] .manual-fallback { padding: 16px; }
+}

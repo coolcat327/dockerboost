@@ -1,5 +1,6 @@
-/* Keep cascade order explicit; changing this order changes the existing layout. */
-@import './styles.css';
-@import './hero-logo.css';
-@import './architecture.css';
-@import './readability.css';
+/* Base and page layout first, followed by shared controls and panel details. */
+@import './foundation.css';
+@import './hero.css';
+@import './workspace.css';
+@import '../features/setup/setup.css';
+@import '../features/download/download.css';

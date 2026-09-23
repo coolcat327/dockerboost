@@ -1,7 +1,26 @@
 import type { Env, Descriptor, Manifest, ImageConfig } from './types';
 import { registryPublicFetch, OCI_ACCEPT } from './registry';
 import { HttpError, upstreamError } from './errors';
-import { usesDockerHubNaming } from './sources';
+import { registrySources, sourceFrom, usesDockerHubNaming } from './sources';
+
+export function requestedImage(url: URL, env: Env) {
+  let source = sourceFrom(url);
+  let input = url.searchParams.get('image') || '';
+  const unqualified = input.trim().replace(/^https?:\/\//, '');
+  const host = unqualified.split('/')[0].toLowerCase();
+  const sources = registrySources(env);
+  const matched = sources.find((item) => new URL(item.url).hostname.toLowerCase() === host);
+  const explicit = host === 'docker.io' ? 'mirror-gcr' : matched?.id;
+  if (explicit) {
+    if (source !== 'auto' && source !== explicit) throw new HttpError('镜像地址与指定镜像源不一致', 400);
+    if (!sources.some((item) => item.id === explicit)) throw new HttpError('不支持的镜像源', 400);
+    source = explicit;
+    input = unqualified.slice(host.length + 1);
+  } else if (host.includes('.') || host.includes(':')) {
+    if (unqualified.includes('/')) throw new HttpError('不支持的镜像源域名', 400);
+  }
+  return { source, image: parseImage(input, false) };
+}
 
 export function parseImage(input: string, dockerHubPath = true) {
   const clean = input.trim().replace(/^docker\.io\//, "").replace(/^https?:\/\//, "").replace(/^\/+/, "");
@@ -19,8 +38,8 @@ export function parseImage(input: string, dockerHubPath = true) {
   return { repo: normalizedSourceRepo, reference: sourceRef, display: digestMarker >= 0 ? clean : `${sourceRepo}:${sourceRef}` };
 }
 
-export function imageForSource(image: ReturnType<typeof parseImage>, source: string) {
-  return parseImage(image.display, usesDockerHubNaming(source));
+export function imageForSource(env: Env, image: ReturnType<typeof parseImage>, source: string) {
+  return parseImage(image.display, usesDockerHubNaming(env, source));
 }
 
 function parsePlatform(value: string) {
@@ -43,10 +62,10 @@ async function directManifestPlatform(env: Env, image: ReturnType<typeof parseIm
 
 export async function resolveImage(env: Env, image: ReturnType<typeof parseImage>, requestedPlatform = "linux/amd64", requestedSource = "auto") {
   const platform = parsePlatform(requestedPlatform);
-  const manifestResponse = await registryPublicFetch(env, (candidate) => `/v2/${imageForSource(image, candidate.id).repo}/manifests/${image.reference}`, { headers: { accept: OCI_ACCEPT } }, requestedSource);
+  const manifestResponse = await registryPublicFetch(env, (candidate) => `/v2/${imageForSource(env, image, candidate.id).repo}/manifests/${image.reference}`, { headers: { accept: OCI_ACCEPT } }, requestedSource);
   if (!manifestResponse.ok) throw upstreamError(manifestResponse.status, `镜像仓库返回 ${manifestResponse.status}`);
   const source = manifestResponse.headers.get("x-dockerboost-source") || requestedSource;
-  const resolvedImage = imageForSource(image, source);
+  const resolvedImage = imageForSource(env, image, source);
   let manifest = await manifestResponse.json<Manifest>();
   if (manifest.manifests) {
     const descriptor = manifest.manifests.find((item) => item.platform?.os === platform.os && item.platform?.architecture === platform.architecture && (!platform.variant || item.platform?.variant === platform.variant));

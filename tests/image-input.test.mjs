@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { pastedImage } from '../src/client/image-input.js';
+import { pastedImage } from '../src/client/shared/image-input.js';
 
 test('extracts a single pull reference, preserving its tag', () => {
   assert.equal(pastedImage('docker pull nginx:alpine'), 'nginx:alpine');

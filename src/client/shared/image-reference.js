@@ -1,16 +1,3 @@
-const scopedSourceIds = new Set(['ghcr', 'quay', 'gitlab', 'mcr', 'ecr-public']);
-
-export const sourceExamples = {
-  auto: '例如 nginx:latest',
-  'mirror-gcr': '例如 nginx:latest',
-  ghcr: '例如 owner/image:tag',
-  quay: '例如 org/image:tag',
-  k8s: '例如 pause:3.10',
-  gitlab: '例如 group/project/image:tag',
-  mcr: '例如 dotnet/aspnet:8.0',
-  'ecr-public': '例如 namespace/image:tag'
-};
-
 function sourceLabel(source, sources) {
   return sources.find((item) => item.id === source)?.label || source;
 }
@@ -42,10 +29,12 @@ export function imageReference(value, { source, acceleratedSource, mirrorHost, s
   const hasTag = digestIndex < 0 && lastColon > lastSlash;
   const repositoryName = hasTag ? input.slice(0, lastColon) : digestIndex >= 0 ? input.slice(0, digestIndex) : input;
   const reference = digestIndex >= 0 ? input.slice(digestIndex + 1) : hasTag ? input.slice(lastColon + 1) : 'latest';
-  if (scopedSourceIds.has(effectiveSource) && !repositoryName.includes('/')) {
+  const sourcePolicy = sources.find((item) => item.id === effectiveSource);
+  if (sourcePolicy?.requiresNamespace && !repositoryName.includes('/')) {
     throw new Error(`${sourceLabel(effectiveSource, sources)} 需要完整的命名空间/镜像名，例如 owner/image:tag`);
   }
-  const repository = (effectiveSource === 'auto' || effectiveSource === 'mirror-gcr') && !repositoryName.includes('/')
+  const dockerHubNaming = effectiveSource === 'auto' || sourcePolicy?.naming === 'docker-hub' || (effectiveSource === 'mirror-gcr' && !sourcePolicy);
+  const repository = dockerHubNaming && !repositoryName.includes('/')
     ? `library/${repositoryName}`
     : repositoryName;
   const original = raw.includes('@') ? raw : raw.lastIndexOf(':') > raw.lastIndexOf('/') ? raw : `${raw}:latest`;

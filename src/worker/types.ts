@@ -3,7 +3,14 @@ export interface Env {
   IMAGE_SOURCES?: string;
 }
 
-export type RegistrySource = { id: string; label: string; url: string };
+export type RegistrySource = {
+  id: string;
+  label: string;
+  url: string;
+  naming: 'docker-hub' | 'native';
+  requiresNamespace: boolean;
+  example?: string;
+};
 
 export type Descriptor = { mediaType: string; digest: string; size: number; platform?: { os?: string; architecture?: string; variant?: string } };
 export type Manifest = { schemaVersion: number; mediaType?: string; config?: Descriptor; layers?: Descriptor[]; manifests?: Descriptor[] };

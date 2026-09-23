@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { runExport } from '../src/client/export-client.js';
+import { runExport } from '../src/client/features/download/export-client.js';
 
 class WorkerStub extends EventTarget {
   postMessage(payload) { this.payload = payload; }

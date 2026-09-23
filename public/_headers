@@ -9,3 +9,6 @@
 
 /docker-icon-*.svg
   Cache-Control: public, max-age=31536000, immutable
+
+/hero-*.svg
+  Cache-Control: public, max-age=31536000, immutable
