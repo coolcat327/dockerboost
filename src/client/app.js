@@ -3,6 +3,7 @@ import { runExport } from './export-client.js';
 import { createTransferRate, formatDuration, formatTransferSpeed } from './download-speed.js';
 import { pastedImage } from './image-input.js';
 import { archiveFilename, imageReference, sourceExamples } from './image-reference.js';
+import { createSetupCommand } from './setup-command.js';
 
 (() => {
   const origin = window.location.origin;
@@ -297,7 +298,7 @@ import { archiveFilename, imageReference, sourceExamples } from './image-referen
     gsap.fromTo(active, { autoAlpha: 0, y: 12 }, { autoAlpha: 1, y: 0, duration: .35, ease: 'power3.out', clearProps: 'visibility' });
   };
 
-  setupCommand.textContent = `command -v jq >/dev/null || { echo "jq is required"; exit 1; }\n[ -f /etc/docker/daemon.json ] || { echo "daemon.json not found; no changes made"; exit 1; }\ntmp_file=$(mktemp) || exit 1\ncp /etc/docker/daemon.json /etc/docker/daemon.json.bak || { rm -f "$tmp_file"; exit 1; }\njq --arg mirror "${origin}" '."registry-mirrors" = ((."registry-mirrors" // []) + [$mirror] | unique)' /etc/docker/daemon.json > "$tmp_file" || { rm -f "$tmp_file"; exit 1; }\nmv "$tmp_file" /etc/docker/daemon.json &&\nsystemctl restart docker`;
+  setupCommand.textContent = createSetupCommand(origin);
   restoreCommand.textContent = `if [ -f /etc/docker/daemon.json.bak ]; then\n  cp /etc/docker/daemon.json.bak /etc/docker/daemon.json &&\n  systemctl restart docker\nelse\n  echo "No backup found"\nfi`;
   manualMirror.textContent = `{\n  "registry-mirrors": ["${origin}"]\n}`;
   const detectedLanguage = localStorage.getItem('dockerboost-language') || localStorage.getItem('dockwave-language') || (navigator.language.toLowerCase().startsWith('zh') ? 'zh-CN' : 'en');

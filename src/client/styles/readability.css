@@ -32,6 +32,7 @@ body {
 .command-block code { padding: 20px; font-size: 14px; line-height: 1.85; word-break: normal; overflow-wrap: anywhere; }
 .setup-grid { gap: 24px; }
 .setup-grid .command-block code { min-height: 0; }
+#setup-command { white-space: pre; overflow-x: auto; overflow-wrap: normal; }
 .manual-fallback { padding: 18px 20px; margin-top: 24px; }
 .manual-fallback p,.command-note { font-size: 14px; line-height: 1.8; }
 .manual-fallback>code { display: block; white-space: pre-wrap; overflow-wrap: anywhere; font-size: 14px; line-height: 1.8; }

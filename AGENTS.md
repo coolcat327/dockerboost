@@ -6,7 +6,7 @@
 - `src/client/`：浏览器端源码；涵盖页面交互、镜像输入与引用解析、浏览器导出、下载进度/速率及样式。
 - `public/`：原样复制到构建产物的静态资源与响应头规则。
 - `scripts/`：构建脚本；使用 esbuild 打包前端并复制静态资源到 `dist/`。
-- `tests/`：Node 内置测试运行器的回归测试，覆盖 Worker 与前端各功能模块。
+- `tests/`：Node 内置测试运行器的回归测试，覆盖 Worker、前端各功能模块及配置脚本的终端执行场景。
 - `wrangler.jsonc`：Worker 入口、静态资源、构建监视和镜像源配置。
 - `.github/workflows/`：CI 校验与部署流程。
 
