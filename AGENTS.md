@@ -2,13 +2,13 @@
 
 ## 项目结构
 
-- `src/worker/`：Cloudflare Worker 服务端。`index.ts` 负责 HTTP 路由和静态资源入口；`sources.ts` 管理镜像源；`registry.ts` 处理上游 Registry 请求、认证、回退和流式透传；`images.ts` 解析镜像和平台；`download-script.ts` 生成终端下载脚本。
-- `src/client/`：浏览器端源码。`app.js` 编排页面交互；`image-reference.js` 与 `image-input.js` 处理镜像输入；`export-client.js` 和 `browser-export-worker.js` 支持浏览器导出；`styles/` 是 CSS 源码。
-- `public/`：原样复制到构建产物的静态资源（目前为 `index.html` 和 `docker-icon.svg`）。
-- `scripts/build.mjs`：使用 esbuild 将客户端 JS/CSS 打包并复制 `public/` 到 `dist/`。
-- `tests/`：Node 内置测试运行器的回归测试；包括 Worker 路由、镜像引用、输入解析、导出客户端和下载脚本。
-- `wrangler.jsonc`：Worker 入口、静态资源目录、构建监视目录和 `IMAGE_SOURCES` 配置。
-- `.github/workflows/deploy.yml`：CI 在 PR、推送到 `main` 和手动触发时执行校验；非 PR 事件在校验通过后部署。
+- `src/worker/`：Cloudflare Worker 服务端；涵盖 HTTP 路由、镜像源配置、Registry 上游代理/认证/回退、镜像解析与终端下载脚本。
+- `src/client/`：浏览器端源码；涵盖页面交互、镜像输入与引用解析、浏览器导出、下载进度/速率及样式。
+- `public/`：原样复制到构建产物的静态资源与响应头规则。
+- `scripts/`：构建脚本；使用 esbuild 打包前端并复制静态资源到 `dist/`。
+- `tests/`：Node 内置测试运行器的回归测试，覆盖 Worker 与前端各功能模块。
+- `wrangler.jsonc`：Worker 入口、静态资源、构建监视和镜像源配置。
+- `.github/workflows/`：CI 校验与部署流程。
 
 `dist/`、`node_modules/`、`.wrangler/`、本地环境文件（`.env*`、`.dev.vars*`）均为忽略内容；不要提交或手工修改它们。
 
@@ -41,6 +41,20 @@ npm run deploy    # 通过 Wrangler 部署；需要 Cloudflare 凭据
 - 修改 Worker 行为时优先保持 `src/worker/index.ts` 的路由契约，以及 Registry 响应的流式透传行为；镜像源变更集中在 `wrangler.jsonc` 的 `IMAGE_SOURCES` 或对应的 `src/worker/sources.ts` 逻辑中。
 - 保持 TypeScript 严格类型检查可通过；客户端 JavaScript、Worker TypeScript 与测试各自使用项目现有的模块写法。
 - 不要提交密钥、令牌或本地 `.env*` / `.dev.vars*` 文件。
+
+## AGENTS.md 持续维护（强制）
+
+`AGENTS.md` 是项目当前事实的工作说明，不是一次性的初始化文档。每一轮会修改仓库内容的任务，都必须在实现与汇报前自动执行以下维护流程；不需要等待用户额外提醒：
+
+**粒度原则：**项目结构默认只写目录或职责域，不逐一列举实现文件。仅当某个入口文件、配置文件或生成物规则是跨目录工作所必需的决策边界时才点名；新增普通模块时，更新其所属职责域即可。示例、完整 API 清单和逐文件索引应放在 `README.md`、专门设计文档或代码注释中，而非本文件。
+
+1. 先用 `git status --short` 和受影响目录的 `rg --files` / 源码检查确认当前状态，避免把未提交的用户改动误记为已完成工作。
+2. 判断改动是否改变了这里记录的项目结构、职责划分、命令/依赖、配置/部署、测试覆盖、生成物规则或开发约定。若改变，必须在同一改动中更新本文件；无变化时无需制造无意义的文档改动。
+3. 新增、删除、移动模块，或改变模块职责域时，同步更新“项目结构”；同一职责域内的普通文件增减不单列。新增或替换测试时，仅在覆盖范围变化时更新测试说明；新增命令、环境要求、构建产物或 CI 行为时，同步更新对应章节。
+4. 完成前复读本文件中受影响的段落，并以实际文件、`package.json`、`wrangler.jsonc` 和工作流为准交叉核验。事实冲突时，以代码与配置为准，立即修正文档。
+5. 最终汇报明确写出“AGENTS.md：已同步”或“AGENTS.md：无需更新（原因）”。不能仅因任务跨越多轮对话而沿用旧描述；每个继续实现的回合都重复此检查。
+
+以下变更视为必须更新本文件的触发条件：`src/` 或 `public/` 下新增/删除职责模块、`scripts/` 或构建链变动、`package.json` 脚本或运行时依赖变动、`wrangler.jsonc`/Worker 路由/镜像源策略变动、CI 工作流变动，以及测试入口或测试范围的实质变化。
 
 ## 完成前验证与汇报
 

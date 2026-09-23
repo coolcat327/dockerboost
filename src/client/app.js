@@ -1,5 +1,6 @@
 import { gsap } from 'gsap';
 import { runExport } from './export-client.js';
+import { createTransferRate, formatDuration, formatTransferSpeed } from './download-speed.js';
 import { pastedImage } from './image-input.js';
 import { archiveFilename, imageReference, sourceExamples } from './image-reference.js';
 
@@ -25,6 +26,10 @@ import { archiveFilename, imageReference, sourceExamples } from './image-referen
   progressRow.className = 'download-progress-row';
   lookupStatus.before(progressRow);
   progressRow.append(lookupStatus);
+  const speedStatus = document.createElement('div');
+  speedStatus.className = 'download-speed-status';
+  speedStatus.hidden = true;
+  progressRow.append(speedStatus);
   const progressTrack = document.createElement('div');
   progressTrack.className = 'download-progress';
   progressTrack.hidden = true;
@@ -39,11 +44,23 @@ import { archiveFilename, imageReference, sourceExamples } from './image-referen
   progressIcon.setAttribute('aria-hidden', 'true');
   progressTrack.append(progressFill, progressIcon);
   progressRow.append(progressTrack);
+  const setLiveText = (element, value) => {
+    element.style.fontSize = '';
+    element.textContent = value;
+    const available = element.clientWidth;
+    const required = element.scrollWidth;
+    if (available && required > available) {
+      const baseSize = parseFloat(getComputedStyle(element).fontSize);
+      element.style.fontSize = `${Math.max(8, Math.floor(baseSize * 10 * (available - 2) / required) / 10)}px`;
+    }
+  };
   const showProgress = (percent, running = true) => {
     if (!progressIcon.getAttribute('src')) progressIcon.src = iconUrl || '/docker-icon.svg';
     progressTrack.hidden = false;
-    progressTrack.style.setProperty('--progress', `${Math.max(0, Math.min(100, percent))}%`);
-    progressTrack.setAttribute('aria-valuenow', String(Math.round(percent)));
+    const value = Math.max(0, Math.min(100, percent));
+    progressFill.style.width = `${value}%`;
+    progressIcon.style.left = `clamp(4px, calc(${value}% - 30px), calc(100% - 34px))`;
+    progressTrack.setAttribute('aria-valuenow', String(Math.round(value)));
     progressTrack.classList.toggle('is-running', running);
   };
   const setupCommand = document.querySelector('#setup-command');
@@ -67,23 +84,41 @@ import { archiveFilename, imageReference, sourceExamples } from './image-referen
     browserDownload.setAttribute('aria-disabled', 'true');
     browserDownload.textContent = '正在下载…';
     showProgress(0);
+    speedStatus.classList.remove('is-summary');
+    speedStatus.hidden = false;
+    setLiveText(speedStatus, '速度计算中…');
+    const startedAt = performance.now();
+    const transferRate = createTransferRate();
+    let lastDownloadUpdateAt = 0;
     let worker;
     try {
       worker = new Worker(browserExportWorker || '/browser-export-worker.js');
       const image = normalise(downloadImage.value, requestedSource() === 'auto' ? resolvedSource : requestedSource());
       const result = await runExport(worker, { repository: image.repository, reference: image.reference, repoTag: image.original, source: resolvedSource, platform: lookupArchitecture.value, filename: archiveFilename(image.original, lookupArchitecture.value), sessionId }, (progress) => {
+        if (progress.phase === 'download') {
+          const now = performance.now();
+          if (progress.completed < progress.total && now - lastDownloadUpdateAt < 100) return;
+          lastDownloadUpdateAt = now;
+        }
         if (progress.phase === 'download' && progress.total) showProgress(progress.completed / progress.total * 90);
-        if (progress.phase === 'export') showProgress(95);
+        if (progress.phase === 'export') { showProgress(95); setLiveText(speedStatus, '正在打包…'); }
         if (progress.phase === 'done') showProgress(100, false);
         lookupResult.classList.remove('hidden');
-        lookupStatus.textContent = progress.message || (progress.total ? `正在下载：${Math.floor(progress.completed / progress.total * 100)}% · ${(progress.completed / 1048576).toFixed(1)} / ${(progress.total / 1048576).toFixed(1)} MB` : '正在下载…');
+        const speed = progress.phase === 'download' ? transferRate(progress.completed) : '';
+        if (speed) setLiveText(speedStatus, `速度：${speed}`);
+        setLiveText(lookupStatus, progress.message || (progress.total ? `下载中 ${Math.floor(progress.completed / progress.total * 100)}% · ${(progress.completed / 1048576).toFixed(1)}/${(progress.total / 1048576).toFixed(1)} MB` : '正在下载…'));
       });
       const url = URL.createObjectURL(result.archive);
       const link = document.createElement('a'); link.href = url; link.download = result.filename; document.body.append(link); link.click(); link.remove();
-      lookupStatus.textContent = `已生成 ${result.filename}，已交给浏览器保存。`;
+      const elapsedMs = Math.max(1, performance.now() - startedAt);
+      lookupStatus.style.fontSize = '';
+      speedStatus.style.fontSize = '';
+      lookupStatus.textContent = `已保存：${result.filename}`;
+      speedStatus.textContent = `均速 ${formatTransferSpeed(result.archive.size * 1000 / elapsedMs)} · 耗时 ${formatDuration(elapsedMs)}`;
+      speedStatus.classList.add('is-summary');
       showProgress(100, false);
       window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
-    } catch (error) { lookupResult.classList.remove('hidden'); lookupStatus.textContent = error.message || '浏览器下载失败，请使用终端命令。'; flash(lookupStatus.textContent); } finally {
+    } catch (error) { lookupResult.classList.remove('hidden'); lookupStatus.style.fontSize = ''; lookupStatus.textContent = error.message || '浏览器下载失败，请使用终端命令。'; speedStatus.hidden = true; flash(lookupStatus.textContent); } finally {
       worker?.terminate(); browserExporting = false; browserDownload.textContent = locale().download.browser;
       progressTrack.classList.remove('is-running');
       if (lookupArchitecture.value) browserDownload.removeAttribute('aria-disabled');
@@ -103,8 +138,8 @@ import { archiveFilename, imageReference, sourceExamples } from './image-referen
       heroTitle: 'Pull images. Move faster.', loadingPlatforms: 'Loading image architectures…', noPlatforms: 'No architecture available', waitingPlatforms: 'Awaiting lookup',
       tabs: ['Setup', 'Pull', 'Download'],
       setup: { kicker: 'DAEMON CONFIGURATION', title: 'Route every <code>docker pull</code> through your mirror.', description: 'Only an existing <code>daemon.json</code> is updated; it is backed up first and can be restored with the command on the right.', applyMeta: 'Back up and write', restoreMeta: 'Restore backup', fallback: 'If the command does not succeed, or the default configuration file is missing, no file is created. Manually merge the <code>registry-mirrors</code> field below into the configuration file your Docker daemon actually uses.', copy: 'Copy all' },
-      pull: { kicker: 'PULL COMMAND BUILDER', title: 'Enter an image and generate the complete command.', description: 'Automatically select the fastest available source, or choose one manually. Do not include the source hostname in the image name.', label: 'Image name', labelDetail: ' (a docker pull command is accepted)', source: 'Image source', automatic: 'Automatic (fastest available)', architecture: 'Target architecture', action: 'Generate command', meta: 'Pull + tag', copy: 'Copy all' },
-      download: { kicker: 'PUBLIC IMAGE DOWNLOAD', title: 'Download an image.', description: 'Choose an image source and CPU architecture, then download it in the browser or copy the command below to your terminal.', label: 'Image name', labelDetail: ' (a docker pull command is accepted)', source: 'Image source', automatic: 'Automatic (fastest available)', architecture: 'Target architecture', action: 'Download in browser', browser: 'Download in browser', meta: 'Terminal download', copy: 'Copy all', note: 'Only public images are supported.' }
+      pull: { kicker: 'PULL COMMAND BUILDER', title: 'Enter an image and generate the complete command.', description: 'Automatically select the fastest available source, or choose one manually. Do not include the source hostname in the image name.', label: 'Image name', labelDetail: ' (a docker pull command is accepted)', source: 'Image source', automatic: 'Auto (fastest available)', architecture: 'Target architecture', action: 'Generate command', meta: 'Pull + tag', copy: 'Copy all' },
+      download: { kicker: 'PUBLIC IMAGE DOWNLOAD', title: 'Download an image.', description: 'Choose an image source and CPU architecture, then download it in the browser or copy the command below to your terminal.', label: 'Image name', labelDetail: ' (a docker pull command is accepted)', source: 'Image source', automatic: 'Auto (fastest available)', architecture: 'Target architecture', action: 'Download in browser', browser: 'Download in browser', meta: 'Terminal download', copy: 'Copy all', note: 'Only public images are supported.' }
     }
   };
 
@@ -183,6 +218,9 @@ import { archiveFilename, imageReference, sourceExamples } from './image-referen
     pullCommand.textContent = locale().waitingPlatforms;
     loadCommand.textContent = locale().waitingPlatforms;
     lookupResult.classList.add('hidden');
+    lookupStatus.style.fontSize = '';
+    speedStatus.hidden = true;
+    progressTrack.hidden = true;
     browserDownload.setAttribute('aria-disabled', 'true');
   };
   const requestPlatforms = async (value) => {
@@ -190,6 +228,9 @@ import { archiveFilename, imageReference, sourceExamples } from './image-referen
     const controller = new AbortController();
     platformRequestController = controller;
     const token = ++platformRequestToken;
+    lookupStatus.style.fontSize = '';
+    speedStatus.hidden = true;
+    progressTrack.hidden = true;
     if (!value.trim()) {
       resetPlatformOptions();
       return;
@@ -301,6 +342,9 @@ import { archiveFilename, imageReference, sourceExamples } from './image-referen
   lookupArchitecture.addEventListener('change', () => {
     try {
       buildDownload();
+      lookupStatus.style.fontSize = '';
+      speedStatus.hidden = true;
+      progressTrack.hidden = true;
       lookupStatus.textContent = `${resolvedSource} · ${normalise(downloadImage.value, requestedSource() === 'auto' ? resolvedSource : requestedSource()).original} · ${lookupArchitecture.value}`;
       lookupResult.classList.remove('hidden');
     } catch { /* wait for a valid name */ }
