@@ -64,7 +64,7 @@ npm run validate  # 类型检查、测试和前端构建
 1. 在 `public/index.html` 增加按钮和面板，分别使用相同且唯一的 `data-tab`、`data-panel` 值；保留现有 `role="tab"`、`role="tabpanel"` 结构。标签内元素由该标签模块查询和管理。
 2. 在 `src/client/features/<名称>/index.js` 导出 `feature`，包含与 HTML 一致的 `id`、`zh-CN` 和 `en` 文案，以及 `init({ panel, locale, messages, flash, selectionStore })`。需要更新模块私有文案时，从 `init` 返回 `setLanguage(message)`。通用语言渲染和标签切换由页面入口处理，无需在 `app.js` 或语言模块添加该标签的分支。
 3. 在 `src/client/features/index.js` 导入并注册 `feature`。需要镜像输入、源和架构时，在标签内部创建自己的 `createImageSelection` 实例；通过 `current()`、`resolve()` 和 `onPlatformChange()` 使用选择结果，不直接操作其内部控件。
-4. 按需要选择共享方式：不声明 `selectionGroup` 即独立；声明相同组名并把 `selectionStore` 传给 `createImageSelection`，则共享镜像名和所选源。架构、请求取消状态及 `auto` 解析结果始终由各标签独立管理。目前拉取与下载使用同一个 `image` 组。
+4. 按需要选择共享方式：不声明 `selectionGroup` 即独立；声明相同组名并把 `selectionStore` 传给 `createImageSelection`，则共享镜像名和所选源，同一镜像与源的平台查询只发送一次。架构、请求结果的应用状态及 `auto` 解析结果由各标签独立管理。目前拉取与下载使用同一个 `image` 组；输入停止 1 秒后查询平台。
 5. 新增专属 CSS 放在对应功能目录，并由 `src/client/styles/index.css` 导入；页面及共用规则留在 `styles/`。专属选择器应限定在自己的 `[data-panel="<名称>"]` 内。配置与下载已有专属 CSS；拉取与下载共用的表单规则留在 `workspace.css`，拉取标签暂不需要独立 CSS。
 
 补充相关回归测试并运行 `npm run validate`；若职责或测试范围改变，按 `AGENTS.md` 同步项目说明。只有新标签需要新的服务端能力时才增加 Worker 路由。

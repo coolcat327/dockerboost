@@ -10,6 +10,8 @@ function platformsFromManifest(manifest) {
   )].sort((left, right) => left.localeCompare(right));
 }
 
+const INPUT_IDLE_MS = 1000;
+
 // A panel owns its requests and available platforms. An optional store syncs user choices.
 export function createImageSelection({ panel, locale, messages, flash, store, onLoading, onReady, onError, onReset }) {
   const image = panel.querySelector('.image-fields input');
@@ -89,11 +91,16 @@ export function createImageSelection({ panel, locale, messages, flash, store, on
       architecture.disabled = true;
       architecture.replaceChildren(new Option(locale().loadingPlatforms, ''));
       const lookupImage = parsed.source === 'auto' ? parsed.original : parsed.upstream;
-      const response = await fetch(`/api/platforms?image=${encodeURIComponent(lookupImage)}&source=${encodeURIComponent(parsed.source)}`, { signal: controller.signal });
-      const manifest = await response.json();
+      const url = `/api/platforms?image=${encodeURIComponent(lookupImage)}&source=${encodeURIComponent(parsed.source)}`;
+      const result = store ? await store.lookupPlatforms(url) : await fetch(url, { signal: controller.signal }).then(async (response) => ({
+        ok: response.ok,
+        manifest: await response.json(),
+        source: response.headers.get('x-dockerboost-source')
+      }));
       if (requestToken !== token) return;
-      if (!response.ok) throw new Error(manifest.error || '无法读取镜像架构');
-      resolvedSource = response.headers.get('x-dockerboost-source') || requestedSource();
+      const { manifest } = result;
+      if (!result.ok) throw new Error(manifest.error || '无法读取镜像架构');
+      resolvedSource = result.source || requestedSource();
       const resolvedImage = normalise(image.value, resolvedSource);
       let platforms = Array.isArray(manifest.platforms) ? manifest.platforms : platformsFromManifest(manifest);
       if (!platforms.length && !Array.isArray(manifest.manifests) && manifest.config?.digest) {
@@ -139,7 +146,7 @@ export function createImageSelection({ panel, locale, messages, flash, store, on
         updatePlaceholder();
         clearTimeout(inputTimer);
         invalidate();
-        if (image.value.trim() && sourceAvailable) inputTimer = setTimeout(inspect, 500);
+        if (image.value.trim() && sourceAvailable) inputTimer = setTimeout(inspect, INPUT_IDLE_MS);
       });
     }
     fetch('/api/sources').then(async (response) => {
@@ -160,7 +167,7 @@ export function createImageSelection({ panel, locale, messages, flash, store, on
       clearTimeout(inputTimer);
       store?.update({ image: image.value }, storeOrigin);
       invalidate();
-      inputTimer = setTimeout(inspect, 500);
+      inputTimer = setTimeout(inspect, INPUT_IDLE_MS);
     });
     image.addEventListener('paste', (event) => {
       try {
@@ -171,7 +178,7 @@ export function createImageSelection({ panel, locale, messages, flash, store, on
         clearTimeout(inputTimer);
         store?.update({ image: image.value }, storeOrigin);
         invalidate();
-        inputTimer = setTimeout(inspect, 500);
+        inputTimer = setTimeout(inspect, INPUT_IDLE_MS);
       } catch (error) { event.preventDefault(); flash(error.message); }
     });
     architecture.addEventListener('change', () => {

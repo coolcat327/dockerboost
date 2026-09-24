@@ -29,6 +29,39 @@ function panel() {
   return { image, source, architecture, querySelector: (selector) => controls.get(selector) };
 }
 
+test('shared image waits one second after typing and sends one platform request', async () => {
+  const original = { Option: globalThis.Option, fetch: globalThis.fetch, window: globalThis.window };
+  globalThis.Option = class { constructor(textContent, value) { this.textContent = textContent; this.value = value; } };
+  globalThis.window = { location: { host: 'proxy.test' } };
+  const requests = [];
+  globalThis.fetch = async (url) => {
+    if (url === '/api/sources') return { ok: true, json: async () => ({ sources: [{ id: 'mirror-gcr', label: 'Docker Hub' }] }) };
+    requests.push(url);
+    return { ok: true, headers: { get: () => 'mirror-gcr' }, json: async () => ({ platforms: ['linux/amd64'] }) };
+  };
+  try {
+    const store = createSelectionStore();
+    const options = { locale: () => ({ waitingPlatforms: 'Waiting', loadingPlatforms: 'Loading', noPlatforms: 'None' }),
+      messages: () => ({ automatic: 'Auto' }), flash: () => {}, store };
+    const firstPanel = panel();
+    const secondPanel = panel();
+    createImageSelection({ panel: firstPanel, ...options }).init();
+    createImageSelection({ panel: secondPanel, ...options }).init();
+    await new Promise(setImmediate);
+
+    firstPanel.image.value = 'golang:ti';
+    firstPanel.image.listeners.get('input')();
+    await new Promise((resolve) => setTimeout(resolve, 400));
+    firstPanel.image.value = 'golang:tip';
+    firstPanel.image.listeners.get('input')();
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    assert.equal(requests.length, 0);
+    await new Promise((resolve) => setTimeout(resolve, 600));
+    assert.equal(requests.length, 1);
+    assert.equal(new URL(requests[0], 'https://proxy.test').searchParams.get('image'), 'golang:tip');
+  } finally { Object.assign(globalThis, original); }
+});
+
 test('image selection state and requests belong to each tab', async () => {
   const original = { Option: globalThis.Option, fetch: globalThis.fetch, window: globalThis.window };
   globalThis.Option = class { constructor(textContent, value) { this.textContent = textContent; this.value = value; } };
@@ -59,7 +92,7 @@ test('image selection state and requests belong to each tab', async () => {
 
     firstPanel.image.value = 'nginx:latest';
     await firstPanel.image.listeners.get('input')();
-    await new Promise((resolve) => setTimeout(resolve, 550));
+    await new Promise((resolve) => setTimeout(resolve, 1050));
     assert.equal(first.current().platform, 'linux/amd64');
     assert.equal(first.current().resolvedSource, 'mirror-gcr');
     assert.equal(second.current().image, '');
@@ -119,7 +152,7 @@ test('a selection group shares image, source, and platform choices', async () =>
     assert.equal(download.current().image, 'nginx:latest');
     assert.equal(separate.current().image, '');
     assert.equal(downloadPanel.architecture.disabled, true);
-    await new Promise((resolve) => setTimeout(resolve, 550));
+    await new Promise((resolve) => setTimeout(resolve, 1050));
     assert.equal(pull.current().platform, 'linux/amd64');
     assert.equal(download.current().platform, 'linux/amd64');
 
@@ -127,7 +160,7 @@ test('a selection group shares image, source, and platform choices', async () =>
     pullPanel.source.listeners.get('change')();
     assert.equal(downloadPanel.source.value, 'mirror-gcr');
     assert.equal(separatePanel.source.value, 'auto');
-    await new Promise((resolve) => setTimeout(resolve, 550));
+    await new Promise((resolve) => setTimeout(resolve, 1050));
     assert.equal(download.current().platform, 'linux/amd64');
     pullPanel.architecture.value = 'linux/arm64';
     pullPanel.architecture.listeners.get('change')();
@@ -145,7 +178,7 @@ test('a selection group shares image, source, and platform choices', async () =>
     downloadPanel.image.value = 'alpine:3';
     downloadPanel.image.listeners.get('input')();
     assert.equal(pull.current().image, 'alpine:3');
-    await new Promise((resolve) => setTimeout(resolve, 550));
+    await new Promise((resolve) => setTimeout(resolve, 1050));
     assert.equal(pull.current().platform, 'linux/amd64');
     assert.equal(download.current().platform, 'linux/amd64');
     assert.equal(group.snapshot().platform, 'linux/amd64');
@@ -158,7 +191,7 @@ test('a pending platform lookup applies the latest shared choice', async () => {
   const original = { Option: globalThis.Option, fetch: globalThis.fetch, window: globalThis.window };
   globalThis.Option = class { constructor(textContent, value) { this.textContent = textContent; this.value = value; } };
   globalThis.window = { location: { host: 'proxy.test' } };
-  let resolveDownload;
+  let resolveLookup;
   let platformRequests = 0;
   const platformResponse = () => ({
     ok: true,
@@ -168,7 +201,7 @@ test('a pending platform lookup applies the latest shared choice', async () => {
   globalThis.fetch = async (url) => {
     if (url === '/api/sources') return { ok: true, json: async () => ({ sources: [{ id: 'mirror-gcr', label: 'Docker Hub' }] }) };
     platformRequests++;
-    if (platformRequests === 1) return new Promise((resolve) => { resolveDownload = resolve; });
+    if (platformRequests === 1) return new Promise((resolve) => { resolveLookup = resolve; });
     return platformResponse();
   };
   try {
@@ -185,13 +218,14 @@ test('a pending platform lookup applies the latest shared choice', async () => {
 
     pullPanel.image.value = 'nginx:latest';
     pullPanel.image.listeners.get('input')();
-    await new Promise((resolve) => setTimeout(resolve, 550));
-    assert.equal(pull.current().platform, 'linux/amd64');
+    await new Promise((resolve) => setTimeout(resolve, 1050));
+    assert.equal(platformRequests, 1);
+    assert.equal(pullPanel.architecture.disabled, true);
     assert.equal(downloadPanel.architecture.disabled, true);
-    pullPanel.architecture.value = 'linux/arm64';
-    pullPanel.architecture.listeners.get('change')();
-    resolveDownload(platformResponse());
+    group.update({ platform: 'linux/arm64' });
+    resolveLookup(platformResponse());
     await new Promise(setImmediate);
+    assert.equal(pull.current().platform, 'linux/arm64');
     assert.equal(download.current().platform, 'linux/arm64');
   } finally {
     Object.assign(globalThis, original);
