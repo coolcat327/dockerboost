@@ -31,7 +31,7 @@ function renderPanel(panel, message) {
   }
   setText(panel, '.source-fields label', message.source);
   setText(panel, '.architecture-fields label', message.architecture);
-  setText(panel, '.generate-button', message.action);
+  setText(panel, '[data-action-button]', message.action);
   setText(panel, '.command-note', message.note, true);
 }
 

@@ -4,6 +4,7 @@ import { healthResponse, sourcesResponse } from './routes/status';
 import { inspectImageResponse, platformResponse } from './routes/images';
 import { downloadScriptResponse, retiredSaveResponse } from './routes/download';
 import { registryProxyResponse } from './routes/registry-proxy';
+import { shareResponse } from './routes/share';
 
 function getOnly(request: Request) {
   return request.method === 'GET' ? undefined : new Response('Method Not Allowed', { status: 405, headers: { Allow: 'GET' } });
@@ -16,6 +17,7 @@ export default {
       if (path === '/api/health') return getOnly(request) || healthResponse(env);
       if (path === '/api/sources') return getOnly(request) || sourcesResponse(env);
       if (path === '/api/download-script') return getOnly(request) || await downloadScriptResponse(request, env);
+      if (path === '/api/share') return getOnly(request) || await shareResponse(request);
       if (path === '/api/save') return retiredSaveResponse();
       if (path === '/api/inspect') return getOnly(request) || await inspectImageResponse(request, env);
       if (path === '/api/platforms') return getOnly(request) || await platformResponse(request, env);

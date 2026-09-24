@@ -1,8 +1,9 @@
 import { gsap } from 'gsap';
 import { features } from './features/index.js';
 import { initHeroIntro } from './hero-intro.js';
-import { createLanguage } from './shared/language.js';
-import { createSelectionStore } from './shared/selection-store.js';
+import { createLanguage } from './common/language.js';
+import { createSelectionStore } from './common/selection-store.js';
+import { restoreSharedState } from './common/share-link.js';
 
 const toast = document.querySelector('#toast');
 const flash = (message) => {
@@ -11,13 +12,16 @@ const flash = (message) => {
   setTimeout(() => toast.classList.remove('show'), 1800);
 };
 const language = createLanguage();
+const sharedState = restoreSharedState(window.location.hash);
 const selectionGroups = new Map();
 const registrations = features.map((feature) => {
   const tab = document.querySelector(`.tool-tab[data-tab="${feature.id}"]`);
   const panel = document.querySelector(`.tool-panel[data-panel="${feature.id}"]`);
   if (!tab || !panel) throw new Error(`缺少 ${feature.id} 标签或面板`);
   if (feature.selectionGroup && !selectionGroups.has(feature.selectionGroup)) {
-    selectionGroups.set(feature.selectionGroup, createSelectionStore());
+    const store = createSelectionStore();
+    if (feature.selectionGroup === 'image' && sharedState) store.update(sharedState);
+    selectionGroups.set(feature.selectionGroup, store);
   }
   const selectionStore = selectionGroups.get(feature.selectionGroup);
   const instance = feature.init({ panel, locale: language.locale, messages: () => language.messages(feature), flash, selectionStore });
@@ -36,6 +40,7 @@ const selectTab = (id) => {
   if (active) gsap.fromTo(active, { autoAlpha: 0, y: 12 }, { autoAlpha: 1, y: 0, duration: .35, ease: 'power3.out', clearProps: 'visibility' });
 };
 registrations.forEach(({ feature, tab }) => tab.addEventListener('click', () => selectTab(feature.id)));
+if (sharedState) selectTab(sharedState.tab);
 document.addEventListener('click', async (event) => {
   const button = event.target.closest('.copy-all');
   if (!button) return;
@@ -44,4 +49,5 @@ document.addEventListener('click', async (event) => {
   catch { flash('复制失败，请手动选择命令'); }
 });
 
-initHeroIntro();
+initHeroIntro({ allowHash: Boolean(sharedState) });
+if (sharedState) window.history.replaceState(window.history.state, '', '/');

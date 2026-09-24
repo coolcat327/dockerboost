@@ -182,7 +182,7 @@ export function createImageSelection({ panel, locale, messages, flash, store, on
   return {
     init,
     setLanguage,
-    current: () => ({ image: image.value, platform: architecture.value, resolvedSource }),
+    current: () => ({ image: image.value, source: requestedSource(), platform: architecture.value, resolvedSource }),
     resolve: () => normalise(image.value, effectiveSource()),
     onPlatformChange: (listener) => platformListeners.add(listener)
   };

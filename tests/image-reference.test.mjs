@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { archiveFilename, imageReference } from '../src/client/shared/image-reference.js';
+import { archiveFilename, imageReference } from '../src/client/common/image-reference.js';
 
 const context = { mirrorHost: 'docker.example', acceleratedSource: 'mirror-gcr', sources: [
   { id: 'mirror-gcr', label: 'mirror.gcr.io', host: 'mirror.gcr.io', naming: 'docker-hub', requiresNamespace: false },

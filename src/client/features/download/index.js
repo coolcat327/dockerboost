@@ -1,7 +1,8 @@
 import { runExport } from './export-client.js';
 import { createTransferRate, formatDuration, formatTransferSpeed } from './download-speed.js';
-import { archiveFilename } from '../../shared/image-reference.js';
-import { createImageSelection } from '../../shared/image-selection.js';
+import { archiveFilename } from '../../common/image-reference.js';
+import { createImageSelection } from '../../common/image-selection.js';
+import { shareSelection } from '../../common/share-link.js';
 
 export const feature = {
   id: 'download',
@@ -11,15 +12,15 @@ export const feature = {
       tab: '下载', kicker: 'PUBLIC IMAGE DOWNLOAD', title: '下载镜像',
       description: '选择镜像源和目标 CPU 架构后，可直接在浏览器下载，或复制下方命令到终端',
       label: '镜像名', labelDetail: '（可粘贴 docker pull 命令解析）', source: '镜像源',
-      automatic: '自动（最快可用）', architecture: '目标架构', action: '浏览器下载',
-      browser: '浏览器下载', meta: '终端下载', copy: '复制全部', note: '仅支持公开镜像'
+      automatic: '自动（最快可用）', architecture: '目标架构', action: '下载',
+      browser: '下载', share: '分享', shareCopied: '分享链接已复制', shareGenerated: '分享链接已生成', shareNeedsImage: '请先填写镜像名', shareFailed: '无法生成分享链接', shareCopyManually: '请复制此分享链接', shareCopyFailed: '未能复制分享链接', meta: '终端下载', copy: '复制全部', note: '仅支持公开镜像'
     },
     en: {
       tab: 'Download', kicker: 'PUBLIC IMAGE DOWNLOAD', title: 'Download an image.',
       description: 'Choose an image source and CPU architecture, then download it in the browser or copy the command below to your terminal.',
       label: 'Image name', labelDetail: ' (a docker pull command is accepted)', source: 'Image source',
-      automatic: 'Auto (fastest available)', architecture: 'Target architecture', action: 'Download in browser',
-      browser: 'Download in browser', meta: 'Terminal download', copy: 'Copy all', note: 'Only public images are supported.'
+      automatic: 'Auto (fastest available)', architecture: 'Target architecture', action: 'Download',
+      browser: 'Download', share: 'Share', shareCopied: 'Share link copied', shareGenerated: 'Share link is ready', shareNeedsImage: 'Enter an image name first', shareFailed: 'Could not create a share link', shareCopyManually: 'Copy this share link', shareCopyFailed: 'Could not copy the share link', meta: 'Terminal download', copy: 'Copy all', note: 'Only public images are supported.'
     }
   },
   init({ panel, locale, messages, flash, selectionStore }) {
@@ -29,11 +30,14 @@ export const feature = {
   const lookupResult = panel.querySelector('#lookup-result');
   const lookupStatus = panel.querySelector('#lookup-status');
   const speedStatus = panel.querySelector('#download-speed-status');
+  const progressRow = panel.querySelector('.download-progress-row');
   const progressTrack = panel.querySelector('#download-progress');
   const progressFill = progressTrack.querySelector('.download-progress-fill');
   const progressIcon = progressTrack.querySelector('.download-progress-icon');
   const browserDownload = panel.querySelector('#browser-download');
+  const shareButton = panel.querySelector('#download-share');
   const loadCommand = panel.querySelector('#load-command');
+  lookupResult.classList.remove('hidden');
   let browserExporting = false;
   let selection;
 
@@ -58,6 +62,9 @@ export const feature = {
   };
   const clearProgress = () => {
     lookupStatus.style.fontSize = '';
+    lookupStatus.removeAttribute('title');
+    progressRow.classList.remove('is-complete');
+    progressRow.hidden = true;
     speedStatus.hidden = true;
     progressTrack.hidden = true;
   };
@@ -76,6 +83,8 @@ export const feature = {
     browserExporting = true;
     browserDownload.setAttribute('aria-disabled', 'true');
     browserDownload.textContent = '正在下载…';
+    progressRow.classList.remove('is-complete');
+    lookupStatus.removeAttribute('title');
     showProgress(0);
     speedStatus.classList.remove('is-summary');
     speedStatus.hidden = false;
@@ -97,7 +106,7 @@ export const feature = {
         if (progress.phase === 'download' && progress.total) showProgress(progress.completed / progress.total * 90);
         if (progress.phase === 'export') { showProgress(95); setLiveText(speedStatus, '正在打包…'); }
         if (progress.phase === 'done') showProgress(100, false);
-        lookupResult.classList.remove('hidden');
+        progressRow.hidden = false;
         const speed = progress.phase === 'download' ? transferRate(progress.completed) : '';
         if (speed) setLiveText(speedStatus, `速度：${speed}`);
         setLiveText(lookupStatus, progress.message || (progress.total ? `下载中 ${Math.floor(progress.completed / progress.total * 100)}% · ${(progress.completed / 1048576).toFixed(1)}/${(progress.total / 1048576).toFixed(1)} MB` : '正在下载…'));
@@ -108,12 +117,14 @@ export const feature = {
       lookupStatus.style.fontSize = '';
       speedStatus.style.fontSize = '';
       lookupStatus.textContent = `已保存：${result.filename}`;
+      lookupStatus.title = result.filename;
       speedStatus.textContent = `均速 ${formatTransferSpeed(result.archive.size * 1000 / elapsedMs)} · 耗时 ${formatDuration(elapsedMs)}`;
       speedStatus.classList.add('is-summary');
+      progressRow.classList.add('is-complete');
       showProgress(100, false);
       window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
     } catch (error) {
-      lookupResult.classList.remove('hidden');
+      progressRow.hidden = false;
       lookupStatus.style.fontSize = '';
       lookupStatus.textContent = error.message || '浏览器下载失败，请使用终端命令。';
       speedStatus.hidden = true;
@@ -131,33 +142,34 @@ export const feature = {
       buildDownload();
       const { platform, resolvedSource } = selection.current();
       lookupStatus.textContent = `${resolvedSource} · ${image.original} · ${platform}`;
-      lookupResult.classList.remove('hidden');
+      progressRow.hidden = false;
     },
     onError: (error) => {
       loadCommand.textContent = locale().waitingPlatforms;
       lookupStatus.textContent = error instanceof Error ? error.message : '无法读取镜像信息';
-      lookupResult.classList.remove('hidden');
+      progressRow.hidden = false;
     },
     onReset: () => {
       loadCommand.textContent = locale().waitingPlatforms;
-      lookupResult.classList.add('hidden');
       clearProgress();
       browserDownload.setAttribute('aria-disabled', 'true');
     }
   });
   selection.init();
+  shareButton.addEventListener('click', () => shareSelection({ tab: 'download', selection, button: shareButton, messages, flash }));
   selection.onPlatformChange(() => {
     try {
       buildDownload();
       clearProgress();
       const { platform, resolvedSource } = selection.current();
       lookupStatus.textContent = `${resolvedSource} · ${selection.resolve().original} · ${platform}`;
-      lookupResult.classList.remove('hidden');
+      progressRow.hidden = false;
     } catch { /* wait for a valid name */ }
   });
   return { setLanguage: (message) => {
     selection.setLanguage();
     if (!browserExporting) browserDownload.textContent = message.browser;
+    shareButton.textContent = message.share;
   } };
   }
 };

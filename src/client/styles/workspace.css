@@ -32,13 +32,17 @@
 .generate-button { display: inline-flex; align-items: center; justify-content: center; height: 56px; min-width: 140px; padding: 0 24px; border: 0; border-radius: 7px; background: #159bdb; color: white; font: 700 16px Manrope, sans-serif; white-space: nowrap; cursor: pointer; }
 .generate-button:hover { background: #28adeb; }
 .generate-button:disabled { opacity: .62; cursor: wait; }
+.download-actions { display:grid;grid-template-columns:repeat(2,140px);gap:12px;min-width:0 }
+.download-actions .generate-button { width:100%;min-width:0;padding:0 12px }
+.share-button { box-sizing:border-box;width:140px;min-width:140px }
 @media (max-width: 1160px) {
-  .image-form, .download-image { grid-template-columns: minmax(150px, .7fr) minmax(0, 1.5fr) minmax(150px, .7fr); }
-  .image-form .generate-button, .download-image .generate-button { grid-column: 1 / -1; justify-self: center; width: min(100%, 300px); }
+  .image-form, .download-image { grid-template-columns: minmax(150px, .7fr) minmax(0, 1.1fr) minmax(150px, .7fr); }
+  .image-form .share-button, .download-image .download-actions { grid-column: 1 / -1; justify-self: center; }
+  .download-image .download-actions { width:min(100%,292px);grid-template-columns:repeat(2,minmax(0,1fr)); }
 }
 @media (max-width: 960px) {
   .image-form, .download-image { grid-template-columns: minmax(0, 1fr); }
-  .image-form .generate-button, .download-image .generate-button { grid-column: auto; justify-self: stretch; width: 100%; }
+  .image-form .share-button, .download-image .download-actions { grid-column:auto; }
 }
 @media (max-width: 820px) {
   .workspace { padding-top: 30px; }
@@ -50,4 +54,8 @@
   .tool-tab span { display: none; }
   .command-block code { padding: 16px; }
   .command-meta { padding: 10px 14px; }
+  .download-actions { gap:8px }
+  .download-image .download-actions { width:min(100%,288px) }
+  .download-actions .generate-button { height:52px;padding:0 8px;font-size:14px }
+  .image-form .share-button { height:52px;font-size:14px }
 }

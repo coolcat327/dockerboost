@@ -14,7 +14,7 @@ src/
       setup/                 配置标签、命令生成与专属 CSS
       pull/                  拉取标签
       download/              下载标签、专属 CSS、导出 Worker 与归档格式
-    shared/                  镜像解析、选择逻辑、可选共享状态与语言渲染
+    common/                  镜像解析、选择逻辑、分享链接与语言渲染等共用模块
     styles/                  页面基础、Hero 与工具区共用样式
       index.css              全部样式的导入入口与级联顺序
       foundation.css         页面基础与导航、页脚样式
@@ -55,7 +55,7 @@ npm run validate  # 类型检查、测试和前端构建
 
 修改 `src/client/` 或 `public/`，不要编辑生成的 `dist/`。CSS 由 `styles/index.css` 构建为一个文件；基础、页面共用、标签专属样式依次导入。共用表单在 1160px 和 960px 切换布局，调整规则时应检查各断点及中英文内容。
 
-当前 Hero 插画和海浪动画在 `public/hero-surf-speed.svg` 中，页面通过一张 `<img>` 引用它。首次从页面顶部进入时，`src/client/hero-intro.js` 用 GSAP 将插画从屏幕中央移动到 Hero 的原位，再显示页面内容；动画期间保留 Hero 图片区域的高度，避免中屏和手机布局中的标题上移。若动画期间开始滚动，会立即结束入场并将插画放回 Hero。减少动态效果、锚点进入或页面已滚动时直接显示页面。以后可直接修改该 SVG，或把 `public/index.html` 中的图片路径切换到其他候选文件；SVG 内含动画和减少动态效果时的静态画面。构建只复制页面引用的 Hero SVG，其他 `public/hero-*.svg` 候选不会进入 `dist/`；选中的文件会加内容哈希，并通过 `public/_headers` 设置一年不可变缓存。更新 SVG 内容后，文件名随哈希变化。
+当前 Hero 插画和海浪动画在 `public/hero-surf-speed.svg` 中，页面通过一张 `<img>` 引用它。首次从页面顶部进入时，`src/client/hero-intro.js` 用 GSAP 将插画从屏幕中央移动到 Hero 的原位，再显示页面内容；分享链接进入也播放该动画。动画期间保留 Hero 图片区域的高度，避免中屏和手机布局中的标题上移。若动画期间开始滚动，会立即结束入场并将插画放回 Hero。减少动态效果、普通锚点进入或页面已滚动时直接显示页面。以后可直接修改该 SVG，或把 `public/index.html` 中的图片路径切换到其他候选文件；SVG 内含动画和减少动态效果时的静态画面。构建只复制页面引用的 Hero SVG，其他 `public/hero-*.svg` 候选不会进入 `dist/`；选中的文件会加内容哈希，并通过 `public/_headers` 设置一年不可变缓存。更新 SVG 内容后，文件名随哈希变化。
 
 ## 新增标签
 
@@ -90,10 +90,11 @@ docker load -i nginx_latest_linux_amd64.tar
 | /api/platforms?image=...&source=auto | 返回 manifest/index；单架构镜像会附加 `platforms` 字段；`auto` 并发选择首个成功源 |
 | /api/inspect?image=...&platform=...&source=... | 镜像层数和目标架构，保留兼容 |
 | /api/download-script?image=...&platform=...&source=... | 生成终端下载脚本 |
+| /api/share?tab=...&image=...&source=...&platform=... | 返回可读的本站分享链接；参数只写入 URL 片段中，不会存储 |
 | /v2/* | Registry 请求与 blob 流式透传；普通路径保留完整仓库名，`/v2/dkbst/<source-id>/*` 可明确指定源 |
 | /api/save | 已停用，返回 410；改用浏览器或终端下载 |
 
-`image` 可使用 `nginx:latest`、`owner/image:tag` 或已配置的源域名（如 `ghcr.io/owner/image:tag`）；带域名的引用会固定到对应源，不能与 `source` 参数指定的其他源混用。`docker.io/...` 固定使用 `mirror-gcr`。`auto` 在各元数据接口中对 Docker Hub 镜像使用 `library/` 简写规则，对其他源使用原生仓库路径。显式源拉取地址使用 `dkbst/<source-id>/...`；旧的 `/<source-id>/...` 地址现在按普通仓库名解释，需要重新复制页面生成的命令。有效 API 仅接受 GET，未知 `/api/*` 返回 JSON 404；请求无效、镜像不存在和上游不可用分别返回 400、404、502/504。
+`image` 可使用 `nginx:latest`、`owner/image:tag` 或已配置的源域名（如 `ghcr.io/owner/image:tag`）；带域名的引用会固定到对应源，不能与 `source` 参数指定的其他源混用。`docker.io/...` 固定使用 `mirror-gcr`。`auto` 在各元数据接口中对 Docker Hub 镜像使用 `library/` 简写规则，对其他源使用原生仓库路径。显式源拉取地址使用 `dkbst/<source-id>/...`；旧的 `/<source-id>/...` 地址现在按普通仓库名解释，需要重新复制页面生成的命令。有效 API 仅接受 GET，未知 `/api/*` 返回 JSON 404；请求无效、镜像不存在和上游不可用分别返回 400、404、502/504。分享链接格式如 `/#download?image=nginx&source=auto&platform=linux/amd64`，打开时恢复表单、重新读取可用架构，并将地址栏还原为主页地址；分享接口不保存分享数据。
 
 ## 部署
 

@@ -1,11 +1,11 @@
 import { gsap } from 'gsap';
 
-export const initHeroIntro = () => {
+export const initHeroIntro = ({ allowHash = false } = {}) => {
   const mm = gsap.matchMedia();
   mm.add('(prefers-reduced-motion: no-preference)', () => {
     const visual = document.querySelector('.hero-visual');
     const art = visual?.querySelector('.boost-art');
-    if (!visual || !art || window.scrollY > 0 || location.hash) return;
+    if (!visual || !art || window.scrollY > 0 || (location.hash && !allowHash)) return;
     const content = document.querySelectorAll('.nav, .hero-copy, .workspace, footer');
     gsap.set(content, { autoAlpha: 0 });
     gsap.set(visual, { autoAlpha: 0 });

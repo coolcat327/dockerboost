@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createImageSelection } from '../src/client/shared/image-selection.js';
-import { createSelectionStore } from '../src/client/shared/selection-store.js';
+import { createImageSelection } from '../src/client/common/image-selection.js';
+import { createSelectionStore } from '../src/client/common/selection-store.js';
 
 class Control {
   constructor(value = '') {
@@ -196,4 +196,34 @@ test('a pending platform lookup applies the latest shared choice', async () => {
   } finally {
     Object.assign(globalThis, original);
   }
+});
+
+test('initial shared state restores a nondefault source and platform after async loading', async () => {
+  const original = { Option: globalThis.Option, fetch: globalThis.fetch, window: globalThis.window };
+  globalThis.Option = class { constructor(textContent, value) { this.textContent = textContent; this.value = value; } };
+  globalThis.window = { location: { host: 'proxy.test' } };
+  let requestedSource;
+  globalThis.fetch = async (url) => {
+    if (url === '/api/sources') return { ok: true, json: async () => ({ sources: [
+      { id: 'mirror-gcr', label: 'Docker Hub' }, { id: 'ghcr', label: 'GitHub' }
+    ] }) };
+    requestedSource = new URL(url, 'https://proxy.test').searchParams.get('source');
+    return { ok: true, headers: { get: () => 'ghcr' }, json: async () => ({ platforms: ['linux/amd64', 'linux/arm64/v8'] }) };
+  };
+  try {
+    const store = createSelectionStore();
+    store.update({ image: 'owner/image:latest', source: 'ghcr', platform: 'linux/arm64/v8' });
+    const panelState = panel();
+    const selection = createImageSelection({ panel: panelState,
+      locale: () => ({ waitingPlatforms: 'Waiting', loadingPlatforms: 'Loading', noPlatforms: 'None' }),
+      messages: () => ({ automatic: 'Auto' }), flash: () => {}, store
+    });
+    selection.init();
+    await new Promise(setImmediate);
+    await new Promise(setImmediate);
+    assert.equal(requestedSource, 'ghcr');
+    assert.equal(selection.current().image, 'owner/image:latest');
+    assert.equal(selection.current().source, 'ghcr');
+    assert.equal(selection.current().platform, 'linux/arm64/v8');
+  } finally { Object.assign(globalThis, original); }
 });
