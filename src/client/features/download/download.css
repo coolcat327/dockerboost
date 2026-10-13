@@ -24,6 +24,8 @@
 
 [data-panel="download"] .browser-download { display:inline-flex;align-items:center;justify-content:center;text-decoration:none }
 [data-panel="download"] .browser-download[aria-disabled="true"] { pointer-events:none;cursor:not-allowed }
+[data-panel="download"] .browser-download.is-stoppable { background:#b8443b }
+[data-panel="download"] .browser-download.is-stoppable:hover { background:#d35449 }
 @media (max-width: 960px) {
   [data-panel="download"] .download-progress { flex-basis: 100%; }
   [data-panel="download"] .download-progress-row.is-complete { flex-wrap:wrap }

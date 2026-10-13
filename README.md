@@ -71,7 +71,7 @@ npm run validate  # 类型检查、测试和前端构建
 
 ## 下载方式
 
-- 浏览器：读取 manifest/config → 逐个下载镜像层到浏览器 OPFS → 本地组装 tar → 保存文件。需要支持 OPFS 的浏览器和足够本地空间。
+- 浏览器：读取 manifest/config → 逐个下载镜像层到浏览器 OPFS → 本地组装 tar → 保存文件。选定架构后以“n 层 共 x MB”显示层数和镜像大小（配置文件与压缩镜像层总量）；下载期间按钮可停止任务，停止后可重新下载。需要支持 OPFS 的浏览器和足够本地空间。
 - 终端：复制页面命令，获取脚本后用 sh 执行；curl 下载镜像层，本机 tar 打包。不需要 Docker、jq 或 Skopeo，仍需常见 shell 工具（如 mktemp、wc）。仅执行可信站点生成的脚本。
 - Worker：解析元数据、生成脚本、流式转发 blob，不在服务端缓存整份镜像或组装 tar。仍然受上游限流、网络和平台资源限制影响。
 
@@ -88,7 +88,7 @@ docker load -i nginx_latest_linux_amd64.tar
 | /api/health | 健康检查和默认源信息 |
 | /api/sources | 可供手动选择的镜像源及仓库命名规则 |
 | /api/platforms?image=...&source=auto | 返回 manifest/index；单架构镜像会附加 `platforms` 字段；`auto` 并发选择首个成功源 |
-| /api/inspect?image=...&platform=...&source=... | 镜像层数和目标架构，保留兼容 |
+| /api/inspect?image=...&platform=...&source=... | 镜像层数、配置与压缩镜像层总字节数 `sizeBytes`、目标架构，保留兼容 |
 | /api/download-script?image=...&platform=...&source=... | 生成终端下载脚本 |
 | /api/share?tab=...&image=...&source=...&platform=... | 返回可读的本站分享链接；参数只写入 URL 片段中，不会存储 |
 | /v2/* | Registry 请求与 blob 流式透传；普通路径保留完整仓库名，`/v2/dkbst/<source-id>/*` 可明确指定源 |

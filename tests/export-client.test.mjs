@@ -28,3 +28,14 @@ test('explicit worker errors retain their diagnostic message', async () => {
   worker.send({ ok: false, error: '镜像层下载不完整，请重试。' });
   await assert.rejects(pending, /镜像层下载不完整/);
 });
+
+test('aborting a download settles the pending export and ignores later progress', async () => {
+  const worker = new WorkerStub();
+  const controller = new AbortController();
+  const progress = [];
+  const pending = runExport(worker, {}, (event) => progress.push(event.phase), { signal: controller.signal });
+  controller.abort();
+  await assert.rejects(pending, { name: 'AbortError' });
+  worker.send({ phase: 'download' });
+  assert.deepEqual(progress, []);
+});

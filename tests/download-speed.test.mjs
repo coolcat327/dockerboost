@@ -1,6 +1,18 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createTransferRate, formatDuration, formatTransferSpeed } from '../src/client/features/download/download-speed.js';
+import { createTransferRate, formatDuration, formatImageMetadata, formatImageSize, formatTransferSpeed } from '../src/client/features/download/download-speed.js';
+
+test('formats compressed image size and rejects unknown sizes', () => {
+  assert.equal(formatImageSize(3 * 1024 * 1024), '3.0 MB');
+  assert.equal(formatImageSize(512 * 1024), '512.0 KB');
+  assert.equal(formatImageSize(-1), '');
+});
+
+test('formats image size and layer count after the architecture', () => {
+  assert.equal(formatImageMetadata({ sizeBytes: 3 * 1024 * 1024, layers: 2 }, '层', ' 共 '), '2 层 共 3.0 MB');
+  assert.equal(formatImageMetadata({ sizeBytes: 3 * 1024 * 1024, layers: 2 }, 'layers', ' · '), '2 layers · 3.0 MB');
+  assert.equal(formatImageMetadata({ sizeBytes: null, layers: 2 }, 'layers'), '2 layers');
+});
 
 test('formats transfer speed in a readable unit', () => {
   assert.equal(formatTransferSpeed(1536), '1.5 KB/s');

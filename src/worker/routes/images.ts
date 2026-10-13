@@ -7,7 +7,10 @@ export async function inspectImageResponse(request: Request, env: Env) {
   const url = new URL(request.url);
   const { source, image } = requestedImage(url, env);
   const { manifest, platform, source: resolvedSource } = await resolveImage(env, image, url.searchParams.get('platform') || 'linux/amd64', source);
-  return Response.json({ image: image.display, layers: manifest.layers?.length || 0, platform, source: resolvedSource });
+  const sizes = [manifest.config!, ...manifest.layers!].map((descriptor) => descriptor.size);
+  const total = sizes.reduce((sum, size) => sum + size, 0);
+  const sizeBytes = sizes.every((size) => Number.isSafeInteger(size) && size >= 0) && Number.isSafeInteger(total) ? total : null;
+  return Response.json({ image: image.display, layers: manifest.layers?.length || 0, platform, source: resolvedSource, sizeBytes });
 }
 
 async function platformManifest(request: Request, env: Env) {

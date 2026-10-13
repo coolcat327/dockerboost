@@ -73,6 +73,26 @@ test('single-platform responses include the platform without a second browser re
   ]);
 });
 
+test('inspection reports the selected platform compressed image size', async (t) => {
+  const amd64Digest = `sha256:${'a'.repeat(64)}`;
+  const arm64Digest = `sha256:${'b'.repeat(64)}`;
+  t.mock.method(globalThis, 'fetch', async (url) => {
+    const path = new URL(url).pathname;
+    if (path.endsWith('/manifests/latest')) return Response.json({ schemaVersion: 2, manifests: [
+      { digest: amd64Digest, size: 999, platform: { os: 'linux', architecture: 'amd64' } },
+      { digest: arm64Digest, size: 999, platform: { os: 'linux', architecture: 'arm64' } }
+    ] });
+    assert.ok(path.endsWith(`/manifests/${arm64Digest}`));
+    return Response.json({ schemaVersion: 2, config: { digest: `sha256:${'c'.repeat(64)}`, size: 40 }, layers: [
+      { digest: `sha256:${'d'.repeat(64)}`, size: 100 },
+      { digest: `sha256:${'e'.repeat(64)}`, size: 200 }
+    ] });
+  });
+  const response = await request('/api/inspect?image=nginx:latest&platform=linux/arm64&source=mirror-gcr');
+  assert.equal(response.status, 200);
+  assert.equal((await response.json()).sizeBytes, 340);
+});
+
 test('blob proxy forwards ranges without buffering the response', async (t) => {
   let source;
   t.mock.method(globalThis, 'fetch', async (url, init) => {
