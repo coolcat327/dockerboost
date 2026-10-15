@@ -45,6 +45,7 @@ const result = await build({
   },
   outdir: 'dist',
   bundle: true,
+  minify: true,
   define: { __DOCKERBOOST_VERSION__: JSON.stringify(version) },
   format: 'iife',
   target: 'es2020',

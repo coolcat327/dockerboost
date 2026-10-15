@@ -1,0 +1,17 @@
+/* Hero lighting lives in document flow with the illustration, never the viewport. */
+.atmosphere { position:absolute;top:-88px;left:calc(50% - 50vw);width:100vw;height:clamp(700px,100svh,1000px);z-index:-1;overflow:hidden;pointer-events:none;isolation:isolate;mask-image:linear-gradient(180deg,#000 0%,#000 40%,transparent 92%); }
+.atmosphere-veil { position:absolute;inset:-15%;opacity:.7;background:radial-gradient(ellipse at 71% 29%,#858b9229,transparent 32%),repeating-conic-gradient(from 214deg at 78% 21%,#08090b 0deg,#25292e 14deg,#5f666d 20deg,#23262b 27deg,#0b0d10 42deg,#090a0c 64deg);filter:blur(32px);transform:rotate(-8deg) scale(1.08);animation:veil-drift 32s ease-in-out infinite alternate,veil-enter 1500ms ease-out both; }
+.atmosphere-veil::after { position:absolute;inset:0;content:'';background:radial-gradient(ellipse at 70% 25%,transparent 5%,#090a0c66 48%,#090a0cf5 80%); }
+.atmosphere::before { position:absolute;inset:0;z-index:1;content:'';opacity:.035;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180' viewBox='0 0 180 180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.88' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Cpath fill='%23fff' filter='url(%23n)' opacity='.8' d='M0 0h180v180H0z'/%3E%3C/svg%3E"); }
+.atmosphere::after { position:absolute;inset:0;z-index:2;content:'';background:linear-gradient(180deg,#090a0c08 0,#090a0c33 320px,#090a0cea 780px),radial-gradient(ellipse at 73% 24%,#178edb0d,transparent 35%),linear-gradient(90deg,#090a0c88,transparent 35%,transparent 85%,#090a0c88); }
+@keyframes veil-drift { from { transform:translate3d(-2%,-1%,0) rotate(-8deg) scale(1.08); } to { transform:translate3d(3%,2%,0) rotate(-3deg) scale(1.12); } }
+.motion-paused .atmosphere-veil { animation-play-state:paused; }
+@media(max-width:820px) {
+  .atmosphere { top:-76px;height:700px;mask-image:linear-gradient(180deg,#000,#000 28%,transparent 82%); }
+  .atmosphere-veil { inset:-10%;opacity:.5;filter:blur(24px);background:radial-gradient(ellipse at 64% 22%,#858b9229,transparent 38%),repeating-conic-gradient(from 214deg at 75% 8%,#08090b 0deg,#25292e 14deg,#5f666d 20deg,#23262b 27deg,#0b0d10 42deg,#090a0c 64deg); }
+  .atmosphere::after { background:linear-gradient(180deg,#090a0c11,#090a0cf2 700px); }
+}
+@media(prefers-reduced-motion:reduce) { .atmosphere-veil { animation:none; } }
+
+@keyframes veil-enter { from { opacity:.25; } to { opacity:.7; } }
+@media(max-width:820px) { @keyframes veil-enter { from { opacity:.2; } to { opacity:.5; } } }

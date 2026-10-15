@@ -1,5 +1,6 @@
 /* Base and page layout first, followed by shared controls and panel details. */
 @import './foundation.css';
+@import './atmosphere.css';
 @import './hero.css';
 @import './workspace.css';
 @import '../features/install/install.css';
