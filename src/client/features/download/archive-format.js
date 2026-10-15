@@ -40,25 +40,33 @@ function tarHeader(name, size) {
   return output;
 }
 
-export async function writeArchive(writable, entries) {
+export async function writeArchive(writable, entries, { signal } = {}) {
+  const write = async (data) => {
+    signal?.throwIfAborted();
+    await writable.write(data);
+    signal?.throwIfAborted();
+  };
   for (const [name, data] of entries) {
     const size = data.size ?? data.byteLength;
-    await writable.write(tarHeader(name, size));
+    await write(tarHeader(name, size));
     if (data.stream) {
       const reader = data.stream().getReader();
       try {
         for (;;) {
+          signal?.throwIfAborted();
           const next = await reader.read();
+          signal?.throwIfAborted();
           if (next.done) break;
-          await writable.write(next.value);
+          await write(next.value);
         }
       } finally {
+        await reader.cancel().catch(() => {});
         reader.releaseLock();
       }
     } else {
-      await writable.write(data);
+      await write(data);
     }
-    await writable.write(new Uint8Array((512 - (size % 512)) % 512));
+    await write(new Uint8Array((512 - (size % 512)) % 512));
   }
-  await writable.write(new Uint8Array(1024));
+  await write(new Uint8Array(1024));
 }

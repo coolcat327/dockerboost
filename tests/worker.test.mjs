@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { build } from 'esbuild';
 
-const { outputFiles } = await build({ entryPoints: ['src/worker/index.ts'], bundle: true, write: false, format: 'esm', platform: 'neutral' });
+const { outputFiles } = await build({ entryPoints: ['src/api/index.ts'], bundle: true, write: false, format: 'esm', platform: 'neutral' });
 const { default: worker } = await import(`data:text/javascript;base64,${Buffer.from(outputFiles[0].text).toString('base64')}`);
 const env = { ASSETS: { fetch: async () => new Response('static page') } };
 const request = (path, options) => worker.fetch(new Request(`https://example.com${path}`, options), env);
@@ -96,11 +96,12 @@ test('inspection reports the selected platform compressed image size', async (t)
 test('blob proxy forwards ranges without buffering the response', async (t) => {
   let source;
   t.mock.method(globalThis, 'fetch', async (url, init) => {
+    assert.equal(new URL(url).searchParams.has('version'), false);
     assert.equal(init.headers.get('range'), 'bytes=0-2');
     source = new Response('abc', { status: 206, headers: { 'content-range': 'bytes 0-2/9' } });
     return source;
   });
-  const response = await request('/v2/library/nginx/blobs/sha256:abc', { headers: { range: 'bytes=0-2' } });
+  const response = await request('/v2/library/nginx/blobs/sha256:abc?version=current', { headers: { range: 'bytes=0-2' } });
   assert.equal(response.status, 206);
   assert.equal(response.body, source.body);
   assert.equal(response.headers.get('content-range'), 'bytes 0-2/9');
@@ -249,4 +250,21 @@ test('API errors retain distinct client, missing, and upstream statuses', async 
   t.mock.restoreAll();
   t.mock.method(globalThis, 'fetch', async () => { throw new Error('offline'); });
   assert.equal((await request('/api/inspect?image=nginx:latest&source=mirror-gcr')).status, 502);
+});
+
+
+test('digest blobs allow one-day browser caching while errors and upstream restrictions are preserved', async t => {
+  const path = `/v2/library/nginx/blobs/sha256:${'a'.repeat(64)}`;
+  let upstream;
+  t.mock.method(globalThis, 'fetch', async () => upstream);
+  upstream = new Response('blob');
+  const cached = await request(path + '?source=mirror-gcr');
+  assert.equal(cached.headers.get('cache-control'), 'private, max-age=86400');
+  assert.equal(cached.body, upstream.body);
+  upstream = new Response('blob', { headers:{ 'cache-control':'no-store' } });
+  assert.equal((await request(path + '?source=mirror-gcr')).headers.get('cache-control'),'no-store');
+  upstream = new Response('missing', { status:404 });
+  assert.equal((await request(path + '?source=mirror-gcr')).headers.get('cache-control'),null);
+  upstream = new Response('manifest');
+  assert.equal((await request('/v2/library/nginx/manifests/latest?source=mirror-gcr')).headers.get('cache-control'),null);
 });

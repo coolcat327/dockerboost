@@ -4,7 +4,7 @@
 /app.bundle-*.js
   Cache-Control: public, max-age=31536000, immutable
 
-/browser-export-worker-*.js
+/image-export-worker-*.js
   Cache-Control: public, max-age=31536000, immutable
 
 /docker-icon-*.svg
@@ -12,3 +12,6 @@
 
 /hero-*.svg
   Cache-Control: public, max-age=31536000, immutable
+
+/version.json
+  Cache-Control: no-store

@@ -1,6 +1,6 @@
 import { build } from 'esbuild';
 import { createHash } from 'node:crypto';
-import { cp, mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises';
+import { cp, mkdir, readFile, readdir, rename, rm, writeFile } from 'node:fs/promises';
 import { basename, dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -20,15 +20,32 @@ await cp(new URL('../public/', import.meta.url), dist, {
   filter: (source) => dirname(source) !== publicDir || !/^hero-[a-z0-9-]+\.svg$/.test(basename(source)) || `/${basename(source)}` === heroSource,
 });
 
+// Include server templates as well as browser code in the download cache version.
+const versionHash = createHash('sha256');
+async function hashTree(relative) {
+  for (const entry of (await readdir(resolve(root, relative), { withFileTypes: true })).sort((a, b) => a.name.localeCompare(b.name))) {
+    const path = `${relative}/${entry.name}`;
+    if (entry.isDirectory()) await hashTree(path);
+    else if (entry.isFile()) { versionHash.update(path); versionHash.update(await readFile(resolve(root, path))); }
+  }
+}
+for (const path of ['src', 'public', 'scripts']) await hashTree(path);
+for (const path of ['package.json', 'package-lock.json', 'wrangler.jsonc']) {
+  versionHash.update(path); versionHash.update(await readFile(resolve(root, path)));
+}
+const version = versionHash.digest().subarray(0, 6).toString('base64url');
+await writeFile(new URL('../dist/version.json', import.meta.url), JSON.stringify({ version }));
+
 const result = await build({
   absWorkingDir: root,
   entryPoints: {
     'app.bundle': 'src/client/app.js',
-    'browser-export-worker': 'src/client/features/download/browser-export-worker.js',
+    'image-export-worker': 'src/client/features/download/image-export-worker.js',
     app: 'src/client/styles/index.css',
   },
   outdir: 'dist',
   bundle: true,
+  define: { __DOCKERBOOST_VERSION__: JSON.stringify(version) },
   format: 'iife',
   target: 'es2020',
   entryNames: '[name]-[hash]',
@@ -56,7 +73,7 @@ const index = new URL('../dist/index.html', import.meta.url);
 const html = (await readFile(index, 'utf8'))
   .replaceAll('/app.css', outputFor('src/client/styles/index.css'))
   .replaceAll('/app.bundle.js', outputFor('src/client/app.js'))
-  .replaceAll('/browser-export-worker.js', outputFor('src/client/features/download/browser-export-worker.js'))
+  .replaceAll('/image-export-worker.js', outputFor('src/client/features/download/image-export-worker.js'))
   .replaceAll('/docker-icon.svg', iconPath)
   .replace(`src="${heroSource}"`, `src="${heroPath}"`);
 await writeFile(index, html);

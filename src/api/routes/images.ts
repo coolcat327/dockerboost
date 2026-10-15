@@ -1,7 +1,7 @@
-import type { Env, ImageConfig, Manifest } from '../types';
-import { requestedImage, imageForSource, resolveImage } from '../images';
-import { registryPublicFetch, OCI_ACCEPT } from '../registry';
-import { upstreamError } from '../errors';
+import type { Env, ImageConfig, Manifest } from '../common/types';
+import { requestedImage, imageForSource, resolveImage } from '../common/images';
+import { registryPublicFetch, OCI_ACCEPT } from '../common/registry';
+import { upstreamError } from '../common/errors';
 
 export async function inspectImageResponse(request: Request, env: Env) {
   const url = new URL(request.url);

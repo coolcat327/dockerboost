@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { build } from 'esbuild';
 import { restoreSharedState } from '../src/client/common/share-link.js';
 
-const { outputFiles } = await build({ entryPoints: ['src/worker/index.ts'], bundle: true, write: false, format: 'esm', platform: 'neutral' });
+const { outputFiles } = await build({ entryPoints: ['src/api/index.ts'], bundle: true, write: false, format: 'esm', platform: 'neutral' });
 const { default: worker } = await import(`data:text/javascript;base64,${Buffer.from(outputFiles[0].text).toString('base64')}`);
 const env = { ASSETS: { fetch: async () => new Response('static page') } };
 const request = (query, options) => worker.fetch(new Request(`https://example.com/api/share?${query}`, options), env);

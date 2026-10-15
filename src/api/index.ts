@@ -1,8 +1,9 @@
-import type { Env } from './types';
-import { HttpError } from './errors';
+import { installResponse } from './routes/install/index';
+import type { Env } from './common/types';
+import { HttpError } from './common/errors';
 import { healthResponse, sourcesResponse } from './routes/status';
 import { inspectImageResponse, platformResponse } from './routes/images';
-import { downloadScriptResponse, retiredSaveResponse } from './routes/download';
+import { downloadScriptResponse, retiredSaveResponse } from './routes/download/index';
 import { registryProxyResponse } from './routes/registry-proxy';
 import { shareResponse } from './routes/share';
 
@@ -14,6 +15,7 @@ export default {
   async fetch(request: Request, env: Env): Promise<Response> {
     const path = new URL(request.url).pathname;
     try {
+      if (['/api/install/catalog', '/api/install/plan', '/api/install/asset', '/api/install/script'].includes(path)) return getOnly(request) || await installResponse(request);
       if (path === '/api/health') return getOnly(request) || healthResponse(env);
       if (path === '/api/sources') return getOnly(request) || sourcesResponse(env);
       if (path === '/api/download-script') return getOnly(request) || await downloadScriptResponse(request, env);

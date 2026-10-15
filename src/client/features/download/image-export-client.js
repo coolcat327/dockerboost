@@ -1,3 +1,28 @@
+// Open tabs can outlive a deployment that removes their hashed worker asset.
+export async function resolveImageExportWorker(url, { signal } = {}) {
+  const isScript = async (path, cache = 'default') => {
+    const response = await fetch(path, { signal, cache });
+    const type = response.headers.get('content-type') || '';
+    if (!response.ok || !/(?:java|ecma)script/i.test(type)) {
+      await response.body?.cancel();
+      return false;
+    }
+    const source = await response.text();
+    signal?.throwIfAborted();
+    return !source.trimStart().startsWith('<');
+  };
+  if (await isScript(url)) return url;
+  const page = await fetch('/', { signal, cache: 'no-store' });
+  if (!page.ok) throw new Error('下载组件加载失败，请刷新页面后重试。');
+  const html = new DOMParser().parseFromString(await page.text(), 'text/html');
+  const current = html.querySelector('meta[name="image-export-worker"]')?.content;
+  // Only accept a root-relative worker asset from our own page.
+  if (!current || !/^\/image-export-worker(?:-[a-z0-9]+)?\.js$/i.test(current) || !await isScript(current, 'reload')) {
+    throw new Error('下载组件已更新，请刷新页面后重试。');
+  }
+  return current;
+}
+
 export function runExport(worker, payload, onProgress, { signal } = {}) {
   return new Promise((resolve, reject) => {
     const cleanup = () => {

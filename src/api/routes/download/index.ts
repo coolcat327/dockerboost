@@ -1,6 +1,6 @@
-import type { Env } from '../types';
-import { downloadScript } from '../download-script';
-import { requestedImage, resolveImage } from '../images';
+import type { Env } from '../../common/types';
+import { downloadScript } from './image-archive-script';
+import { requestedImage, resolveImage } from '../../common/images';
 
 export async function downloadScriptResponse(request: Request, env: Env) {
   const url = new URL(request.url);

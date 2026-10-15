@@ -1,4 +1,4 @@
-import { HttpError } from '../errors';
+import { HttpError } from '../common/errors';
 
 const allowedTabs = new Set(['pull', 'download']);
 const validSource = /^[a-z0-9][a-z0-9-]{0,63}$/;

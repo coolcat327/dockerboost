@@ -27,22 +27,23 @@ ${checks}
 printf '%s\\n' ${quote(`Verified ${blobs.length} blobs · ${Math.round(totalBytes / 1048576)} MB`)}`;
   return `#!/bin/sh
 set -eu
-command -v curl >/dev/null
-command -v tar >/dev/null
 script_path=$0
+case "$script_path" in /*) ;; *) script_path="$PWD/$script_path" ;; esac
 work=''
 cleanup() {
   if [ -n "$work" ]; then rm -rf -- "$work"; fi
-  rm -f -- "$script_path"
+  if [ -f "$script_path" ]; then rm -f -- "$script_path"; fi
 }
-trap cleanup EXIT
+trap cleanup 0
+trap 'exit 1' HUP INT TERM
+command -v curl >/dev/null
+command -v tar >/dev/null
 output="$PWD/"${quote(filename)}
 if [ -e "$output" ]; then
   printf '%s\\n' "File already exists: $output" >&2
   exit 1
 fi
 work=$(mktemp -d "$PWD/.dockerboost-download.XXXXXX")
-trap 'exit 1' HUP INT TERM
 mkdir -p "$work/blobs/sha256"
 printf '%s\\n' ${quote(metadata)} > "$work/manifest.json"
 ${download}

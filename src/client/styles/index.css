@@ -2,5 +2,6 @@
 @import './foundation.css';
 @import './hero.css';
 @import './workspace.css';
+@import '../features/install/install.css';
 @import '../features/setup/setup.css';
 @import '../features/download/download.css';

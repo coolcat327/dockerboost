@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createTransferRate, formatDuration, formatImageMetadata, formatImageSize, formatTransferSpeed } from '../src/client/features/download/download-speed.js';
+import { createTransferRate, formatDuration, formatImageMetadata, formatImageSize, formatTransferSpeed } from '../src/client/common/transfer-progress.js';
 
 test('formats compressed image size and rejects unknown sizes', () => {
   assert.equal(formatImageSize(3 * 1024 * 1024), '3.0 MB');

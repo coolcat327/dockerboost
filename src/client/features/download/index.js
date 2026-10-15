@@ -1,5 +1,7 @@
-import { runExport } from './export-client.js';
-import { createTransferRate, formatDuration, formatImageMetadata, formatTransferSpeed } from './download-speed.js';
+import { currentDownloadVersion } from '../../common/download-cache-policy.js';
+import { createDownloadTask, clearDownloadCaches } from '../../common/browser-download-task.js';
+import { resolveImageExportWorker, runExport } from './image-export-client.js';
+import { createTransferRate, formatDuration, formatImageMetadata, formatTransferSpeed } from '../../common/transfer-progress.js';
 import { archiveFilename } from '../../common/image-reference.js';
 import { createImageSelection } from '../../common/image-selection.js';
 import { shareSelection } from '../../common/share-link.js';
@@ -24,9 +26,9 @@ export const feature = {
     }
   },
   init({ panel, locale, messages, flash, selectionStore }) {
-  const browserExportWorker = document.querySelector('meta[name="browser-export-worker"]')?.content;
+  const browserExportWorker = document.querySelector('meta[name="image-export-worker"]')?.content;
   const iconUrl = document.querySelector('link[rel="icon"]')?.href;
-  const sessionId = crypto.randomUUID();
+  void clearDownloadCaches().catch(() => {});
   const lookupResult = panel.querySelector('#lookup-result');
   const lookupStatus = panel.querySelector('#lookup-status');
   const speedStatus = panel.querySelector('#download-speed-status');
@@ -137,12 +139,18 @@ export const feature = {
     const startedAt = performance.now();
     const transferRate = createTransferRate();
     let lastDownloadUpdateAt = 0;
+    let downloadTask;
     try {
-      const worker = new Worker(browserExportWorker || '/browser-export-worker.js');
+      const version = await currentDownloadVersion({ signal: exportTask.controller.signal });
+      downloadTask = await createDownloadTask('image');
+      if (exportTask.controller.signal.aborted) throw new DOMException('Download stopped', 'AbortError');
+      const workerUrl = await resolveImageExportWorker(browserExportWorker || '/image-export-worker.js', { signal: exportTask.controller.signal });
+      exportTask.controller.signal.throwIfAborted();
+      const worker = new Worker(workerUrl);
       exportTask.worker = worker;
       const { platform, resolvedSource } = selection.current();
       const image = selection.resolve();
-      const result = await runExport(worker, { repository: image.repository, reference: image.reference, repoTag: image.original, source: resolvedSource, platform, filename: archiveFilename(image.original, platform), sessionId }, (progress) => {
+      const result = await runExport(worker, { repository: image.repository, reference: image.reference, repoTag: image.original, source: resolvedSource, platform, filename: archiveFilename(image.original, platform), version, sessionId: downloadTask.id }, (progress) => {
         if (progress.phase === 'download') {
           const now = performance.now();
           if (progress.completed < progress.total && now - lastDownloadUpdateAt < 100) return;
@@ -156,8 +164,7 @@ export const feature = {
         if (speed) setLiveText(speedStatus, `速度：${speed}`);
         setLiveText(lookupStatus, progress.message || (progress.total ? `下载中 ${Math.floor(progress.completed / progress.total * 100)}% · ${(progress.completed / 1048576).toFixed(1)}/${(progress.total / 1048576).toFixed(1)} MB` : '正在下载…'));
       }, { signal: exportTask.controller.signal });
-      const url = URL.createObjectURL(result.archive);
-      const link = document.createElement('a'); link.href = url; link.download = result.filename; document.body.append(link); link.click(); link.remove();
+      downloadTask.save(result.archive, result.filename);
       const elapsedMs = Math.max(1, performance.now() - startedAt);
       lookupStatus.style.fontSize = '';
       speedStatus.style.fontSize = '';
@@ -167,7 +174,6 @@ export const feature = {
       speedStatus.classList.add('is-summary');
       progressRow.classList.add('is-complete');
       showProgress(100, false);
-      window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
     } catch (error) {
       progressRow.hidden = false;
       lookupStatus.style.fontSize = '';
@@ -177,6 +183,7 @@ export const feature = {
       else flash(lookupStatus.textContent);
     } finally {
       exportTask.worker?.terminate();
+      await downloadTask?.finish().catch(() => {});
       activeExport = undefined;
       browserDownload.classList.remove('is-stoppable');
       browserDownload.textContent = messages().browser;

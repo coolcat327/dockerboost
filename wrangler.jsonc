@@ -1,7 +1,7 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "dockerboost",
-  "main": "src/worker/index.ts",
+  "main": "src/api/index.ts",
   "build": {
     "command": "npm run build",
     "watch_dir": ["src/client", "public", "scripts"]

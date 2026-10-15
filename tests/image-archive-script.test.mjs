@@ -1,11 +1,11 @@
 import { transform } from 'esbuild';
-import { readFile, mkdtemp, mkdir, writeFile, rm } from 'node:fs/promises';
+import { readFile, mkdtemp, mkdir, writeFile, rm, readdir } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import assert from 'node:assert/strict';
 
-const source = await readFile(new URL('../src/worker/download-script.ts', import.meta.url), 'utf8');
+const source = await readFile(new URL('../src/api/routes/download/image-archive-script.ts', import.meta.url), 'utf8');
 const { code } = await transform(source, { loader: 'ts', format: 'esm' });
 const { downloadScript } = await import(`data:text/javascript;base64,${Buffer.from(code).toString('base64')}`);
 const temp = await mkdtemp(join(tmpdir(), 'dockerboost-script-test-'));
@@ -19,7 +19,10 @@ try {
   const script = downloadScript('https://mirror.example', 'library/nginx', 'nginx:latest', config, [layer]);
   const env = { ...process.env, PATH: `${bin}:${process.env.PATH}` };
   const run = (input) => spawnSync('sh', [], { cwd: temp, env, input, encoding: 'utf8' });
-  const result = run(script);
+  const scriptFile = join(temp, '.download-image.sh');
+  await writeFile(scriptFile, script, { mode: 0o755 });
+  const result = spawnSync('sh', ['.download-image.sh'], { cwd: temp, env, encoding: 'utf8' });
+  await assert.rejects(readFile(scriptFile), { code: 'ENOENT' });
   assert.equal(result.status, 0, result.stderr);
   assert.match(result.stdout, /Downloading 2 blobs/);
   assert.match(result.stdout, /Verified 2 blobs/);
@@ -34,8 +37,11 @@ try {
   assert.equal(blob.stdout, 'abc');
   assert.notEqual(run(script).status, 0, 'Existing archive must not be overwritten');
   const bad = downloadScript('https://mirror.example', 'library/nginx', 'nginx:broken', config, [{ ...layer, size: 4 }]);
-  assert.notEqual(run(bad).status, 0, 'Truncated layer must fail');
+  await writeFile(scriptFile, bad, { mode: 0o755 });
+  assert.notEqual(spawnSync('sh', ['.download-image.sh'], { cwd: temp, env }).status, 0, 'Truncated layer must fail');
+  await assert.rejects(readFile(scriptFile), { code: 'ENOENT' });
   await assert.rejects(readFile(join(temp, 'nginx_broken_linux_amd64.tar')));
+  assert.deepEqual((await readdir(temp)).filter(name => name.startsWith('.dockerboost-download.')), []);
   console.log('PASS: shell execution, tar metadata/layers, overwrite refusal, truncated download rejection');
 } finally {
   await rm(temp, { recursive: true, force: true });
