@@ -11,7 +11,7 @@
 A lightweight Docker toolkit running on Cloudflare Workers.
 Install Docker, configure registry mirrors, generate pull commands, and download offline archives from a single page.
 
-[Quick start](#local-development) · [Deploy your own](#deployment) · [Use cases](#what-you-can-do) · [Documentation](docs/README.md)
+[Live demo](https://docker.coolcat.win/) · [Quick start](#local-development) · [Deploy your own](#deployment) · [Use cases](#what-you-can-do) · [Documentation](docs/README.md)
 
 </div>
 
