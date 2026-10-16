@@ -1,6 +1,6 @@
 # React Bits 选型依据
 
-本文件仅用于追溯视觉选型；当前约束见 [视觉规范](visual-style.md)，接入配置见 [开发参考](../development.md)。
+本文件仅用于追溯视觉选型；当前约束见 [视觉规范](../design/visual-style.md)，接入配置见 [开发工具](../development/tooling.md)。
 
 ## 来源与取舍
 

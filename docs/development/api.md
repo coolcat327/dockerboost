@@ -1,5 +1,7 @@
 # 接口参考
 
+本文维护当前 HTTP 契约与镜像源配置。前端请求时机见 [前端开发](frontend.md#数据加载)，服务端注册步骤见 [后端开发](backend.md)，本地下载与暂存机制见 [下载任务与缓存](downloads.md)。
+
 以下 `/api/*` 有效接口使用 GET；`/api/save` 为停用接口，始终返回 410。接口按页面功能排列。
 
 ### 安装
@@ -11,17 +13,13 @@
 | `/api/install/asset` | `arch`、`docker`、`compose`、`kind` | 流式返回官方二进制；`kind` 为 `docker` 或 `compose`；缓存 1 天 |
 | `/api/install/script` | `arch`、`docker`、`compose` | Shell 脚本：联网下载所需文件并在本机打包；不设置过期时间 |
 
-前端首次打开页面不请求 catalog；选择 CPU 架构后才读取版本列表，再次选择同一架构或点击刷新会重新请求并绕过浏览器缓存。
-
-`arch` 默认 `x86_64`，支持 `x86_64`、`aarch64`、`armhf`、`ppc64le`、`s390x`。除 catalog 外，`docker` 和 `compose` 必填，格式为 `主版本.次版本.补丁版本`。前端使用 catalog 返回的 Compose 版本，确保包内容与下载命令一致。plan 和 script 返回 `Cache-Control: no-store`。
+`arch` 默认 `x86_64`，支持 `x86_64`、`aarch64`、`armhf`、`ppc64le`、`s390x`。除 catalog 外，`docker` 和 `compose` 必填，格式为 `主版本.次版本.补丁版本`。plan 和 script 返回 `Cache-Control: no-store`。
 
 ### 配置
 
 | 路径 | 参数 | 返回与用途 |
 | --- | --- | --- |
 | `/api/sources` | 无 | JSON `{ sources: [...] }`：源 ID、名称、域名、仓库命名规则及示例；浏览器缓存 5 分钟，边缘缓存 1 小时 |
-
-配置页直接在浏览器生成配置和恢复命令，无独立写配置接口。
 
 ### 拉取
 
@@ -33,7 +31,9 @@
 
 `image` 必填，可用 `nginx:latest`、`owner/image:tag` 或已配置源的域名引用（如 `ghcr.io/owner/image:tag`）。带域名的引用固定对应源，不可与其他 `source` 混用；`docker.io/...` 固定 `mirror-gcr`。元数据接口的 `source` 默认 `auto`，并发选择首个成功源；Docker Hub 简写补全 `library/`，其他源保留原生路径。路径中的源与查询参数必须一致。
 
-分享链接如 `/#download?image=nginx&source=auto&platform=linux/amd64`，参数存于 URL 片段，不保存到服务端；打开时恢复表单并重新查询架构。`/v2/*` 按 Registry 请求方法透传，不受 API 的 GET 限制；不绕过上游鉴权。
+Registry 只读请求返回成功的 sha256 blob（200 或 206）时，浏览器缓存策略为 `private, max-age=86400`；上游明确设置 `no-store` 或 `no-cache` 时不覆盖。其他 Registry 响应沿用上游缓存策略。
+
+分享链接如 `/#download?image=nginx&source=auto&platform=linux/amd64`，参数存于 URL 片段，不保存到服务端。`/v2/*` 按 Registry 请求方法透传，不受 API 的 GET 限制；不绕过上游鉴权。
 
 ### 下载
 
