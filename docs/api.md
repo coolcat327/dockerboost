@@ -11,6 +11,8 @@
 | `/api/install/asset` | `arch`、`docker`、`compose`、`kind` | 流式返回官方二进制；`kind` 为 `docker` 或 `compose`；缓存 1 天 |
 | `/api/install/script` | `arch`、`docker`、`compose` | Shell 脚本：联网下载所需文件并在本机打包；不设置过期时间 |
 
+前端首次打开页面不请求 catalog；选择 CPU 架构后才读取版本列表，再次选择同一架构或点击刷新会重新请求并绕过浏览器缓存。
+
 `arch` 默认 `x86_64`，支持 `x86_64`、`aarch64`、`armhf`、`ppc64le`、`s390x`。除 catalog 外，`docker` 和 `compose` 必填，格式为 `主版本.次版本.补丁版本`。前端使用 catalog 返回的 Compose 版本，确保包内容与下载命令一致。plan 和 script 返回 `Cache-Control: no-store`。
 
 ### 配置

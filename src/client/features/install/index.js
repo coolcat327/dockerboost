@@ -11,7 +11,7 @@ const translations = {
   'zh-CN': {
     resources: '相关资源', binariesGuide: 'Docker 静态安装指南', composeGuide: 'Compose 安装指南', online: '在线安装', onlineHelp: '在线安装脚本来自 LinuxMirrors，提供 Docker 安装与换源的交互引导。在联网 Linux 主机上以 root 运行，按提示选择版本和镜像源；需要 Bash 和 curl。', onlineLink: 'LinuxMirrors 安装说明',
     offline: '离线安装', offlineHelp: '适用于全新安装的 systemd Linux。包含安装说明、Docker 静态包、Compose、daemon.json、服务文件、校验文件及交互安装脚本。',
-    cpu: 'CPU 架构', dockerVersion: 'Docker 版本', composeVersion: 'Compose 版本', download: '下载', stop: '停止下载', reload: '刷新', downloadCommand: '下载离线安装包',
+    chooseArch: '请选择 CPU 架构', currentArch: '当前：', chooseVersion: '请先选择 CPU 架构', cpu: 'CPU 架构', dockerVersion: 'Docker 版本', composeVersion: 'Compose 版本', download: '下载', stop: '停止下载', reload: '刷新', downloadCommand: '下载离线安装包',
     installHelp: '在联网 Linux 机器下载，完成后将 tar 包复制到离线机器。解压：<code>tar -xf docker-offline-*.tar</code>，再执行 <code>sudo sh offline_install_docker.sh</code>。交互询问数据目录、镜像源、日志大小/数量及 live-restore，回车使用默认值。', dockerLink: 'Docker 静态包', composeLink: 'Compose 发布版本',
     waiting: '选择版本后自动显示下载命令', loading: '正在读取官方版本列表…', ready: '版本已就绪。', unavailable: '此架构暂无匹配的 Docker / Compose 版本，请选择其他架构。', retry: '请点击刷新。', package: '离线安装包',
     unsupported: '此浏览器不支持本地文件暂存，请使用下载命令', preparing: '正在准备下载…', speed: '速度', downloading: '下载中', failed: '下载失败', packing: '正在校验并打包…', done: '离线包已下载', cancelled: '已取消下载', progressLabel: '离线安装包下载进度'
@@ -19,7 +19,7 @@ const translations = {
   en: {
     resources: 'Related resources', binariesGuide: 'Docker binary installation guide', composeGuide: 'Compose installation guide', online: 'Online installation', onlineHelp: 'The installation script is provided by LinuxMirrors and guides you through Docker installation and mirror selection. Run as root on an online Linux host; requires Bash and curl.', onlineLink: 'LinuxMirrors installation guide',
     offline: 'Offline installation', offlineHelp: 'For a fresh installation on systemd Linux. Includes an installation guide, Docker binaries, Compose, daemon.json, a service unit, checksums and an interactive installer.',
-    cpu: 'CPU architecture', dockerVersion: 'Docker version', composeVersion: 'Compose version', download: 'Download', stop: 'Stop download', reload: 'Refresh', downloadCommand: 'Download offline bundle',
+    chooseArch: 'Select CPU architecture', currentArch: 'Current: ', chooseVersion: 'Select CPU architecture first', cpu: 'CPU architecture', dockerVersion: 'Docker version', composeVersion: 'Compose version', download: 'Download', stop: 'Stop download', reload: 'Refresh', downloadCommand: 'Download offline bundle',
     installHelp: 'Download on an online Linux host, then transfer the tar to the offline machine. Extract with <code>tar -xf docker-offline-*.tar</code>, then <code>sudo sh offline_install_docker.sh</code>. The installer asks about the data directory, mirror, log rotation and live-restore. Press Enter to accept defaults.', dockerLink: 'Docker binaries', composeLink: 'Compose releases',
     waiting: 'Select versions to show the download command', loading: 'Loading official versions…', ready: 'Versions ready.', unavailable: 'No matching Docker / Compose versions for this architecture. Choose another architecture.', retry: 'Click Refresh to retry.', package: 'Offline bundle',
     unsupported: 'Local file storage is unavailable. Use the download command.', preparing: 'Preparing download…', speed: 'Speed', downloading: 'Downloading', failed: 'Download failed', packing: 'Verifying and packaging…', done: 'Bundle downloaded', cancelled: 'Download cancelled', progressLabel: 'Offline bundle download progress'
@@ -32,6 +32,8 @@ export const feature = {
     const arch = panel.querySelector('#install-arch');
     const docker = panel.querySelector('#install-docker');
     const version = buildVersion;
+    let selectedArch = '', selectedArchLabel = '';
+    const currentArch = panel.querySelector('#install-arch-current');
     let composeVersion = ''; 
     const download = panel.querySelector('#install-download');
     const status = panel.querySelector('#install-status');
@@ -48,7 +50,7 @@ export const feature = {
     };
     const renderSpeed = () => { speedStatus.textContent = lastSpeed ? `${text.speed}: ${lastSpeed}` : ''; speedStatus.hidden = !lastSpeed; };
     let controller;
-    let generation = 0, busy = false, text = translations['zh-CN'], state = 'waiting', commandUrl = '';
+    let generation = 0, busy = false, text = translations['zh-CN'], state = 'chooseArch', commandUrl = '';
     const progress = panel.querySelector('#install-progress');
     const showProgress = (value, running = true) => {
       progress.hidden = false;
@@ -60,12 +62,12 @@ export const feature = {
     const setStatus = (key) => { state = key; status.textContent = text[key]; };
     const renderCommand = () => { command.textContent = commandUrl ? `curl -fsSL -o .download-docker.sh '${commandUrl}' && sh .download-docker.sh` : text.waiting; };
     const renderPackage = () => {
-      panel.querySelector('#install-package-name').textContent = docker.value ? `docker-offline-${arch.value}-docker-${docker.value}-compose-${composeVersion}.tar` : text.package;
+      panel.querySelector('#install-package-name').textContent = docker.value ? `docker-offline-${selectedArch}-docker-${docker.value}-compose-${composeVersion}.tar` : text.package;
       panel.querySelector('#install-package-tree').textContent = docker.value ? `.\n├── readme.md\n├── docker-${docker.value}.tgz\n├── docker-compose\n├── daemon.json\n├── docker.service\n├── offline_install_docker.sh\n└── SHA256SUMS` : text.waiting;
     };
-    const query = () => new URLSearchParams({ arch: arch.value, docker: docker.value, compose: composeVersion, version });
-    const json = async (url, signal) => { const r = await fetch(downloadRequestUrl(url, version), { signal }); const data = await r.json(); if (!r.ok) throw new Error(data.error || `HTTP ${r.status}`); return data; };
-    const ready = () => { panel.querySelector('#install-reload').disabled = busy; download.disabled = !busy && (!docker.value || !composeVersion); download.textContent = busy ? text.stop : text.download; download.classList.toggle('is-stoppable', busy); };
+    const query = () => new URLSearchParams({ arch: selectedArch, docker: docker.value, compose: composeVersion, version });
+    const json = async (url, signal, cache) => { const r = await fetch(downloadRequestUrl(url, version), { signal, ...(cache ? { cache } : {}) }); const data = await r.json(); if (!r.ok) throw new Error(data.error || `HTTP ${r.status}`); return data; };
+    const ready = () => { panel.querySelector('#install-reload').disabled = busy || !selectedArch; docker.disabled = busy || !docker.value; download.disabled = !busy && (!docker.value || !composeVersion); download.textContent = busy ? text.stop : text.download; download.classList.toggle('is-stoppable', busy); };
     const invalidate = () => {
       commandUrl = '';
       if (docker.value && composeVersion) {
@@ -75,11 +77,12 @@ export const feature = {
       renderCommand(); renderPackage();
     };
     async function load() {
+      if (!selectedArch) return;
       const current = ++generation;
       docker.replaceChildren(); composeVersion = ''; ready(); invalidate();
       setStatus('loading');
       try {
-        const data = await json(`/api/install/catalog?arch=${arch.value}`);
+        const data = await json(`/api/install/catalog?arch=${selectedArch}`, undefined, 'no-store');
         if (current !== generation) return;
         for (const version of data.docker) docker.add(new Option(version, version));
         composeVersion = data.compose;
@@ -87,7 +90,16 @@ export const feature = {
       } catch (error) { if (current === generation) status.textContent = `${error.message} · ${text.retry}`; }
       ready();
     }
-    arch.addEventListener('change', load);
+    const renderArch = () => { currentArch.textContent = selectedArch ? `${text.currentArch}${selectedArchLabel}` : text.chooseArch; };
+    arch.addEventListener('change', () => {
+      if (!arch.value) return;
+      selectedArch = arch.value;
+      selectedArchLabel = arch.selectedOptions[0].textContent;
+      renderArch();
+      // Return to the current-architecture display so choosing the same real option fires change again.
+      arch.value = '';
+      return load();
+    });
     docker.addEventListener('change', invalidate);
     const cleanupCache = clearDownloadCaches;
     panel.querySelector('#install-reload').addEventListener('click', async () => {
@@ -104,7 +116,7 @@ export const feature = {
         busy = true; downloadProgress = null; lastSpeed = ''; renderSpeed(); ready(); setStatus('preparing'); showProgress(0); arch.disabled = docker.disabled = true;
         invalidate();
         const q = query();
-        const filename = `docker-offline-${arch.value}-docker-${docker.value}-compose-${composeVersion}.tar`;
+        const filename = `docker-offline-${selectedArch}-docker-${docker.value}-compose-${composeVersion}.tar`;
         if (!navigator.storage?.getDirectory) throw new Error(text.unsupported);
         task = await createDownloadTask('install');
         signal.throwIfAborted();
@@ -180,11 +192,13 @@ export const feature = {
       }
     });
     void cleanupCache().catch(() => {});
-    void load();
+    ready(); renderArch(); setStatus('chooseArch');
     return { setLanguage(message) {
       text = translations[message === en ? 'en' : 'zh-CN'];
       panel.querySelectorAll('[data-install-text]').forEach(node => { node.innerHTML = text[node.dataset.installText]; });
       progress.setAttribute('aria-label', text.progressLabel);
+      renderArch();
+      if (!selectedArch) { docker.replaceChildren(new Option(text.chooseVersion, '')); }
       renderCommand(); renderPackage(); renderSpeed(); ready();
       if (state === 'downloading') renderDownloadProgress();
       else if (text[state]) status.textContent = text[state];

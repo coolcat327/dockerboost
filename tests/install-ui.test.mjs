@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { feature } from '../src/client/features/install/index.js';
 test('installation switches all labels and command hints without losing versions', async t => {
   const nodes = new Map();
-  function node() { return { value:'', textContent:'', innerHTML:'', dataset:{}, listeners:{}, style:{}, classList:{ toggle() {} }, addEventListener(event,fn) { this.listeners[event]=fn; }, replaceChildren() { this.value=''; }, add(option) { this.value ||= option.value; }, setAttribute() {}, querySelector() { return node(); } }; }
+  function node() { return { selectedOptions:[{ textContent:'x86_64 / amd64' }], value:'', textContent:'', innerHTML:'', dataset:{}, listeners:{}, style:{}, classList:{ toggle() {} }, addEventListener(event,fn) { this.listeners[event]=fn; }, replaceChildren() { this.value=''; }, add(option) { this.value ||= option.value; }, setAttribute() {}, querySelector() { return node(); } }; }
   const panel = { querySelector(selector) { if (!nodes.has(selector)) nodes.set(selector,node()); return nodes.get(selector); }, querySelectorAll() { return labels; } };
   const labels = ['online','offline','download','reload','installHelp','cpu'].map(key => ({ dataset:{ installText:key } }));
   panel.querySelector('#install-arch').value='x86_64';
@@ -13,6 +13,8 @@ test('installation switches all labels and command hints without losing versions
   globalThis.window = { location:{ origin:'https://example.com' } };
   t.mock.method(globalThis,'fetch',async () => Response.json({ docker:['28.1.1'], compose:'2.35.1' }));
   const instance = feature.init({ panel });
+  assert.equal(panel.querySelector('#install-download').disabled, true);
+  await panel.querySelector('#install-arch').listeners.change();
   await new Promise(resolve => setImmediate(resolve));
   instance.setLanguage(feature.messages.en);
   assert.equal(labels[0].innerHTML,'Online installation');
@@ -37,7 +39,7 @@ test('installation switches all labels and command hints without losing versions
 
 test('installation can stop a pending request, clean its task and download again', async t => {
   const nodes = new Map();
-  const node = () => ({ value: '', dataset: {}, style: {}, listeners: {}, classList: { toggle() {} },
+  const node = () => ({ selectedOptions: [{ textContent: 'x86_64 / amd64' }], value: '', dataset: {}, style: {}, listeners: {}, classList: { toggle() {} },
     addEventListener(event, fn) { this.listeners[event] = fn; }, replaceChildren() { this.value = ''; },
     add(option) { this.value ||= option.value; }, setAttribute() {}, querySelector() { return node(); } });
   const panel = { querySelector(selector) { if (!nodes.has(selector)) nodes.set(selector, node()); return nodes.get(selector); }, querySelectorAll() { return []; } };
@@ -81,6 +83,7 @@ test('installation can stop a pending request, clean its task and download again
     });
   });
   const instance = feature.init({ panel });
+  await panel.querySelector('#install-arch').listeners.change();
   const tick = () => new Promise(resolve => setImmediate(resolve));
   await tick();
   const button = panel.querySelector('#install-download');
@@ -105,4 +108,39 @@ test('installation can stop a pending request, clean its task and download again
   assert.match(progressMessages[1], /33% · 1\.0\/3\.0 MB · docker-compose/);
   assert.equal(removed, 3);
   assert.equal(panel.querySelector('#install-status').textContent, 'Download cancelled');
+});
+
+test('catalog waits for architecture selection and refetches the same architecture without cache', async t => {
+  const nodes = new Map();
+  const node = () => ({ value: '', selectedOptions: [{ textContent: 'x86_64 / amd64' }], dataset: {}, style: {}, listeners: {}, classList: { toggle() {} },
+    addEventListener(event, fn) { this.listeners[event] = fn; }, replaceChildren() { this.value = ''; },
+    add(option) { this.value ||= option.value; }, setAttribute() {}, querySelector() { return node(); } });
+  const panel = { querySelector(selector) { if (!nodes.has(selector)) nodes.set(selector, node()); return nodes.get(selector); }, querySelectorAll() { return []; } };
+  const previousOption = globalThis.Option, previousWindow = globalThis.window;
+  t.after(() => { globalThis.Option = previousOption; globalThis.window = previousWindow; });
+  globalThis.Option = function(label, value) { this.value = value; };
+  globalThis.window = { location: { origin: 'https://example.com' } };
+  const requests = [];
+  t.mock.method(globalThis, 'fetch', async (url, options) => {
+    requests.push({ url, options });
+    return Response.json({ docker: ['28.1.1'], compose: '2.35.1' });
+  });
+  const instance = feature.init({ panel });
+  instance.setLanguage(feature.messages.en);
+  await new Promise(resolve => setImmediate(resolve));
+  assert.equal(requests.length, 0);
+  assert.equal(panel.querySelector('#install-reload').disabled, true);
+  assert.equal(panel.querySelector('#install-docker').disabled, true);
+  assert.equal(panel.querySelector('#install-status').textContent, 'Select CPU architecture');
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const arch = panel.querySelector('#install-arch');
+    arch.value = 'x86_64';
+    await arch.listeners.change();
+    assert.equal(arch.value, '', 'the display option allows selecting the same architecture again');
+    assert.equal(requests.length, attempt + 1);
+    assert.match(requests[attempt].url, /arch=x86_64/);
+    assert.equal(requests[attempt].options.cache, 'no-store');
+    assert.equal(panel.querySelector('#install-download').disabled, false);
+    assert.match(panel.querySelector('#install-command').textContent, /arch=x86_64/);
+  }
 });

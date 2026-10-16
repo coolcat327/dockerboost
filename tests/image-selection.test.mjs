@@ -34,8 +34,12 @@ test('shared image waits one second after typing and sends one platform request'
   globalThis.Option = class { constructor(textContent, value) { this.textContent = textContent; this.value = value; } };
   globalThis.window = { location: { host: 'proxy.test' } };
   const requests = [];
+  let sourcesRequests = 0;
   globalThis.fetch = async (url) => {
-    if (url === '/api/sources') return { ok: true, json: async () => ({ sources: [{ id: 'mirror-gcr', label: 'Docker Hub' }] }) };
+    if (url === '/api/sources') {
+      sourcesRequests++;
+      return { ok: true, json: async () => ({ sources: [{ id: 'mirror-gcr', label: 'Docker Hub' }] }) };
+    }
     requests.push(url);
     return { ok: true, headers: { get: () => 'mirror-gcr' }, json: async () => ({ platforms: ['linux/amd64'] }) };
   };
@@ -48,6 +52,9 @@ test('shared image waits one second after typing and sends one platform request'
     createImageSelection({ panel: firstPanel, ...options }).init();
     createImageSelection({ panel: secondPanel, ...options }).init();
     await new Promise(setImmediate);
+    assert.equal(sourcesRequests, 1, 'both panels share one source catalog request');
+    assert.equal(firstPanel.source.options.some(option => option.value === 'mirror-gcr'), true);
+    assert.equal(secondPanel.source.options.some(option => option.value === 'mirror-gcr'), true);
 
     firstPanel.image.value = 'golang:ti';
     firstPanel.image.listeners.get('input')();
@@ -260,4 +267,28 @@ test('initial shared state restores a nondefault source and platform after async
     assert.equal(selection.current().source, 'ghcr');
     assert.equal(selection.current().platform, 'linux/arm64/v8');
   } finally { Object.assign(globalThis, original); }
+});
+
+
+test('source catalog shares pending and successful requests and retries after failure', async t => {
+  let calls = 0, resolveResponse;
+  t.mock.method(globalThis, 'fetch', () => {
+    calls++;
+    return new Promise(resolve => { resolveResponse = resolve; });
+  });
+  const store = createSelectionStore();
+  const first = store.lookupSources();
+  assert.equal(store.lookupSources(), first);
+  assert.equal(calls, 1);
+  const failure = assert.rejects(first, /无法读取镜像源/);
+  resolveResponse(Response.json({ error: 'Unavailable' }, { status: 503 }));
+  await failure;
+  const retry = store.lookupSources();
+  assert.equal(calls, 2);
+  const data = { sources: [{ id: 'mirror-gcr', label: 'Docker Hub' }] };
+  resolveResponse(Response.json(data));
+  assert.deepEqual(await retry, data);
+  store.update({ image: 'nginx:latest', source: 'mirror-gcr' });
+  assert.equal(store.lookupSources(), retry, 'choice changes retain the source catalog');
+  assert.equal(calls, 2);
 });

@@ -2,9 +2,22 @@
 export function createSelectionStore() {
   let state = { image: '', source: 'auto', platform: '' };
   let platformLookup;
+  let sourcesLookup;
   const listeners = new Set();
   return {
     snapshot: () => ({ ...state }),
+    lookupSources() {
+      if (sourcesLookup) return sourcesLookup;
+      const promise = fetch('/api/sources').then(async (response) => {
+        if (!response.ok) throw new Error('无法读取镜像源');
+        return response.json();
+      });
+      sourcesLookup = promise;
+      promise.catch(() => {
+        if (sourcesLookup === promise) sourcesLookup = undefined;
+      });
+      return promise;
+    },
     lookupPlatforms(url) {
       if (platformLookup?.url === url) return platformLookup.promise;
       const promise = fetch(url).then(async (response) => ({

@@ -149,9 +149,11 @@ export function createImageSelection({ panel, locale, messages, flash, store, on
         if (image.value.trim() && sourceAvailable) inputTimer = setTimeout(inspect, INPUT_IDLE_MS);
       });
     }
-    fetch('/api/sources').then(async (response) => {
+    const sourcesRequest = store ? store.lookupSources() : fetch('/api/sources').then(async (response) => {
       if (!response.ok) throw new Error('无法读取镜像源');
-      const { sources } = await response.json();
+      return response.json();
+    });
+    sourcesRequest.then(({ sources }) => {
       setSources(sources);
       if (image.value.trim()) inspect();
     }).catch(() => flash('镜像源列表加载失败，暂使用默认镜像源。'));
