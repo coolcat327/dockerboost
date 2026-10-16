@@ -30,11 +30,10 @@ async function hashTree(relative) {
   }
 }
 for (const path of ['src', 'public', 'scripts']) await hashTree(path);
-for (const path of ['package.json', 'package-lock.json', 'wrangler.jsonc']) {
+for (const path of ['package.json', 'pnpm-lock.yaml', 'wrangler.jsonc']) {
   versionHash.update(path); versionHash.update(await readFile(resolve(root, path)));
 }
 const version = versionHash.digest().subarray(0, 6).toString('base64url');
-await writeFile(new URL('../dist/version.json', import.meta.url), JSON.stringify({ version }));
 
 const result = await build({
   absWorkingDir: root,
@@ -49,7 +48,7 @@ const result = await build({
   define: { __DOCKERBOOST_VERSION__: JSON.stringify(version) },
   format: 'iife',
   target: 'es2020',
-  entryNames: '[name]-[hash]',
+  entryNames: `[name]-${version}`,
   metafile: true,
   logLevel: 'info',
 });
@@ -61,13 +60,11 @@ const outputFor = (entryPoint) => {
 };
 
 const icon = new URL('../dist/docker-icon.svg', import.meta.url);
-const iconHash = createHash('sha256').update(await readFile(icon)).digest('hex').slice(0, 10);
-const iconPath = `/docker-icon-${iconHash}.svg`;
+const iconPath = `/docker-icon-${version}.svg`;
 await rename(icon, new URL(`../dist${iconPath}`, import.meta.url));
 
 const hero = new URL(`../dist${heroSource}`, import.meta.url);
-const heroHash = createHash('sha256').update(await readFile(hero)).digest('hex').slice(0, 10);
-const heroPath = heroSource.replace(/\.svg$/, `-${heroHash}.svg`);
+const heroPath = heroSource.replace(/\.svg$/, `-${version}.svg`);
 await rename(hero, new URL(`../dist${heroPath}`, import.meta.url));
 
 const index = new URL('../dist/index.html', import.meta.url);

@@ -1,4 +1,4 @@
-import { buildVersion, currentDownloadVersion, downloadRequestUrl } from '../../common/download-cache-policy.js';
+import { buildVersion, downloadRequestUrl } from '../../common/download-cache-policy.js';
 import { writeOpfsFile, writeOpfsStream } from '../../common/opfs-file-writer.js';
 import { clearDownloadCaches, createDownloadTask } from '../../common/browser-download-task.js';
 import { createTransferRate } from '../../common/transfer-progress.js';
@@ -31,7 +31,7 @@ export const feature = {
   init({ panel }) {
     const arch = panel.querySelector('#install-arch');
     const docker = panel.querySelector('#install-docker');
-    let version = buildVersion;
+    const version = buildVersion;
     let composeVersion = ''; 
     const download = panel.querySelector('#install-download');
     const status = panel.querySelector('#install-status');
@@ -102,7 +102,6 @@ export const feature = {
       const responses = [];
       try {
         busy = true; downloadProgress = null; lastSpeed = ''; renderSpeed(); ready(); setStatus('preparing'); showProgress(0); arch.disabled = docker.disabled = true;
-        version = await currentDownloadVersion({ signal });
         invalidate();
         const q = query();
         const filename = `docker-offline-${arch.value}-docker-${docker.value}-compose-${composeVersion}.tar`;

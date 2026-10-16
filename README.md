@@ -1,30 +1,74 @@
+<div align="center">
+
+<img src="public/hero-surf-speed.svg" width="560" alt="DockerBoost 鲸鱼乘风破浪" />
+
 # DockerBoost
 
-基于 Hono、部署在 Cloudflare Workers 上的 Docker 镜像代理，提供安装、加速配置、拉取命令和浏览器/终端下载。自动选源按延迟逐批并发查询已配置源，采用第一个成功响应；未缓存镜像可能不可用，不绕过上游鉴权或限流。
+**简体中文** · [English](README.en.md)
 
-## 页面功能
+**从安装 Docker 到带走镜像，一个页面搞定。**
 
-### 安装
+部署在 Cloudflare Workers 上的轻量 Docker 工具站。
+在线安装、镜像加速、拉取命令、离线打包，让不同网络环境下的 Docker 使用更顺手。
 
-在线安装使用 LinuxMirrors 脚本。离线安装可选择 Linux 架构与 Docker 版本，自动匹配 Compose 最新正式版；浏览器下载完整 TAR 包，或复制命令在联网机器下载后带到离线机器。文件经本站代理下载，下载机器无需直连 Docker 或 GitHub。
+[快速开始](#本地开发) · [部署自己的站点](#部署) · [使用场景](#你可以用它做什么) · [详细文档](docs/README.md)
 
-离线包提供程序、配置、systemd 服务、校验文件及交互安装脚本，仅支持全新安装的 systemd Linux；需要 iptables/ip6tables 等系统依赖。具体操作和限制见包内 `readme.md`。
+</div>
 
-### 配置
+## 为什么选择 DockerBoost
 
-生成本站镜像加速配置命令。修改已有 `daemon.json` 前备份，并提供恢复命令；也可手动合并页面展示的 `registry-mirrors` 字段。
+- **一站完成常用操作**：安装、配置、拉取、下载四个入口，共享镜像选择，减少重复输入。
+- **离线环境也有准备方案**：打包 Docker、Compose 或镜像归档，在联网机器下载后带到目标机器。
+- **下载镜像无需先装 Docker**：浏览器直接导出 TAR，或用 curl 与本机 tar 在终端完成下载。
+- **轻量部署到边缘**：基于 Hono 与 Cloudflare Workers，Worker 流式转发文件，归档在客户端组装。
+- **按需选择镜像源**：支持自动选源、手动指定来源与架构；分享链接可以恢复页面参数。
 
-### 拉取
+## 你可以用它做什么
 
-输入镜像名或粘贴 `docker pull` 命令，选择镜像源与架构，生成拉取和标签命令。拉取与下载共享镜像选择，分享链接可恢复页面参数。
+| 你的目标 | DockerBoost 提供的方式 |
+| --- | --- |
+| 给新机器装 Docker | 在线安装命令，或包含 Docker、Compose、配置和安装脚本的离线包 |
+| 配置镜像加速 | 生成配置命令，备份已有配置，并提供恢复命令 |
+| 拉取指定架构的镜像 | 输入镜像名或粘贴 `docker pull` 命令，生成拉取和标签命令 |
+| 给离线机器准备镜像 | 在浏览器或终端下载 TAR，拷贝后用 `docker load` 导入 |
+| 与同事分享相同镜像选择 | 复制分享链接，恢复镜像、来源与架构等页面参数 |
 
-### 下载
+### 一份归档，把镜像带到离线机器
 
-- 浏览器将镜像层流式暂存至 OPFS，本地组装 TAR 并触发保存；需要支持 OPFS 的浏览器和足够磁盘空间。安装包与镜像下载均可停止并清理暂存。
-- 终端命令使用 curl 下载、本机 tar 打包，无需 Docker、jq 或 Skopeo；需常见 shell 工具。下载脚本成功、失败或收到可捕获中断后删除自身和临时文件，成功时保留 TAR。
-- Worker 解析元数据并流式转发文件，不在服务端组装整份归档；下载仍受上游限流、网络和平台资源限制影响。
+在页面选择镜像与架构，下载镜像归档，再在目标机器导入：
 
-镜像归档可通过 `docker load -i nginx_latest_linux_amd64.tar` 导入。浏览器不能确认文件已保存完毕，触发保存后保留暂存 60 秒；关闭页面可能中断清理，下次访问会回收遗留目录。缓存与任务规则见 [下载任务与缓存](docs/downloads.md)。
+```sh
+docker load -i nginx_latest_linux_amd64.tar
+```
+
+浏览器下载使用 OPFS 流式暂存镜像层并在本地组装 TAR；终端下载使用 curl、本机 tar 和常见 shell 工具，无需 Docker、jq 或 Skopeo。安装包与镜像下载均支持停止并清理暂存，具体规则见 [下载任务与缓存](docs/downloads.md)。
+
+### 先了解这些使用边界
+
+- 自动选源按延迟逐批并发查询已配置源，采用第一个成功响应；未缓存镜像可能不可用，不绕过上游鉴权或限流，也不保证所有镜像均可访问。
+- 浏览器下载需要支持 OPFS 的浏览器和足够磁盘空间；网络、上游限流与平台资源限制仍会影响下载。
+- 在线安装使用 LinuxMirrors 脚本。离线安装包面向**全新安装的 systemd Linux**，需 iptables/ip6tables 等系统依赖；支持选择 Linux 架构与 Docker 版本，并匹配 Compose 最新正式版，详细操作见包内 `readme.md`。
+- 应用镜像加速配置时需保留 `daemon.json` 的其他字段并重启 Docker；Docker Desktop 在设置界面应用并重启。
+
+## 本地开发
+
+使用 **Node.js 22 或更新版本**和 **pnpm 10.33.0**（版本固定在 `package.json` 的 `packageManager` 字段）。如果尚未安装 pnpm，可按 [pnpm 安装说明](https://pnpm.io/installation)安装对应版本：
+
+```sh
+pnpm install --frozen-lockfile
+pnpm run dev
+```
+
+打开终端提示的本地地址即可使用。Wrangler 自动构建并监听前端、静态资源与构建脚本变化；服务端源码由 Wrangler 处理。
+
+```sh
+pnpm run check     # TypeScript 类型与 API 依赖边界检查
+pnpm test          # 回归测试，需 sh、bash、tar、sha256sum 等工具
+pnpm run build     # 生成 dist
+pnpm run validate  # 类型检查、测试与构建；CI 使用此命令
+```
+
+修改源码，不手工编辑 `dist/`。参与开发前阅读 [AGENTS.md](AGENTS.md)，模块接入与依赖边界见 [开发参考](docs/development.md)。
 
 ## 项目结构
 
@@ -49,37 +93,48 @@
 
 模块接入和依赖边界见 [开发参考](docs/development.md)，详细文档按 [索引](docs/README.md) 查阅。
 
-## 本地开发
-
-使用 Node.js 22 或更新版本：
-
-```sh
-npm ci
-npm run dev
-```
-
-Wrangler 自动构建并监听前端、静态资源与构建脚本变化；服务端源码由 Wrangler 处理。
-
-```sh
-npm run check     # TypeScript 类型与 API 依赖边界检查
-npm test          # 回归测试，需 sh、bash、tar、sha256sum 等工具
-npm run build     # 生成 dist
-npm run validate  # 类型检查、测试与构建；CI 使用此命令
-```
-
-修改源码，不手工编辑 `dist/`。开发前阅读 [AGENTS.md](AGENTS.md)，再按任务从 [文档索引](docs/README.md) 选择相关说明；React Bits MCP 配置、模块分工和新增标签步骤见 [开发参考](docs/development.md)。
-
 ## 部署
 
+### 通过 GitHub Actions 部署
+
+1. 将项目推送到自己的 GitHub 仓库，建议将默认分支设为 `main`。
+2. 在 `wrangler.jsonc` 中设置 Worker 名称，并按需调整 `IMAGE_SOURCES`。镜像源字段与路径规则见 [接口参考](docs/api.md#镜像源配置)。
+3. 在仓库 **Settings → Secrets and variables → Actions** 中添加以下 Repository secrets：
+
+   | Secret | 用途 |
+   | --- | --- |
+   | `CLOUDFLARE_API_TOKEN` | 具有目标账户 Workers 部署权限的 API Token |
+   | `CLOUDFLARE_ACCOUNT_ID` | 目标 Cloudflare 账户 ID |
+
+4. 将工作流推送到默认分支后，在 **Actions → Validate and deploy DockerBoost** 查看执行结果。
+
+| 触发方式 | 行为 |
+| --- | --- |
+| 推送到 `main` | 自动运行类型检查、测试和构建，通过后部署 |
+| 创建或更新 Pull Request | 运行验证 |
+| 手动运行 | 点击 **Run workflow**，在 **Use workflow from** 下拉框选择要部署的分支，通过验证后部署 |
+| 推送到其他分支 | 不自动触发部署；可手动选择该分支运行 |
+
+手动选择分支使用 GitHub 原生入口，参见 [GitHub 手动运行工作流说明](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/manually-run-a-workflow)。默认分支设为 `main` 时，手动入口默认选择 `main`。所选分支需包含该工作流；验证和部署固定使用本次触发的同一个提交，运行名称会显示分支名。
+
+**手动部署其他分支也会更新同一个线上 Worker**，不会创建独立预览站点。部署任务使用同一并发组，同一时间只运行一个部署；GitHub 可能合并等待中的运行，不保证每次触发都发布。
+
+### 从本地部署
+
+先安装依赖并调整 `wrangler.jsonc`，然后登录 Cloudflare：
+
 ```sh
-npx wrangler login
-npm run deploy
+pnpm install --frozen-lockfile
+pnpm exec wrangler login
+pnpm run deploy
 ```
 
-部署自动构建。镜像源在 `wrangler.jsonc` 的 `IMAGE_SOURCES` 配置，字段和路径规则见 [接口参考](docs/api.md#镜像源配置)。GitHub Actions 在 PR、推送 `main` 或手动触发时执行验证，非 PR 触发在验证通过后部署；需要 `CLOUDFLARE_API_TOKEN` 和 `CLOUDFLARE_ACCOUNT_ID` secrets。
+部署时会自动构建。部署完成后，使用 Wrangler 输出的站点地址访问。
 
-使用本站作为 Docker 镜像加速地址时，保留 `daemon.json` 的其他配置，修改后重启 Docker；Docker Desktop 在设置界面应用并重启。
+## 文档与开发导航
 
-## 文档
-
-[文档索引](docs/README.md) 按任务列出开发参考、接口、下载机制、设计规范和计划。当前行为写在 README 与专题文档，待实现目标与交付记录仅保留在计划中。
+- [文档索引](docs/README.md)：按任务查阅项目文档。
+- [开发参考](docs/development.md)：模块结构、接口接入与依赖边界。
+- [接口参考](docs/api.md)：API 契约、Registry 与镜像源配置。
+- [下载任务与缓存](docs/downloads.md)：浏览器与终端下载、暂存与清理机制。
+- [视觉规范](docs/design/visual-style.md)：页面风格与交互约束。

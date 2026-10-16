@@ -6,3 +6,4 @@ dist/
 .dev.vars*
 .env*
 !.env.example
+.pnpm-store/

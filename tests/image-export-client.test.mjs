@@ -40,23 +40,24 @@ test('aborting a download settles the pending export and ignores later progress'
   assert.deepEqual(progress, []);
 });
 
-test('a removed worker returning HTML is replaced by the current deployment worker', async t => {
+test('a removed worker asks for refresh without loading another release', async t => {
   const { resolveImageExportWorker } = await import('../src/client/features/download/image-export-client.js');
   const requested = [];
   t.mock.method(globalThis, 'fetch', async url => {
-    requested.push(String(url));
-    if (url === '/old-worker.js') return new Response('<!doctype html>', { headers: { 'content-type': 'text/html' } });
-    if (url === '/') return new Response('<meta name="image-export-worker" content="/image-export-worker-CURRENT.js">');
-    return new Response('self.onmessage = () => {};', { headers: { 'content-type': 'text/javascript' } });
+    requested.push(url);
+    return new Response('<!doctype html>', { headers: { 'content-type': 'text/html' } });
   });
-  const previousParser = globalThis.DOMParser;
-  globalThis.DOMParser = class { parseFromString(html) { return { querySelector() { return { content: html.match(/content="([^"]+)"/)[1] }; } }; } };
-  t.after(() => { globalThis.DOMParser = previousParser; });
-  assert.equal(await resolveImageExportWorker('/old-worker.js'), '/image-export-worker-CURRENT.js');
-  assert.deepEqual(requested, ['/old-worker.js', '/', '/image-export-worker-CURRENT.js']);
+  await assert.rejects(resolveImageExportWorker('/image-export-worker-OLD.js'), /刷新页面/);
+  assert.deepEqual(requested, ['/image-export-worker-OLD.js']);
 });
 
-test('worker recovery respects stop requests', async t => {
+test('the worker from the page release is used unchanged', async t => {
+  const { resolveImageExportWorker } = await import('../src/client/features/download/image-export-client.js');
+  t.mock.method(globalThis, 'fetch', async () => new Response('self.onmessage = () => {};', { headers: { 'content-type': 'text/javascript' } }));
+  assert.equal(await resolveImageExportWorker('/image-export-worker-Abcd123_.js'), '/image-export-worker-Abcd123_.js');
+});
+
+test('worker availability check respects stop requests', async t => {
   const { resolveImageExportWorker } = await import('../src/client/features/download/image-export-client.js');
   const controller = new AbortController();
   t.mock.method(globalThis, 'fetch', (url, { signal }) => new Promise((resolve, reject) => {

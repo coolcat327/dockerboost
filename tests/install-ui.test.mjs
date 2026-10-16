@@ -68,7 +68,7 @@ test('installation can stop a pending request, clean its task and download again
     else delete navigator.storage;
   });
   t.mock.method(globalThis, 'fetch', async (url, { signal } = {}) => {
-    if (url === '/version.json') return Response.json({ version: 'Abcd123_' });
+    assert.notEqual(url, '/version.json', 'downloads use their embedded release version');
     if (url.includes('/catalog')) return Response.json({ docker: ['28.1.1'], compose: '2.35.1' });
     if (progressMode) {
       if (url.includes('/plan')) return Response.json({ files: {} });

@@ -1,9 +1,11 @@
 name: Validate and deploy DockerBoost
+run-name: "${{ github.event_name == 'pull_request' && 'Validate PR' || 'Deploy' }} · ${{ github.head_ref || github.ref_name }}"
 
 on:
   pull_request:
   push:
     branches: [main]
+  # GitHub's "Run workflow" dialog provides the branch selector.
   workflow_dispatch:
 
 permissions:
@@ -11,32 +13,43 @@ permissions:
 
 concurrency:
   group: dockerboost-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   validate:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+      - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
-      - run: npm ci
-      - run: npm run validate
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run validate
 
   deploy:
-    if: github.event_name != 'pull_request'
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
     needs: validate
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+    concurrency:
+      group: dockerboost-production
+      cancel-in-progress: false
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+      - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
-      - run: npm ci
-      - run: npm run deploy
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run deploy
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

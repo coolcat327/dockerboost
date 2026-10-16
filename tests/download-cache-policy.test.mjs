@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { currentDownloadVersion, downloadRequestUrl } from '../src/client/common/download-cache-policy.js';
+import { buildVersion, downloadRequestUrl } from '../src/client/common/download-cache-policy.js';
 
 test('download cache keys differ by version and preserve source and selected versions', () => {
   const path = '/v2/library/nginx/blobs/sha256:abc?source=mirror-gcr';
@@ -13,21 +13,9 @@ test('download cache keys differ by version and preserve source and selected ver
   assert.match(install, /docker=29.9.0/);
 });
 
-test('open pages read the live version without caching before each download', async t => {
-  let version = 'Abcd123_';
-  const controller = new AbortController();
-  t.mock.method(globalThis, 'fetch', async (url, options) => {
-    assert.equal(url, '/version.json');
-    assert.equal(options.cache, 'no-store');
-    assert.equal(options.signal, controller.signal);
-    return Response.json({ version: version });
-  });
-  assert.equal(await currentDownloadVersion({ signal: controller.signal }), version);
-  version = 'Efgh456-';
-  assert.equal(await currentDownloadVersion({ signal: controller.signal }), version);
-});
-
-test('invalid deployment metadata fails rather than reusing old cache keys', async t => {
-  t.mock.method(globalThis, 'fetch', async () => Response.json({ version: 'old' }));
-  await assert.rejects(currentDownloadVersion(), /版本信息无效/);
+test('download URLs use the embedded build version without a version lookup', t => {
+  t.mock.method(globalThis, 'fetch', () => { assert.fail('version selection must not fetch'); });
+  const url = new URL(downloadRequestUrl('/api/install/plan?docker=28.1.1'), 'https://example.com');
+  assert.equal(url.searchParams.get('version'), buildVersion);
+  assert.equal(url.searchParams.get('docker'), '28.1.1');
 });

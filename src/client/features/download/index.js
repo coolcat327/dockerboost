@@ -1,4 +1,4 @@
-import { currentDownloadVersion } from '../../common/download-cache-policy.js';
+import { buildVersion } from '../../common/download-cache-policy.js';
 import { createDownloadTask, clearDownloadCaches } from '../../common/browser-download-task.js';
 import { resolveImageExportWorker, runExport } from './image-export-client.js';
 import { createTransferRate, formatDuration, formatImageMetadata, formatTransferSpeed } from '../../common/transfer-progress.js';
@@ -27,7 +27,6 @@ export const feature = {
   },
   init({ panel, locale, messages, flash, selectionStore }) {
   const browserExportWorker = document.querySelector('meta[name="image-export-worker"]')?.content;
-  const iconUrl = document.querySelector('link[rel="icon"]')?.href;
   void clearDownloadCaches().catch(() => {});
   const lookupResult = panel.querySelector('#lookup-result');
   const lookupStatus = panel.querySelector('#lookup-status');
@@ -59,7 +58,6 @@ export const feature = {
     }
   };
   const showProgress = (percent, running = true) => {
-    if (!progressIcon.getAttribute('src')) progressIcon.src = iconUrl || '/docker-icon.svg';
     progressTrack.hidden = false;
     const value = Math.max(0, Math.min(100, percent));
     progressFill.style.width = `${value}%`;
@@ -141,7 +139,7 @@ export const feature = {
     let lastDownloadUpdateAt = 0;
     let downloadTask;
     try {
-      const version = await currentDownloadVersion({ signal: exportTask.controller.signal });
+      const version = buildVersion;
       downloadTask = await createDownloadTask('image');
       if (exportTask.controller.signal.aborted) throw new DOMException('Download stopped', 'AbortError');
       const workerUrl = await resolveImageExportWorker(browserExportWorker || '/image-export-worker.js', { signal: exportTask.controller.signal });

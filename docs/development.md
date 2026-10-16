@@ -21,7 +21,7 @@
 3. **注册方法**：GET API 用 common/http.ts 的 getRoute；它处理 Hono 默认 HEAD→GET 映射，HEAD 和其他非 GET 返回 405、Allow: GET，且不执行业务函数。非 GET 接口显式使用 Hono post/on/all 等方法，明确鉴权、响应与不支持方法策略。Registry 等协议路由直接传 c.req.raw，不能改写仓库路径、方法、正文、Range 或上游状态。
 4. **挂载模块**：新增业务由 api/index.ts 从业务 index 导入并 app.route 挂载前缀；已有业务不需修改根入口。根入口负责 onError 和 notFound：未知 `/api`、`/api/*` 返回 JSON 404，其他未命中交给 ASSETS；不要在业务目录重复定义全局错误或 SPA 回退。
 5. **复用边界**：模块只引用本模块和 api/common；真实跨业务复用再下沉 common。common 不引用 routes。前后端共用的纯逻辑遵循上文模块边界；业务间不要通过另一个路由 handler 复用实现。需要 waitUntil 时从 c.executionCtx 获取，处理函数只声明实际使用的上下文能力，避免框架类型与 Workers 新增成员产生不必要耦合。
-6. **验证与文档**：给真实行为增加接口测试，包括成功、无效参数、已知路径的不支持方法、未知路径、错误映射；流式接口验证正文/状态/头及取消。执行 npm run check（含依赖边界检查），行为变更执行相关测试，按根 AGENTS.md 决定 build/validate。更新 api.md 中方法、路径、参数默认值、响应和重要限制；内部重构只修正失效引用，不增加功能交付说明。
+6. **验证与文档**：给真实行为增加接口测试，包括成功、无效参数、已知路径的不支持方法、未知路径、错误映射；流式接口验证正文/状态/头及取消。执行 pnpm run check（含依赖边界检查），行为变更执行相关测试，按根 AGENTS.md 决定 build/validate。更新 api.md 中方法、路径、参数默认值、响应和重要限制；内部重构只修正失效引用，不增加功能交付说明。
 
 模块 index 示例（对应 `/api/example/preview`）：
 
@@ -37,7 +37,7 @@ getRoute(exampleRoutes, '/preview', c => previewResponse(c.req.raw, c.env));
 
 根入口只增加 `import { exampleRoutes } from './routes/example/index'` 与 `app.route('/api/example', exampleRoutes)`。已有外部 URL 不因目录调整而改名，例如 download 模块仍注册 /api/download-script 与已停用的 /api/save。
 
-`npm run check:architecture` 可单独检查静态依赖：禁止 routes 下平铺源码、缺失业务 index、common→routes、业务间引用，以及入口引用业务内部文件；包含静态 import/export、类型导入和字面量动态导入。它与 TypeScript 一同接入 check，现有 CI 的 validate 会自动执行。该检查不代替 HTTP 契约测试，不解析运行时拼接的模块路径。
+`pnpm run check:architecture` 可单独检查静态依赖：禁止 routes 下平铺源码、缺失业务 index、common→routes、业务间引用，以及入口引用业务内部文件；包含静态 import/export、类型导入和字面量动态导入。它与 TypeScript 一同接入 check，现有 CI 的 validate 会自动执行。该检查不代替 HTTP 契约测试，不解析运行时拼接的模块路径。
 
 ## 必备开发工具：React Bits MCP
 
@@ -51,7 +51,7 @@ npx -y shadcn@latest mcp
 
 项目根目录的 [`components.json`](../components.json) 已配置 `@react-bits` 注册表，无需重复添加；配置方式见 [React Bits 官方说明](https://reactbits.dev/get-started/mcp)。
 
-在客户端中重新加载 MCP 服务或重启客户端后，在该项目中请求浏览或搜索 `@react-bits` 组件。首次启动时 `npx` 会联网下载 shadcn CLI；克隆项目或运行 `npm ci` 不会自动注册 MCP，每位开发者需在所用客户端中完成配置。普通网站用户无需安装。当前前端使用原生 JavaScript，采用 React 组件前需评估框架与依赖适配。
+在客户端中重新加载 MCP 服务或重启客户端后，在该项目中请求浏览或搜索 `@react-bits` 组件。首次启动时 `npx` 会联网下载 shadcn CLI；克隆项目或运行 `pnpm install --frozen-lockfile` 不会自动注册 MCP，每位开发者需在所用客户端中完成配置。普通网站用户无需安装。当前前端使用原生 JavaScript，采用 React 组件前需评估框架与依赖适配。
 
 ## 前端与构建
 
@@ -59,7 +59,7 @@ npx -y shadcn@latest mcp
 
 Hero 入场由 `hero-intro.js` 管理，指针视差、工具区柔光及背景暂停由 `page-motion.js` 管理；均使用原生 JavaScript 与 CSS。具体动画参数以源码为准，视觉约束见 [视觉与交互规范](design/visual-style.md)。
 
-构建只复制选中的 Hero，并给 JS、CSS 和图标添加内容哈希；`public/_headers` 为这些静态资源设置一年不可变缓存。更新产物名称时同步缓存匹配规则。
+构建只复制选中的 Hero，并给 JS、CSS、图标与 Hero 添加统一发布标识后缀；public/_headers 为这些静态资源设置一年不可变缓存。首页保留 index.html，使用 no-cache；由 Cloudflare Workers Assets 提供默认首页及原生 SPA 回退，不生成重写规则。更新产物名称时同步缓存匹配规则。
 
 ## 新增标签
 
