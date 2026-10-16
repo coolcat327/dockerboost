@@ -18,7 +18,7 @@ export const feature = {
       browser: '下载', stop: '停止下载', layerUnit: '层', sizeSeparator: ' 共 ', share: '分享', shareCopied: '分享链接已复制', shareGenerated: '分享链接已生成', shareNeedsImage: '请先填写镜像名', shareFailed: '无法生成分享链接', shareCopyManually: '请复制此分享链接', shareCopyFailed: '未能复制分享链接', meta: '终端下载', copy: '复制全部', note: '仅支持公开镜像'
     },
     en: {
-      tab: 'Download', kicker: 'PUBLIC IMAGE DOWNLOAD', title: 'Download an image.',
+      tab: 'Download', kicker: 'PUBLIC IMAGE DOWNLOAD', title: 'Download images',
       description: 'Choose an image source and CPU architecture, then download it in the browser or copy the command below to your terminal.',
       label: 'Image name', labelDetail: ' (a docker pull command is accepted)', source: 'Image source',
       automatic: 'Auto (fastest available)', architecture: 'Target architecture', action: 'Download',

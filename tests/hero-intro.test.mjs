@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { initHeroIntro } from '../src/client/hero-intro.js';
 
-function environment(t, { width = 390, reduce = false, hash = '' } = {}) {
+function environment(t, { width = 390, reduce = false, hash = '', hidden = false } = {}) {
   const target = () => {
     const listeners = new Map();
     return { addEventListener: (name, fn) => listeners.set(name, fn), removeEventListener: (name) => listeners.delete(name), emit: (name) => listeners.get(name)?.() };
@@ -18,7 +18,7 @@ function environment(t, { width = 390, reduce = false, hash = '' } = {}) {
   };
   const art = { ...target(), complete: true, naturalWidth: 560, animate, parent: 'hero', getBoundingClientRect: () => ({ left: 20, top: 120, width: width - 40, height: 200 }), cloneNode: () => ({ style: {}, removeAttribute() {}, animate }) };
   const root = { classList: { add: (s) => classes.add(s), remove: (s) => classes.delete(s) } };
-  const document = { ...target(), hidden: false, documentElement: root, querySelector: () => art, body: { append: (e) => overlays.push(e) }, createElement: () => ({ setAttribute() {}, append(child) { this.child = child; }, animate, remove() { this.removed = true; } }) };
+  const document = { ...target(), hidden, documentElement: root, querySelector: () => art, body: { append: (e) => overlays.push(e) }, createElement: () => ({ setAttribute() {}, append(child) { this.child = child; }, animate, remove() { this.removed = true; } }) };
   const window = { ...target(), scrollY: 0, innerWidth: width, innerHeight: 844, matchMedia: () => reduced };
   for (const [name, value] of Object.entries({ document, window, location: { hash } })) {
     const original = Object.getOwnPropertyDescriptor(globalThis, name);
@@ -59,4 +59,26 @@ test('interaction and a changed motion preference immediately reveal the origina
   e.window.emit('pointerdown');
   assert.equal(e.overlays[0].removed, true);
   assert.equal(e.classes.size, 0);
+});
+
+test('mobile browser height changes preserve intro while width changes cancel it', (t) => {
+  const e = environment(t);
+  initHeroIntro();
+  e.window.innerHeight = 760;
+  e.window.emit('resize');
+  assert.equal(e.classes.has('hero-intro-active'), true);
+  e.window.innerWidth = 844;
+  e.window.emit('resize');
+  assert.equal(e.classes.has('hero-intro-active'), false);
+});
+test('background load waits until visible and starts only once', (t) => {
+  const e = environment(t, { hidden: true });
+  initHeroIntro();
+  assert.equal(e.overlays.length, 0);
+  e.document.hidden = false;
+  e.document.emit('visibilitychange');
+  e.document.emit('visibilitychange');
+  assert.equal(e.overlays.length, 1);
+  assert.equal(e.classes.has('hero-intro-active'), true);
+  e.window.emit('pagehide');
 });

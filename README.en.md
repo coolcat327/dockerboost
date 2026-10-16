@@ -52,7 +52,7 @@ Browser downloads stream image layers into OPFS temporary storage and assemble t
 
 ## Local development
 
-Use **Node.js 22 or newer** and **pnpm 10.33.0**, pinned in the `packageManager` field of `package.json`. If needed, follow the [pnpm installation instructions](https://pnpm.io/installation) to install that version.
+Use **Node.js 22 or newer** and **pnpm 12.14.0**, pinned in the `packageManager` field of `package.json`. If needed, follow the [pnpm installation instructions](https://pnpm.io/installation) to install that version.
 
 ```sh
 pnpm install --frozen-lockfile

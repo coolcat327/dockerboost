@@ -6,7 +6,7 @@ export const feature = {
   selectionGroup: 'image',
   messages: {
     'zh-CN': {
-      tab: '拉取', kicker: 'PULL COMMAND BUILDER', title: '输入一个镜像，生成完整拉取命令',
+      tab: '拉取', kicker: 'PULL COMMAND BUILDER', title: '生成镜像拉取命令',
       description: '自动选择最快可用镜像源，也可手动指定。镜像名不包含镜像源域名。',
       label: '镜像名', labelDetail: '（可粘贴 docker pull 命令解析）', source: '镜像源',
       automatic: '自动（最快可用）', architecture: '目标架构', action: '分享',
@@ -14,7 +14,7 @@ export const feature = {
       meta: '拉取 + 标签', copy: '复制全部'
     },
     en: {
-      tab: 'Pull', kicker: 'PULL COMMAND BUILDER', title: 'Enter an image and generate the complete command.',
+      tab: 'Pull', kicker: 'PULL COMMAND BUILDER', title: 'Build pull commands',
       description: 'Automatically select the fastest available source, or choose one manually. Do not include the source hostname in the image name.',
       label: 'Image name', labelDetail: ' (a docker pull command is accepted)', source: 'Image source',
       automatic: 'Auto (fastest available)', architecture: 'Target architecture', action: 'Share',

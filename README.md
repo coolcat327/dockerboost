@@ -52,7 +52,7 @@ docker load -i nginx_latest_linux_amd64.tar
 
 ## 本地开发
 
-使用 **Node.js 22 或更新版本**和 **pnpm 10.33.0**（版本固定在 `package.json` 的 `packageManager` 字段）。如果尚未安装 pnpm，可按 [pnpm 安装说明](https://pnpm.io/installation)安装对应版本：
+使用 **Node.js 22 或更新版本**和 **pnpm 12.14.0**（版本固定在 `package.json` 的 `packageManager` 字段）。如果尚未安装 pnpm，可按 [pnpm 安装说明](https://pnpm.io/installation)安装对应版本：
 
 ```sh
 pnpm install --frozen-lockfile

@@ -12,7 +12,7 @@
 .tool-panel { display: none; width: 100%; }
 .tool-panel.active { display: block; }
 .panel-kicker { color: var(--cyan); font: 500 12px 'DM Mono', monospace; letter-spacing: .12em; }
-.panel-copy h3 { margin: 14px 0 12px; font-size: clamp(26px, 2.8vw, 34px); line-height: 1.4; letter-spacing: -.025em; }
+.panel-copy h3 { margin: 14px 0 12px; font-size: clamp(26px, 2.8vw, 34px); line-height: 1.4; letter-spacing: -.025em; white-space:nowrap; }
 .panel-copy h3 code { color: var(--cyan); font: 600 .88em 'DM Mono', monospace; }
 .panel-copy p { max-width: 940px; margin: 0; color: var(--muted); font-size: 16px; line-height: 1.85; }
 .panel-copy p code { color: var(--code); font-family: 'DM Mono', monospace; }
@@ -50,6 +50,7 @@
 }
 @media (max-width: 600px) {
   .tool-stage { padding: 24px 18px; }
+  .panel-copy h3 { font-size:clamp(20px,5.6vw,26px);line-height:1.4; }
   .tool-tab { padding: 14px 12px; font-size: 15px; }
   .tool-tab span { display: none; }
   .command-block code { padding: 16px; }

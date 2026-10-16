@@ -3,19 +3,21 @@ export const initHeroIntro = () => {
   const art = document.querySelector('.boost-art');
   const root = document.documentElement;
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)');
-  if (!art || reduced.matches || document.hidden || window.scrollY > 0 || location.hash || typeof art.animate !== 'function') return;
+  if (!art || reduced.matches || window.scrollY > 0 || location.hash || typeof art.animate !== 'function') return;
   let overlay;
   let animation;
   let fade;
   let timer;
   let finished = false;
+  const viewportWidth = window.innerWidth;
   const finish = () => {
     if (finished) return;
     finished = true;
     clearTimeout(timer);
     art.removeEventListener('load', start);
     art.removeEventListener('error', finish);
-    for (const type of ['scroll', 'resize', 'pointerdown', 'keydown', 'pagehide']) window.removeEventListener(type, finish);
+    for (const type of ['scroll', 'pointerdown', 'keydown', 'pagehide']) window.removeEventListener(type, finish);
+    window.removeEventListener('resize', onResize);
     document.removeEventListener('visibilitychange', onVisibility);
     reduced.removeEventListener('change', finish);
     animation?.cancel();
@@ -23,10 +25,19 @@ export const initHeroIntro = () => {
     overlay?.remove();
     root.classList.remove('hero-intro-active');
   };
-  const onVisibility = () => { if (document.hidden) finish(); };
+  const onResize = () => { if (window.innerWidth !== viewportWidth) finish(); };
+  const onVisibility = () => {
+    if (document.hidden) { if (overlay) finish(); }
+    else if (!overlay) {
+      if (art.complete) start();
+      else timer = setTimeout(finish, 1500);
+    }
+  };
   const start = () => {
     clearTimeout(timer);
-    if (finished || reduced.matches || document.hidden || window.scrollY > 0 || !art.naturalWidth) return finish();
+    if (finished || overlay) return;
+    if (document.hidden) return;
+    if (reduced.matches || window.scrollY > 0 || !art.naturalWidth) return finish();
     const rect = art.getBoundingClientRect();
     if (!rect.width || !rect.height) return finish();
     const scale = Math.min(1.3, (window.innerWidth - 32) / rect.width, (window.innerHeight - 32) / rect.height);
@@ -52,13 +63,14 @@ export const initHeroIntro = () => {
       timer = setTimeout(finish, 2000);
     } catch { finish(); }
   };
-  for (const type of ['scroll', 'resize', 'pointerdown', 'keydown', 'pagehide']) window.addEventListener(type, finish, { passive: true });
+  for (const type of ['scroll', 'pointerdown', 'keydown', 'pagehide']) window.addEventListener(type, finish, { passive: true });
+  window.addEventListener('resize', onResize, { passive: true });
   document.addEventListener('visibilitychange', onVisibility);
   reduced.addEventListener('change', finish);
   if (art.complete) start();
   else {
     art.addEventListener('load', start, { once: true });
     art.addEventListener('error', finish, { once: true });
-    timer = setTimeout(finish, 1500);
+    if (!document.hidden) timer = setTimeout(finish, 1500);
   }
 };

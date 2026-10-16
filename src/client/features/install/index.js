@@ -4,8 +4,8 @@ import { clearDownloadCaches, createDownloadTask } from '../../common/browser-do
 import { createTransferRate } from '../../common/transfer-progress.js';
 import { Sha256 } from '../../common/sha256.js';
 import { writeArchive } from '../download/archive-format.js';
-const zh = { tab: '安装', kicker: 'DOCKER INSTALLATION', title: '在线安装，或带走完整离线包', description: '选择 Linux 架构与版本，下载后复制到离线机器安装。', copy: '复制全部' };
-const en = { tab: 'Install', kicker: 'DOCKER INSTALLATION', title: 'Install online or take an offline bundle', description: 'Select Linux architecture and versions, then transfer the bundle to your offline machine.', copy: 'Copy all' };
+const zh = { tab: '安装', kicker: 'DOCKER INSTALLATION', title: '在线安装与离线包', description: '选择 Linux 架构与版本，下载后复制到离线机器安装。', copy: '复制全部' };
+const en = { tab: 'Install', kicker: 'DOCKER INSTALLATION', title: 'Online & offline install', description: 'Select Linux architecture and versions, then transfer the bundle to your offline machine.', copy: 'Copy all' };
 
 const translations = {
   'zh-CN': {

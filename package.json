@@ -24,7 +24,7 @@
     "hono": "4.13.13",
     "modern-tar": "0.8.6"
   },
-  "packageManager": "pnpm@10.33.0",
+  "packageManager": "pnpm@12.14.0",
   "engines": {
     "node": ">=22"
   }
