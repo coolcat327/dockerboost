@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="public/hero-surf-speed.svg" width="560" alt="The DockerBoost whale surfing across ocean waves" />
+<img src="public/github-icon.svg" width="280" alt="The DockerBoost whale surfing across ocean waves" />
 
 # DockerBoost
 
