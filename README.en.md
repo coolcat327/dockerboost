@@ -74,6 +74,7 @@ Edit source files rather than generated files in `dist/`. Before contributing, r
 
 | Location | Purpose |
 | --- | --- |
+| `src/client/index.html` | Page template; the build injects settings and versioned asset paths |
 | `src/client/app.js` | Vanilla JavaScript entry point for initialization, language selection, and tabs |
 | `src/client/features/` | Page features: install, setup, pull, and download |
 | `src/client/common/` | Shared frontend capabilities, including image selection, localization, download tasks, and file writing |
@@ -81,7 +82,7 @@ Edit source files rather than generated files in `dist/`. Before contributing, r
 | `src/api/index.ts` | Hono Worker entry point, business routes, shared error handling, and static asset fallback |
 | `src/api/routes/` | install, images, download, registry, share, and status routes, registered by each directory's index.ts |
 | `src/api/common/` | Shared source configuration and selection, Registry requests, image parsing, and HTTP adapters |
-| `public/` | Page markup and static assets |
+| `public/` | Static assets and hosting configuration |
 | `scripts/` | Build tooling, release identifiers, and architecture checks |
 | `tests/` | Regression tests for APIs, installation scripts, archives, and browser downloads |
 | `docs/` | Development reference, API contracts, and download mechanisms |

@@ -9,10 +9,10 @@ import { fileURLToPath } from 'node:url';
 const root = fileURLToPath(new URL('../', import.meta.url));
 const dist = new URL('../dist/', import.meta.url);
 const publicDir = resolve(fileURLToPath(new URL('../public/', import.meta.url)));
-const sourceHtml = await readFile(new URL('../public/index.html', import.meta.url), 'utf8');
+const sourceHtml = await readFile(new URL('../src/client/index.html', import.meta.url), 'utf8');
 const heroTag = sourceHtml.match(/<img\b[^>]*\bclass="[^"]*\bboost-art\b[^"]*"[^>]*>/)?.[0];
 const heroSource = heroTag?.match(/\bsrc="(\/hero-[a-z0-9-]+\.svg)"/)?.[1];
-if (!heroSource) throw new Error('Hero image must reference a root-level hero-*.svg in public/index.html');
+if (!heroSource) throw new Error('Hero image must reference a root-level hero-*.svg in src/client/index.html');
 
 await rm(dist, { recursive: true, force: true });
 await mkdir(dist, { recursive: true });
@@ -79,7 +79,7 @@ for (const [key, value] of Object.entries(config.site.links)) {
   pageConfig[key] = url.href;
 }
 const escapeHtml = (value) => String(value).replaceAll('&', '&amp;').replaceAll('"', '&quot;').replaceAll("'", '&#39;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
-const html = (await readFile(index, 'utf8'))
+const html = sourceHtml
   .replace(/__CONFIG_([A-Za-z]+)__/g, (_, key) => {
     if (!Object.hasOwn(pageConfig, key)) throw new Error(`Unknown page config: ${key}`);
     return escapeHtml(pageConfig[key]);

@@ -74,6 +74,7 @@ pnpm run validate  # 类型检查、测试与构建；CI 使用此命令
 
 | 位置 | 职责 |
 | --- | --- |
+| `src/client/index.html` | 页面模板，构建时注入配置及版本化资源路径 |
 | `src/client/app.js` | 原生 JavaScript 页面入口，管理初始化、语言与标签切换 |
 | `src/client/features/` | 页面功能：install（安装）、setup（配置）、pull（拉取）、download（下载） |
 | `src/client/common/` | 前端复用能力，例如镜像选择、语言、浏览器下载任务与文件写入 |
@@ -81,7 +82,7 @@ pnpm run validate  # 类型检查、测试与构建；CI 使用此命令
 | `src/api/index.ts` | Hono Worker 入口，挂载业务路由并统一处理错误与静态资源回退 |
 | `src/api/routes/` | 业务路由：install、images、download、registry、share、status；各目录 index.ts 注册子路由 |
 | `src/api/common/` | 跨业务复用能力，例如镜像源配置与选择、Registry 请求、镜像解析及 HTTP 适配 |
-| `public/` | 页面与静态资源 |
+| `public/` | 静态资源与托管配置 |
 | `scripts/` | 构建、发布标识和架构检查 |
 | `tests/` | 接口、安装脚本、归档及浏览器下载等回归测试 |
 | `docs/` | development.md、api.md、downloads.md 分别说明开发接入、接口契约与下载机制 |
