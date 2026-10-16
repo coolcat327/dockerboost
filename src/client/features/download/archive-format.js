@@ -14,9 +14,14 @@ export async function archiveEntries(manifest, repository, reference, repoTag) {
   const manifestDigest = await sha256(manifestBytes);
   const configPath = `blobs/sha256/${digestHex(manifest.config.digest)}`;
   const layerPaths = manifest.layers.map((item) => `blobs/sha256/${digestHex(item.digest)}`);
+  // OCI imports bypass Docker's RepoTags normalization. Match Docker Hub's
+  // canonical name so containerd can resolve the image again during docker run.
+  const firstComponent = repoTag.split('/')[0];
+  const qualified = repoTag.includes('/') && (/[.:]/.test(firstComponent) || firstComponent === 'localhost');
+  const imageName = qualified ? repoTag : `docker.io/${repoTag.includes('/') ? '' : 'library/'}${repoTag}`;
   return [
     ['oci-layout', text('{"imageLayoutVersion":"1.0.0"}')],
-    ['index.json', text({ schemaVersion: 2, manifests: [{ mediaType: manifest.mediaType, digest: `sha256:${manifestDigest}`, size: manifestBytes.byteLength, annotations: { 'org.opencontainers.image.ref.name': repoTag } }] })],
+    ['index.json', text({ schemaVersion: 2, manifests: [{ mediaType: manifest.mediaType, digest: `sha256:${manifestDigest}`, size: manifestBytes.byteLength, annotations: { 'io.containerd.image.name': imageName, 'org.opencontainers.image.ref.name': reference } }] })],
     ['manifest.json', text([{ Config: configPath, RepoTags: [repoTag], Layers: layerPaths }])],
     ['repositories', text({ [repository]: { [reference]: digestHex(manifest.config.digest) } })],
     [`blobs/sha256/${manifestDigest}`, manifestBytes]

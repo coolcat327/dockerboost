@@ -40,7 +40,8 @@ test('browser archive opens as tar and contains consistent OCI and Docker metada
   const repositories = JSON.parse(extract(archive, 'repositories'));
   assert.equal(index.manifests[0].digest, `sha256:${manifestDigest}`);
   assert.equal(index.manifests[0].size, manifestBytes.length);
-  assert.equal(index.manifests[0].annotations['org.opencontainers.image.ref.name'], 'nginx:latest');
+  assert.equal(index.manifests[0].annotations['org.opencontainers.image.ref.name'], 'latest');
+  assert.equal(index.manifests[0].annotations['io.containerd.image.name'], 'docker.io/library/nginx:latest');
   assert.equal(dockerManifest[0].Config, `blobs/sha256/${configDigest}`);
   assert.deepEqual(dockerManifest[0].Layers, [`blobs/sha256/${layerDigest}`]);
   assert.deepEqual(dockerManifest[0].RepoTags, ['nginx:latest']);
@@ -48,6 +49,20 @@ test('browser archive opens as tar and contains consistent OCI and Docker metada
   assert.deepEqual(extract(archive, `blobs/sha256/${manifestDigest}`), manifestBytes);
   assert.deepEqual(extract(archive, `blobs/sha256/${configDigest}`), config);
   assert.deepEqual(extract(archive, `blobs/sha256/${layerDigest}`), layer);
+});
+
+test('OCI image names normalize shorthand and preserve namespaces and explicit registries', async () => {
+  const manifest = { config: { digest: `sha256:${'a'.repeat(64)}` }, layers: [] };
+  for (const [repoTag, expected] of [
+    ['redis:latest', 'docker.io/library/redis:latest'],
+    ['owner/image:release', 'docker.io/owner/image:release'],
+    ['docker.io/library/redis:latest', 'docker.io/library/redis:latest'],
+    ['registry.k8s.io/pause:3.10', 'registry.k8s.io/pause:3.10']
+  ]) {
+    const entries = await archiveEntries(manifest, 'unused', 'release', repoTag);
+    const index = JSON.parse(new TextDecoder().decode(entries.find(([name]) => name === 'index.json')[1]));
+    assert.equal(index.manifests[0].annotations['io.containerd.image.name'], expected);
+  }
 });
 
 test('library TAR encoding preserves Unicode long paths, empty files and block boundaries', async () => {

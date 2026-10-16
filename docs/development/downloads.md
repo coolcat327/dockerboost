@@ -20,6 +20,8 @@
 
 ## 哈希与归档实现
 
+浏览器镜像归档同时包含 OCI 索引与 Docker manifest.json。OCI 描述符的 `io.containerd.image.name` 使用完整 Docker Hub 名称（例如 `docker.io/library/redis:latest`），`org.opencontainers.image.ref.name` 保存标签。containerd 优先读取 OCI 索引，不能依赖 manifest.json 的 RepoTags 修正短名称，否则可能出现导入成功但运行时找不到本地镜像的问题。
+
 安装包增量 SHA-256 使用 @noble/hashes，经 src/client/common/sha256.js 适配。TAR 头、PAX 与填充由 modern-tar 编码，archive-format.js 负责业务条目、流式读写和取消；公共 OPFS writer 负责 close/abort。生产与消费均停止后才允许清理暂存。
 
 ## 接入下载功能
