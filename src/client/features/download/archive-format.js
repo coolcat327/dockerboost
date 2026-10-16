@@ -1,3 +1,5 @@
+import { createTarPacker } from 'modern-tar';
+
 const encoder = new TextEncoder();
 const text = (value) => encoder.encode(typeof value === 'string' ? value : JSON.stringify(value));
 export const digestHex = (digest) => String(digest).replace(/^sha256:/, '');
@@ -21,52 +23,35 @@ export async function archiveEntries(manifest, repository, reference, repoTag) {
   ];
 }
 
-function tarHeader(name, size) {
-  const output = new Uint8Array(512);
-  const put = (offset, length, value) => output.set(encoder.encode(String(value).slice(0, length)), offset);
-  const octal = (value, length) => value.toString(8).padStart(length - 1, '0') + '\0';
-  put(0, 100, name);
-  put(100, 8, octal(0o644, 8));
-  put(108, 8, octal(0, 8));
-  put(116, 8, octal(0, 8));
-  put(124, 12, octal(size, 12));
-  put(136, 12, octal(Math.floor(Date.now() / 1000), 12));
-  output.fill(32, 148, 156);
-  put(156, 1, '0');
-  put(257, 6, 'ustar');
-  put(263, 2, '00');
-  const checksum = output.reduce((sum, value) => sum + value, 0);
-  put(148, 8, checksum.toString(8).padStart(6, '0') + '\0 ');
-  return output;
-}
-
+// The library owns TAR headers, PAX records, padding and end markers.
+// The caller still owns the OPFS writable's close/abort transaction.
 export async function writeArchive(writable, entries, { signal } = {}) {
-  const write = async (data) => {
-    signal?.throwIfAborted();
-    await writable.write(data);
-    signal?.throwIfAborted();
-  };
-  for (const [name, data] of entries) {
-    const size = data.size ?? data.byteLength;
-    await write(tarHeader(name, size));
-    if (data.stream) {
-      const reader = data.stream().getReader();
-      try {
-        for (;;) {
-          signal?.throwIfAborted();
-          const next = await reader.read();
-          signal?.throwIfAborted();
-          if (next.done) break;
-          await write(next.value);
-        }
-      } finally {
-        await reader.cancel().catch(() => {});
-        reader.releaseLock();
-      }
-    } else {
-      await write(data);
+  signal?.throwIfAborted();
+  const { readable, controller } = createTarPacker();
+  const consume = readable.pipeTo(new WritableStream({
+    async write(chunk) {
+      signal?.throwIfAborted();
+      await writable.write(chunk);
+      signal?.throwIfAborted();
     }
-    await write(new Uint8Array((512 - (size % 512)) % 512));
-  }
-  await write(new Uint8Array(1024));
+  }), { signal });
+  const produce = (async () => {
+    try {
+      for (const [name, data] of entries) {
+        signal?.throwIfAborted();
+        const body = controller.add({ name, size: data.size ?? data.byteLength, type: 'file', mode: 0o644 });
+        if (data.stream) await data.stream().pipeTo(body, { signal });
+        else {
+          const writer = body.getWriter();
+          try { await writer.write(data); await writer.close(); }
+          finally { writer.releaseLock(); }
+        }
+      }
+      controller.finalize();
+    } catch (error) { controller.error(error); throw error; }
+  })();
+  // Observe both immediately and wait for production to stop before OPFS cleanup.
+  const results = await Promise.allSettled([consume, produce]);
+  const failure = results.find(result => result.status === 'rejected');
+  if (failure) throw failure.reason;
 }

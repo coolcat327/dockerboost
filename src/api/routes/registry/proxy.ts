@@ -1,7 +1,7 @@
-import type { Env } from '../common/types';
-import { registryFetch, registryPublicFetch, proxyHeaders, passthrough } from '../common/registry';
-import { sourceProxyTarget } from '../common/sources';
-import { HttpError } from '../common/errors';
+import type { Env } from '../../common/types';
+import { registryFetch, registryPublicFetch, proxyHeaders, passthrough } from '../../common/registry';
+import { sourceProxyTarget } from '../../common/sources';
+import { HttpError } from '../../common/errors';
 
 export async function registryProxyResponse(request: Request, env: Env) {
   const url = new URL(request.url);

@@ -49,3 +49,50 @@ test('browser archive opens as tar and contains consistent OCI and Docker metada
   assert.deepEqual(extract(archive, `blobs/sha256/${configDigest}`), config);
   assert.deepEqual(extract(archive, `blobs/sha256/${layerDigest}`), layer);
 });
+
+test('library TAR encoding preserves Unicode long paths, empty files and block boundaries', async () => {
+  const names = ['empty', 'one', 'before-block', 'block', 'after-block', `${'目录/'.repeat(40)}镜像层.bin`];
+  const sizes = [0, 1, 511, 512, 513, 3];
+  const entries = names.map((name, index) => [name, new Blob([new Uint8Array(sizes[index]).fill(index)])]);
+  const parts = [];
+  await writeArchive({ write: async value => parts.push(Buffer.from(value)) }, entries);
+  const archive = Buffer.concat(parts);
+  const listing = spawnSync('tar', ['-tf', '-'], { input: archive });
+  assert.equal(listing.status, 0, listing.stderr.toString());
+  assert.deepEqual(listing.stdout.toString().trim().split('\n'), names);
+  for (let index = 0; index < entries.length; index++) assert.deepEqual(extract(archive, names[index]), Buffer.alloc(sizes[index], index));
+});
+
+test('an archive with an incomplete source aborts the OPFS transaction', async () => {
+  const { MemoryDirectory } = await import('./helpers/opfs.mjs');
+  const { writeOpfsFile } = await import('../src/client/common/opfs-file-writer.js');
+  const handle = await new MemoryDirectory().getFileHandle('archive.tar', { create: true });
+  await writeOpfsFile(handle, writer => writer.write(new TextEncoder().encode('previous committed file')));
+  const source = { size: 3, stream: () => new Response('ab').body };
+  await assert.rejects(writeOpfsFile(handle, writer => writeArchive(writer, [['layer', source]])));
+  assert.equal(await (await handle.getFile()).text(), 'previous committed file');
+});
+
+test('disk failure cancels the active source before archive production settles', async () => {
+  const failure = new Error('disk is full');
+  let cancelled = false;
+  const source = { size: 16 * 1024 * 1024, stream: () => new ReadableStream({
+    pull(controller) { controller.enqueue(new Uint8Array(65536)); },
+    cancel() { cancelled = true; }
+  }) };
+  await assert.rejects(writeArchive({ write: async () => { throw failure; } }, [['layer', source]]), error => error === failure);
+  assert.equal(cancelled, true);
+});
+
+test('pause during archive output cancels its source and preserves caller-owned close/abort', async () => {
+  const controller = new AbortController();
+  let cancelled = false;
+  const source = { size: 16 * 1024 * 1024, stream: () => new ReadableStream({
+    pull(stream) { stream.enqueue(new Uint8Array(65536)); },
+    cancel() { cancelled = true; }
+  }) };
+  await assert.rejects(writeArchive({ write: async () => { controller.abort(); } }, [['layer', source]], { signal: controller.signal }), { name: 'AbortError' });
+  assert.equal(cancelled, true);
+  const early = new AbortController(); early.abort();
+  await assert.rejects(writeArchive({ write() { assert.fail('an aborted archive cannot write'); } }, [], { signal: early.signal }), { name: 'AbortError' });
+});

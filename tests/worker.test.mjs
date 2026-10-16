@@ -268,3 +268,55 @@ test('digest blobs allow one-day browser caching while errors and upstream restr
   upstream = new Response('manifest');
   assert.equal((await request('/v2/library/nginx/manifests/latest?source=mirror-gcr')).headers.get('cache-control'),null);
 });
+
+test('every GET API preserves explicit 405/Allow including HEAD without contacting upstream', async t => {
+  t.mock.method(globalThis, 'fetch', () => { assert.fail('method rejection must happen before upstream work'); });
+  const paths = ['/api/install/catalog', '/api/install/asset', '/api/install/plan', '/api/install/script', '/api/health', '/api/sources', '/api/platforms', '/api/inspect', '/api/download-script', '/api/share'];
+  for (const path of paths) for (const method of ['HEAD', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS']) {
+    const response = await request(path, { method });
+    assert.equal(response.status, 405, `${method} ${path}`);
+    assert.equal(response.headers.get('allow'), 'GET');
+  }
+});
+
+test('unknown API paths and trailing slashes stay JSON 404 while other paths use assets', async () => {
+  for (const path of ['/api', '/api/unknown', '/api/install/unknown', '/api/health/', '/api/install/catalog/']) {
+    for (const method of ['GET', 'POST']) {
+      const response = await request(path, { method });
+      assert.equal(response.status, 404, `${method} ${path}`);
+      assert.deepEqual(await response.json(), { error: '接口不存在' });
+    }
+  }
+  for (const path of ['/deep/link', '/api-other', '/v20']) assert.equal(await (await request(path)).text(), 'static page');
+});
+
+test('retired save remains 410 for every method', async () => {
+  for (const method of ['GET', 'HEAD', 'POST', 'DELETE', 'OPTIONS']) assert.equal((await request('/api/save', { method })).status, 410);
+});
+
+test('Registry routing preserves HEAD and streaming upload bodies instead of applying API guards', async t => {
+  const paths = [];
+  const upload = new Request('https://example.com/v2/team/image/blobs/uploads/id', { method: 'PATCH', body: 'payload', duplex: 'half' });
+  t.mock.method(globalThis, 'fetch', async (url, init) => {
+    paths.push(new URL(url).pathname);
+    if (init.method === 'PATCH') {
+      assert.equal(init.body, upload.body);
+      assert.equal(await new Response(init.body).text(), 'payload');
+      return new Response(null, { status: 202 });
+    }
+    assert.equal(init.method, 'HEAD');
+    return new Response(null, { headers: { 'Docker-Content-Digest': 'sha256:test' } });
+  });
+  assert.equal((await worker.fetch(upload, env)).status, 202);
+  for (const path of ['/v2', '/v2/', '/v2/team/image/manifests/latest']) {
+    const response = await request(path, { method: 'HEAD' });
+    assert.equal(response.status, 200); assert.equal(response.body, null);
+    assert.equal(response.headers.get('Docker-Content-Digest'), 'sha256:test');
+  }
+  assert.deepEqual(paths, ['/v2/team/image/blobs/uploads/id', '/v2', '/v2/', '/v2/team/image/manifests/latest']);
+});
+
+test('unexpected handler failures still use the shared JSON 500 response', async () => {
+  const response = await worker.fetch(new Request('https://example.com/asset'), { ASSETS: { fetch: async () => { throw new Error('asset failure'); } } });
+  assert.equal(response.status, 500); assert.deepEqual(await response.json(), { error: 'asset failure' });
+});

@@ -1,33 +1,24 @@
-import { installResponse } from './routes/install/index';
-import type { Env } from './common/types';
+import { Hono } from 'hono';
+import type { ApiEnv } from './common/types';
 import { HttpError } from './common/errors';
-import { healthResponse, sourcesResponse } from './routes/status';
-import { inspectImageResponse, platformResponse } from './routes/images';
-import { downloadScriptResponse, retiredSaveResponse } from './routes/download/index';
-import { registryProxyResponse } from './routes/registry-proxy';
-import { shareResponse } from './routes/share';
+import { installRoutes } from './routes/install/index';
+import { imagesRoutes } from './routes/images/index';
+import { downloadRoutes } from './routes/download/index';
+import { registryRoutes } from './routes/registry/index';
+import { shareRoutes } from './routes/share/index';
+import { statusRoutes } from './routes/status/index';
 
-function getOnly(request: Request) {
-  return request.method === 'GET' ? undefined : new Response('Method Not Allowed', { status: 405, headers: { Allow: 'GET' } });
-}
+const app = new Hono<ApiEnv>();
+app.route('/api/install', installRoutes);
+app.route('/api', imagesRoutes);
+app.route('/api', downloadRoutes);
+app.route('/api', shareRoutes);
+app.route('/api', statusRoutes);
+app.route('/', registryRoutes);
 
-export default {
-  async fetch(request: Request, env: Env): Promise<Response> {
-    const path = new URL(request.url).pathname;
-    try {
-      if (['/api/install/catalog', '/api/install/plan', '/api/install/asset', '/api/install/script'].includes(path)) return getOnly(request) || await installResponse(request);
-      if (path === '/api/health') return getOnly(request) || healthResponse(env);
-      if (path === '/api/sources') return getOnly(request) || sourcesResponse(env);
-      if (path === '/api/download-script') return getOnly(request) || await downloadScriptResponse(request, env);
-      if (path === '/api/share') return getOnly(request) || await shareResponse(request);
-      if (path === '/api/save') return retiredSaveResponse();
-      if (path === '/api/inspect') return getOnly(request) || await inspectImageResponse(request, env);
-      if (path === '/api/platforms') return getOnly(request) || await platformResponse(request, env);
-      if (path === '/v2' || path.startsWith('/v2/')) return await registryProxyResponse(request, env);
-      if (path === '/api' || path.startsWith('/api/')) return Response.json({ error: '接口不存在' }, { status: 404 });
-      return env.ASSETS.fetch(request);
-    } catch (error) {
-      return Response.json({ error: error instanceof Error ? error.message : '服务暂时不可用' }, { status: error instanceof HttpError ? error.status : 500 });
-    }
-  }
-};
+app.onError((error) => Response.json({ error: error.message || '服务暂时不可用' }, { status: error instanceof HttpError ? error.status : 500 }));
+app.notFound(c => c.req.path === '/api' || c.req.path.startsWith('/api/')
+  ? Response.json({ error: '接口不存在' }, { status: 404 })
+  : c.env.ASSETS.fetch(c.req.raw));
+
+export default app;

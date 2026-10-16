@@ -1,5 +1,5 @@
-import type { Env } from '../common/types';
-import { registrySources } from '../common/sources';
+import type { Env } from '../../common/types';
+import { registrySources } from '../../common/sources';
 
 export function healthResponse(env: Env) {
   const sources = registrySources(env);

@@ -1,6 +1,6 @@
 # DockerBoost
 
-部署在 Cloudflare Workers 上的 Docker 镜像代理，提供安装、加速配置、拉取命令和浏览器/终端下载。自动选源按延迟逐批并发查询已配置源，采用第一个成功响应；未缓存镜像可能不可用，不绕过上游鉴权或限流。
+基于 Hono、部署在 Cloudflare Workers 上的 Docker 镜像代理，提供安装、加速配置、拉取命令和浏览器/终端下载。自动选源按延迟逐批并发查询已配置源，采用第一个成功响应；未缓存镜像可能不可用，不绕过上游鉴权或限流。
 
 ## 页面功能
 
@@ -26,6 +26,29 @@
 
 镜像归档可通过 `docker load -i nginx_latest_linux_amd64.tar` 导入。浏览器不能确认文件已保存完毕，触发保存后保留暂存 60 秒；关闭页面可能中断清理，下次访问会回收遗留目录。缓存与任务规则见 [下载任务与缓存](docs/downloads.md)。
 
+## 项目结构
+
+| 位置 | 职责 |
+| --- | --- |
+| `src/client/app.js` | 原生 JavaScript 页面入口，管理初始化、语言与标签切换 |
+| `src/client/features/` | 页面功能：install（安装）、setup（配置）、pull（拉取）、download（下载） |
+| `src/client/common/` | 前端复用能力，例如镜像选择、语言、浏览器下载任务与文件写入 |
+| `src/client/styles/` | 页面与共用样式，由 index.css 统一导入；功能专属样式留在 features 对应目录 |
+| `src/api/index.ts` | Hono Worker 入口，挂载业务路由并统一处理错误与静态资源回退 |
+| `src/api/routes/` | 业务路由：install、images、download、registry、share、status；各目录 index.ts 注册子路由 |
+| `src/api/common/` | 跨业务复用能力，例如镜像源配置与选择、Registry 请求、镜像解析及 HTTP 适配 |
+| `public/` | 页面与静态资源 |
+| `scripts/` | 构建、发布标识和架构检查 |
+| `tests/` | 接口、安装脚本、归档及浏览器下载等回归测试 |
+| `docs/` | development.md、api.md、downloads.md 分别说明开发接入、接口契约与下载机制 |
+| `docs/design/` | 视觉规范与设计流程 |
+| `docs/plans/` | pending 存放待实现或待验收事项，implemented 存放交付记录 |
+| `docs/research/` | 调研结果与选型依据 |
+| `wrangler.jsonc` | Worker 绑定、镜像源及部署配置 |
+| `.github/workflows/` | 持续验证与部署 |
+
+模块接入和依赖边界见 [开发参考](docs/development.md)，详细文档按 [索引](docs/README.md) 查阅。
+
 ## 本地开发
 
 使用 Node.js 22 或更新版本：
@@ -38,7 +61,7 @@ npm run dev
 Wrangler 自动构建并监听前端、静态资源与构建脚本变化；服务端源码由 Wrangler 处理。
 
 ```sh
-npm run check     # TypeScript 类型检查
+npm run check     # TypeScript 类型与 API 依赖边界检查
 npm test          # 回归测试，需 sh、bash、tar、sha256sum 等工具
 npm run build     # 生成 dist
 npm run validate  # 类型检查、测试与构建；CI 使用此命令

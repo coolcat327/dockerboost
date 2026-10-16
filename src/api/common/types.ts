@@ -3,6 +3,8 @@ export interface Env {
   IMAGE_SOURCES?: string;
 }
 
+export type ApiEnv = { Bindings: Env };
+
 export type RegistrySource = {
   id: string;
   label: string;

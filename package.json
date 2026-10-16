@@ -8,14 +8,20 @@
     "build": "node scripts/build.mjs",
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
-    "check": "tsc --noEmit",
+    "check": "tsc --noEmit && npm run check:architecture",
     "test": "node --test tests/*.test.mjs",
-    "validate": "npm run check && npm test && npm run build"
+    "validate": "npm run check && npm test && npm run build",
+    "check:architecture": "node scripts/check-api-boundaries.mjs"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^5.20260918.1",
     "esbuild": "^0.25.0",
     "typescript": "^5.9.2",
     "wrangler": "^4.39.0"
+  },
+  "dependencies": {
+    "@noble/hashes": "2.4.0",
+    "hono": "4.13.13",
+    "modern-tar": "0.8.6"
   }
 }

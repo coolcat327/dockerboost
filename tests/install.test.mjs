@@ -2,9 +2,13 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { build } from 'esbuild';
 import { spawnSync } from 'node:child_process';
-const { outputFiles } = await build({ entryPoints: ['src/api/routes/install/index.ts'], bundle: true, write: false, format: 'esm', platform: 'neutral' });
-const { installResponse, installFiles } = await import(`data:text/javascript;base64,${Buffer.from(outputFiles[0].text).toString('base64')}`);
-const req = path => installResponse(new Request(`https://example.com/api/install/${path}`));
+const { outputFiles } = await build({ stdin: { contents: "export * from './src/api/routes/install/handlers'; export * from './src/api/routes/install/bundle';", resolveDir: process.cwd() }, bundle: true, write: false, format: 'esm', platform: 'neutral' });
+const { catalogResponse, assetResponse, planResponse, scriptResponse, installFiles } = await import(`data:text/javascript;base64,${Buffer.from(outputFiles[0].text).toString('base64')}`);
+const handlers = { catalog: catalogResponse, asset: assetResponse, plan: planResponse, script: scriptResponse };
+const req = async path => {
+  const request = new Request(`https://example.com/api/install/${path}`);
+  return handlers[new URL(request.url).pathname.split('/').at(-1)](request);
+};
 test('generated installer and download script are valid Bash and contain required files', async () => {
   const files = installFiles('aarch64', '28.1.1', '2.35.1', 'https://example.com');
   assert.equal(spawnSync('bash', ['-n'], { input: files['offline_install_docker.sh'] }).status, 0);
