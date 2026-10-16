@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="public/github-icon.svg" width="280" alt="The DockerBoost whale surfing across ocean waves" />
+<a href="https://docker.coolcat.win/"><img src="docs/assets/github-title-icon.svg" width="280" alt="The DockerBoost whale surfing across ocean waves" /></a>
 
 # DockerBoost
 
@@ -88,7 +88,8 @@ Edit source files rather than generated files in `dist/`. Before contributing, r
 | `docs/design/` | Visual guidelines and design workflow |
 | `docs/plans/` | Pending work in pending; delivery records in implemented |
 | `docs/research/` | Research findings and technology assessments |
-| `wrangler.jsonc` | Worker bindings, image sources, and deployment configuration |
+| `config.js` | Public page settings and default image sources |
+| `wrangler.jsonc` | Worker bindings, variable overrides, and deployment configuration |
 | `.github/workflows/` | Continuous validation and deployment |
 
 See the [Development reference](docs/development.md) for module integration and dependency boundaries, or browse the [Documentation index](docs/README.md).
@@ -98,7 +99,7 @@ See the [Development reference](docs/development.md) for module integration and 
 ### Deploy with GitHub Actions
 
 1. Push the project to your GitHub repository. Set `main` as the default branch for the default manual selection described below.
-2. Set the Worker name in `wrangler.jsonc` and adjust `IMAGE_SOURCES` as needed. See [Image source configuration](docs/api.md#镜像源配置) for fields and path rules.
+2. Set the Worker name in `wrangler.jsonc`. Configure page links, author, and default image sources in the root `config.js`. Override the source list with the JSON variable `IMAGE_SOURCES` if needed. See [Image source configuration](docs/api.md#镜像源配置) for fields and path rules.
 3. Add these repository secrets under **Settings → Secrets and variables → Actions**:
 
    | Secret | Purpose |

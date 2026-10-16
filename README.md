@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="public/github-icon.svg" width="280" alt="DockerBoost 鲸鱼乘风破浪" />
+<a href="https://docker.coolcat.win/"><img src="docs/assets/github-title-icon.svg" width="280" alt="DockerBoost 鲸鱼乘风破浪" /></a>
 
 # DockerBoost
 
@@ -88,7 +88,8 @@ pnpm run validate  # 类型检查、测试与构建；CI 使用此命令
 | `docs/design/` | 视觉规范与设计流程 |
 | `docs/plans/` | pending 存放待实现或待验收事项，implemented 存放交付记录 |
 | `docs/research/` | 调研结果与选型依据 |
-| `wrangler.jsonc` | Worker 绑定、镜像源及部署配置 |
+| `config.js` | 页面公开配置与默认镜像源 |
+| `wrangler.jsonc` | Worker 绑定、变量覆盖与部署配置 |
 | `.github/workflows/` | 持续验证与部署 |
 
 模块接入和依赖边界见 [开发参考](docs/development.md)，详细文档按 [索引](docs/README.md) 查阅。
@@ -98,7 +99,7 @@ pnpm run validate  # 类型检查、测试与构建；CI 使用此命令
 ### 通过 GitHub Actions 部署
 
 1. 将项目推送到自己的 GitHub 仓库，建议将默认分支设为 `main`。
-2. 在 `wrangler.jsonc` 中设置 Worker 名称，并按需调整 `IMAGE_SOURCES`。镜像源字段与路径规则见 [接口参考](docs/api.md#镜像源配置)。
+2. 在 `wrangler.jsonc` 中设置 Worker 名称；页面链接、作者与默认镜像源在根目录 `config.js` 中配置。可用 JSON 类型变量 `IMAGE_SOURCES` 覆盖镜像源列表。镜像源字段与路径规则见 [接口参考](docs/api.md#镜像源配置)。
 3. 在仓库 **Settings → Secrets and variables → Actions** 中添加以下 Repository secrets：
 
    | Secret | 用途 |

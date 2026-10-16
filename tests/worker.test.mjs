@@ -1,3 +1,4 @@
+import { config } from '../config.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { build } from 'esbuild';
@@ -319,4 +320,25 @@ test('Registry routing preserves HEAD and streaming upload bodies instead of app
 test('unexpected handler failures still use the shared JSON 500 response', async () => {
   const response = await worker.fetch(new Request('https://example.com/asset'), { ASSETS: { fetch: async () => { throw new Error('asset failure'); } } });
   assert.equal(response.status, 500); assert.deepEqual(await response.json(), { error: 'asset failure' });
+});
+
+
+test('registry defaults come from config.js and JSON arrays or strings fully override them', async () => {
+  const defaults = (await (await request('/api/sources')).json()).sources;
+  assert.deepEqual(defaults.map(({ id, label, host }) => ({ id, label, host })),
+    config.imageSources.map(({ id, label, url }) => ({ id, label, host: new URL(url).host })));
+  const custom = [{ id: 'custom-json', label: 'Custom JSON', url: 'https://custom.example', naming: 'native', requiresNamespace: true }];
+  for (const value of [custom, JSON.stringify(custom)]) {
+    const response = await worker.fetch(new Request('https://example.com/api/sources'), { ...env, IMAGE_SOURCES: value });
+    assert.equal(response.status, 200);
+    assert.deepEqual((await response.json()).sources, [{ id: 'custom-json', label: 'Custom JSON', host: 'custom.example', naming: 'native', requiresNamespace: true }]);
+  }
+});
+
+test('invalid JSON source overrides fail instead of silently using defaults', async () => {
+  for (const value of [[], {}, 'not json', 'null', [null], [{ id: 'bad', label: 'Bad', url: 'http://upstream.example' }], [{ id: 'bad', label: 42, url: 'https://upstream.example' }]]) {
+    const response = await worker.fetch(new Request('https://example.com/api/sources'), { ...env, IMAGE_SOURCES: value });
+    assert.equal(response.status, 500);
+    assert.deepEqual(await response.json(), { error: 'IMAGE_SOURCES 配置无效' });
+  }
 });

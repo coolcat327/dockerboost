@@ -1,6 +1,6 @@
 export interface Env {
   ASSETS: Fetcher;
-  IMAGE_SOURCES?: string;
+  IMAGE_SOURCES?: string | Partial<RegistrySource>[];
 }
 
 export type ApiEnv = { Bindings: Env };

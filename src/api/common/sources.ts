@@ -1,21 +1,12 @@
+import { config } from '../../../config.js';
 import type { Env, RegistrySource } from './types';
 import { HttpError } from './errors';
 
 export const AUTO_SOURCE = 'auto';
 export const DOCKER_HUB_MIRROR_SOURCE = 'mirror-gcr';
 
-const defaultSources: RegistrySource[] = [
-  { id: DOCKER_HUB_MIRROR_SOURCE, label: 'mirror.gcr.io', url: 'https://mirror.gcr.io', naming: 'docker-hub', requiresNamespace: false, example: 'nginx:latest' },
-  { id: 'ghcr', label: 'ghcr.io', url: 'https://ghcr.io', naming: 'native', requiresNamespace: true, example: 'owner/image:tag' },
-  { id: 'quay', label: 'quay.io', url: 'https://quay.io', naming: 'native', requiresNamespace: true, example: 'org/image:tag' },
-  { id: 'k8s', label: 'registry.k8s.io', url: 'https://registry.k8s.io', naming: 'native', requiresNamespace: false, example: 'pause:3.10' },
-  { id: 'gitlab', label: 'registry.gitlab.com', url: 'https://registry.gitlab.com', naming: 'native', requiresNamespace: true, example: 'group/project/image:tag' },
-  { id: 'mcr', label: 'mcr.microsoft.com', url: 'https://mcr.microsoft.com', naming: 'native', requiresNamespace: true, example: 'dotnet/aspnet:8.0' },
-  { id: 'ecr-public', label: 'public.ecr.aws', url: 'https://public.ecr.aws', naming: 'native', requiresNamespace: true, example: 'namespace/image:tag' }
-];
-
 function validateSource(source: Partial<RegistrySource>): RegistrySource {
-  if (!source.id || !source.label || !source.url) throw new Error('IMAGE_SOURCES 配置无效');
+  if (!source || typeof source.id !== 'string' || typeof source.label !== 'string' || !source.label || typeof source.url !== 'string') throw new Error('IMAGE_SOURCES 配置无效');
   const url = new URL(source.url);
   const naming = source.naming ?? (source.id === DOCKER_HUB_MIRROR_SOURCE ? 'docker-hub' : 'native');
   if (!/^[a-z0-9-]+$/.test(source.id) || url.protocol !== 'https:' || !['docker-hub', 'native'].includes(naming) ||
@@ -26,9 +17,9 @@ function validateSource(source: Partial<RegistrySource>): RegistrySource {
 
 /** The single configuration seam for every registry source exposed by this Worker. */
 export function registrySources(env: Env): RegistrySource[] {
-  if (!env.IMAGE_SOURCES) return defaultSources;
   try {
-    const sources = JSON.parse(env.IMAGE_SOURCES) as Partial<RegistrySource>[];
+    const value = env.IMAGE_SOURCES ?? config.imageSources;
+    const sources = typeof value === 'string' ? JSON.parse(value) : value;
     if (!Array.isArray(sources) || !sources.length) throw new Error();
     return sources.map(validateSource);
   } catch {

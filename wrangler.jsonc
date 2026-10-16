@@ -1,10 +1,15 @@
-  {
+{
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "dockerboost",
   "main": "src/api/index.ts",
   "build": {
     "command": "pnpm run build",
-    "watch_dir": ["src/client", "public", "scripts"]
+    "watch_dir": [
+      "src/client",
+      "public",
+      "scripts",
+      "config.js"
+    ]
   },
   "compatibility_date": "2026-09-18",
   "workers_dev": true,
@@ -13,7 +18,5 @@
     "binding": "ASSETS",
     "not_found_handling": "single-page-application"
   },
-  "vars": {
-    "IMAGE_SOURCES": "[{\"id\":\"mirror-gcr\",\"label\":\"mirror.gcr.io\",\"url\":\"https://mirror.gcr.io\",\"naming\":\"docker-hub\",\"requiresNamespace\":false,\"example\":\"nginx:latest\"},{\"id\":\"ghcr\",\"label\":\"ghcr.io\",\"url\":\"https://ghcr.io\",\"naming\":\"native\",\"requiresNamespace\":true,\"example\":\"owner/image:tag\"},{\"id\":\"quay\",\"label\":\"quay.io\",\"url\":\"https://quay.io\",\"naming\":\"native\",\"requiresNamespace\":true,\"example\":\"org/image:tag\"},{\"id\":\"k8s\",\"label\":\"registry.k8s.io\",\"url\":\"https://registry.k8s.io\",\"naming\":\"native\",\"requiresNamespace\":false,\"example\":\"pause:3.10\"},{\"id\":\"gitlab\",\"label\":\"registry.gitlab.com\",\"url\":\"https://registry.gitlab.com\",\"naming\":\"native\",\"requiresNamespace\":true,\"example\":\"group/project/image:tag\"},{\"id\":\"mcr\",\"label\":\"mcr.microsoft.com\",\"url\":\"https://mcr.microsoft.com\",\"naming\":\"native\",\"requiresNamespace\":true,\"example\":\"dotnet/aspnet:8.0\"},{\"id\":\"ecr-public\",\"label\":\"public.ecr.aws\",\"url\":\"https://public.ecr.aws\",\"naming\":\"native\",\"requiresNamespace\":true,\"example\":\"namespace/image:tag\"}]"
-  }
+  "keep_vars": true
 }

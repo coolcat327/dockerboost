@@ -1,3 +1,4 @@
+import { config } from '../config.js';
 import { build } from 'esbuild';
 import { createHash } from 'node:crypto';
 import { cp, mkdir, readFile, readdir, rename, rm, writeFile } from 'node:fs/promises';
@@ -30,7 +31,7 @@ async function hashTree(relative) {
   }
 }
 for (const path of ['src', 'public', 'scripts']) await hashTree(path);
-for (const path of ['package.json', 'pnpm-lock.yaml', 'wrangler.jsonc']) {
+for (const path of ['config.js', 'package.json', 'pnpm-lock.yaml', 'wrangler.jsonc']) {
   versionHash.update(path); versionHash.update(await readFile(resolve(root, path)));
 }
 const version = versionHash.digest().subarray(0, 6).toString('base64url');
@@ -63,15 +64,30 @@ const icon = new URL('../dist/docker-icon.svg', import.meta.url);
 const iconPath = `/docker-icon-${version}.svg`;
 await rename(icon, new URL(`../dist${iconPath}`, import.meta.url));
 
+const githubIconPath = `/github-icon-${version}.svg`;
+await rename(new URL('../dist/github-icon.svg', import.meta.url), new URL(`../dist${githubIconPath}`, import.meta.url));
+
 const hero = new URL(`../dist${heroSource}`, import.meta.url);
 const heroPath = heroSource.replace(/\.svg$/, `-${version}.svg`);
 await rename(hero, new URL(`../dist${heroPath}`, import.meta.url));
 
 const index = new URL('../dist/index.html', import.meta.url);
+const pageConfig = { author: config.site.author };
+for (const [key, value] of Object.entries(config.site.links)) {
+  const url = new URL(value);
+  if (url.protocol !== 'https:') throw new Error(`Page link ${key} must use HTTPS`);
+  pageConfig[key] = url.href;
+}
+const escapeHtml = (value) => String(value).replaceAll('&', '&amp;').replaceAll('"', '&quot;').replaceAll("'", '&#39;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
 const html = (await readFile(index, 'utf8'))
+  .replace(/__CONFIG_([A-Za-z]+)__/g, (_, key) => {
+    if (!Object.hasOwn(pageConfig, key)) throw new Error(`Unknown page config: ${key}`);
+    return escapeHtml(pageConfig[key]);
+  })
   .replaceAll('/app.css', outputFor('src/client/styles/index.css'))
   .replaceAll('/app.bundle.js', outputFor('src/client/app.js'))
   .replaceAll('/image-export-worker.js', outputFor('src/client/features/download/image-export-worker.js'))
   .replaceAll('/docker-icon.svg', iconPath)
+  .replaceAll('/github-icon.svg', githubIconPath)
   .replace(`src="${heroSource}"`, `src="${heroPath}"`);
 await writeFile(index, html);
