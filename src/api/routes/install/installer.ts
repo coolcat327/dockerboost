@@ -91,16 +91,16 @@ EOF_CONFIG
 # Validate with the unpacked proxy; the final installation path does not exist yet.
 write_daemon_config "$work/docker/docker-proxy"
 "$work/docker/dockerd" --validate --config-file="$work/daemon.json"
-write_daemon_config /usr/local/bin/docker-proxy
+write_daemon_config /usr/bin/docker-proxy
 
 # Configuration validation succeeded. Install binaries, plugin and service.
-mkdir -p /usr/local/bin /usr/local/lib/docker/cli-plugins /etc/docker
+mkdir -p /usr/bin /usr/local/lib/docker/cli-plugins /etc/docker
 if [ -f /etc/docker/daemon.json ]; then
   cp -p /etc/docker/daemon.json "/etc/docker/daemon.json.bak.$(date +%s)"
 fi
-install -m 755 "$work"/docker/* /usr/local/bin/
+install -m 755 "$work"/docker/* /usr/bin/
 install -m 755 docker-compose /usr/local/lib/docker/cli-plugins/docker-compose
-ln -sf /usr/local/lib/docker/cli-plugins/docker-compose /usr/local/bin/docker-compose
+ln -sf /usr/local/lib/docker/cli-plugins/docker-compose /usr/bin/docker-compose
 install -m 644 "$work/daemon.json" /etc/docker/daemon.json
 install -m 644 docker.service /etc/systemd/system/docker.service
 

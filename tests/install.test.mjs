@@ -22,6 +22,9 @@ test('generated installer and download script are valid Bash and contain require
   assert.match(files['readme.md'], /Linux aarch64.*Docker Engine 28\.1\.1.*Docker Compose 2\.35\.1/);
   assert.match(files['offline_install_docker.sh'], /cli-plugins\/docker-compose/);
   assert.match(files['offline_install_docker.sh'], /--validate/);
+  assert.match(files['offline_install_docker.sh'], /install -m 755 "\$work"\/docker\/\* \/usr\/bin\//);
+  assert.match(files['docker.service'], /ExecStart=\/usr\/bin\/dockerd/);
+  assert.doesNotMatch(files['offline_install_docker.sh'], /\/usr\/local\/bin/);
   const response = await req(`script?arch=aarch64&docker=28.1.1&compose=2.35.1&version=Abcd123_`);
   const script = await response.text();
   assert.equal(spawnSync('sh', ['-n'], { input: script }).status, 0);
@@ -130,9 +133,9 @@ fi
     });
     assert.equal(result.status, 0, result.stderr);
     const config = JSON.parse(result.stdout);
-    assert.equal(config['userland-proxy-path'], '/usr/local/bin/docker-proxy');
+    assert.equal(config['userland-proxy-path'], '/usr/bin/docker-proxy');
     assert.deepEqual(config['registry-mirrors'], []);
-    assert.equal(JSON.parse(files['daemon.json'])['userland-proxy-path'], '/usr/local/bin/docker-proxy');
+    assert.equal(JSON.parse(files['daemon.json'])['userland-proxy-path'], '/usr/bin/docker-proxy');
   } finally { await rm(temp, { recursive: true, force: true }); }
 });
 

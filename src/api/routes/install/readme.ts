@@ -47,16 +47,17 @@ sudo sh offline_install_docker.sh
 
 脚本询问数据目录（默认 /var/lib/docker）、镜像源（默认空，不启用加速；也可输入 none 禁用）、日志大小（10m）、日志数量（3）和 live-restore（true）。按回车使用默认值。
 脚本先检查环境和配置，再复制程序、备份已有 daemon.json、安装服务并启动 Docker。
+Docker 程序按官方静态安装示例放在 /usr/bin，docker-compose 兼容命令也放在该目录；Compose 插件放在 /usr/local/lib/docker/cli-plugins。
 以下是不用脚本的手动安装步骤。
 
 ## 3. 手动安装 Docker 程序
 
 \`\`\`bash
 tar -xzf docker-${docker}.tgz
-sudo mkdir -p /usr/local/bin
-sudo install -m 755 docker/* /usr/local/bin/
-/usr/local/bin/docker --version
-/usr/local/bin/dockerd --version
+sudo mkdir -p /usr/bin
+sudo install -m 755 docker/* /usr/bin/
+/usr/bin/docker --version
+/usr/bin/dockerd --version
 \`\`\`
 
 保持静态包内的程序版本一致，包含 docker-proxy；不要只复制 docker 客户端，否则没有 daemon 和容器运行时。
@@ -66,7 +67,7 @@ sudo install -m 755 docker/* /usr/local/bin/
 \`\`\`bash
 sudo mkdir -p /usr/local/lib/docker/cli-plugins
 sudo install -m 755 docker-compose /usr/local/lib/docker/cli-plugins/docker-compose
-sudo ln -s /usr/local/lib/docker/cli-plugins/docker-compose /usr/local/bin/docker-compose
+sudo ln -s /usr/local/lib/docker/cli-plugins/docker-compose /usr/bin/docker-compose
 docker compose version
 docker-compose version
 \`\`\`
@@ -75,7 +76,7 @@ CLI 插件目录让 docker compose 可用，符号链接让 docker-compose 可�
 
 ## 5. 配置 Docker daemon
 
-daemon.json 中 userland-proxy-path 指向 /usr/local/bin/docker-proxy，必须与程序的安装路径一致，并在校验前确保该文件已安装且可执行；data-root 是镜像、容器与卷的数据目录；registry-mirrors 是 Docker Hub 加速地址；log-opts 限制容器日志的大小和数量；live-restore 允许 daemon 暂时不可用时保留容器运行。
+daemon.json 中 userland-proxy-path 指向 /usr/bin/docker-proxy，必须与程序的安装路径一致，并在校验前确保该文件已安装且可执行；data-root 是镜像、容器与卷的数据目录；registry-mirrors 是 Docker Hub 加速地址；log-opts 限制容器日志的大小和数量；live-restore 允许 daemon 暂时不可用时保留容器运行。
 如需改变默认值，先编辑包内 daemon.json。禁用镜像源时将 registry-mirrors 设为 []。数据目录必须可写且磁盘空间充足。
 
 \`\`\`bash
@@ -83,7 +84,7 @@ sudo mkdir -p /etc/docker
 if sudo test -f /etc/docker/daemon.json; then
   sudo cp -p /etc/docker/daemon.json "/etc/docker/daemon.json.bak.$(date +%s)"
 fi
-sudo /usr/local/bin/dockerd --validate --config-file="$PWD/daemon.json"
+sudo /usr/bin/dockerd --validate --config-file="$PWD/daemon.json"
 sudo install -m 644 daemon.json /etc/docker/daemon.json
 \`\`\`
 
@@ -99,7 +100,7 @@ sudo systemctl status docker --no-pager
 sudo docker info
 \`\`\`
 
-docker.service 调用 /usr/local/bin/dockerd，设置开机启动和故障重启。默认使用 Unix socket，不开放远程 TCP 管理端口。
+docker.service 调用 /usr/bin/dockerd，设置开机启动和故障重启。默认使用 Unix socket，不开放远程 TCP 管理端口。
 
 ## 7. 导入离线镜像并运行
 
