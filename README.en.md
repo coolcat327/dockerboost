@@ -47,7 +47,7 @@ Browser downloads stream image layers into OPFS temporary storage and assemble t
 
 - Automatic source selection queries configured sources concurrently in batches ordered by latency and uses the first successful response. Uncached images may be unavailable. DockerBoost does not bypass upstream authentication or rate limits, and access to every image is not guaranteed.
 - Browser downloads require OPFS support and sufficient disk space. Network conditions, upstream rate limits, and platform resource limits still apply.
-- Online installation uses LinuxMirrors scripts. Offline installation bundles support **fresh Docker installations on Linux with systemd** and require system dependencies such as iptables/ip6tables. Choose a Linux architecture and Docker version; the bundle pairs them with the latest stable Compose release. Read the included `readme.md` for instructions.
+- Online installation uses LinuxMirrors scripts. Offline installation bundles support **fresh Docker installations on Linux with systemd** and require system dependencies such as iptables/ip6tables. Choose a Linux architecture and Docker version; the bundle pairs them with the latest stable Compose release. Extracts into one top-level folder and includes idempotent install/uninstall scripts. Records, configuration backups, and locks stay beside the scripts. Uninstall removes recorded programs and services and saves the current configuration for reuse on reinstall. It does not adopt older or manual installations. Read the included `readme.md` for instructions.
 - Preserve other fields in `daemon.json` when applying registry mirror settings, then restart Docker. For Docker Desktop, apply the settings and restart through its settings interface.
 
 ## Local development

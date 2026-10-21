@@ -21,18 +21,18 @@ Docker 静态包包含 docker、dockerd、containerd、runc 等程序；Compose 
 - daemon.json：Docker daemon 默认配置示例。
 - docker.service：systemd 服务定义。
 - offline_install_docker.sh：交互安装脚本。
+- offline_uninstall_docker.sh：按安装记录恢复的离线卸载脚本。
 - SHA256SUMS：传输完整性校验值，不是独立的官方发布签名。
 
 目标系统须提前安装 iptables 软件包（提供 iptables 和 ip6tables）；Docker 静态包不包含这些系统工具。Debian/Ubuntu 联网时可运行 sudo apt-get update && sudo apt-get install -y iptables；完全离线时需在相同发行版、版本和架构的联网环境准备软件包及其依赖后安装。
 
 ## 1. 复制、解压和校验
 
-在联网机器下载完整 TAR 包，然后复制到目标机器。建议在独立目录解压：
+在联网机器下载完整 TAR 包，然后复制到目标机器。TAR 内包含与文件名同名的顶层文件夹，直接解压即可集中存放：
 
 \`\`\`bash
-mkdir -p docker-offline
-tar -xf docker-offline-${arch}-docker-${docker}-compose-${compose}.tar -C docker-offline
-cd docker-offline
+tar -xf docker-offline-${arch}-docker-${docker}-compose-${compose}.tar
+cd docker-offline-${arch}-docker-${docker}-compose-${compose}
 sha256sum -c SHA256SUMS
 uname -m
 \`\`\`
@@ -45,7 +45,7 @@ uname -m
 sudo sh offline_install_docker.sh
 \`\`\`
 
-脚本询问数据目录（默认 /var/lib/docker）、镜像源（默认空，不启用加速；也可输入 none 禁用）、日志大小（10m）、日志数量（3）和 live-restore（true）。按回车使用默认值。
+若存在脚本同目录下的 daemon.json.bak，脚本直接复用该备份并跳过配置询问；否则询问数据目录（默认 /var/lib/docker）、镜像源（默认空，不启用加速；也可输入 none 禁用）、日志大小（10m）、日志数量（3）和 live-restore（true）。按回车使用默认值。
 脚本先检查环境和配置，再复制程序、备份已有 daemon.json、安装服务并启动 Docker。
 Docker 程序按官方静态安装示例放在 /usr/bin，docker-compose 兼容命令也放在该目录；Compose 插件放在 /usr/local/lib/docker/cli-plugins。
 以下是不用脚本的手动安装步骤。
@@ -114,6 +114,20 @@ sudo docker compose up -d --pull never
 \`\`\`
 
 离线 Compose 项目还需要准备环境文件、挂载文件和其他外部资源。缺失镜像时应回联网机器下载，而不是在离线机器执行 docker pull。
+
+## 8. 离线卸载和恢复
+
+先停止正在运行的容器，再执行：
+
+\`\`\`bash
+sudo sh offline_uninstall_docker.sh
+\`\`\`
+
+安装记录 install-state/、配置备份 daemon.json.bak 和临时锁目录 .offline-install.lock/ 均放在安装、卸载脚本所在目录。请保留整个解压目录，后续从同一套目录安装或卸载；换一个没有安装记录的目录不会接管现有安装。重复安装同一版本时直接成功，保留安装后修改的配置；已有其他版本的记录时先卸载再安装。不覆盖已有 Docker、Compose、containerd 等程序或服务。
+卸载仍要求配套安装记录；未执行过新版安装、使用旧版脚本或手动安装时直接退出，不删除现有 Docker。允许修改 daemon.json、服务及其他已安装文件，不再要求与初始文件内容一致。卸载先连接本机 Docker 查询运行中的容器；有运行中的容器或活动服务无法查询时立即退出，不停止服务或删除文件。若 daemon 不可连接且服务已停止，则通过 procps 提供的 pgrep 检查 live-restore 残留的容器进程；无法检查或仍有残留进程时停止卸载。
+卸载前将当前 daemon.json 的实际内容（包括符号链接指向的配置）备份到脚本同目录下的 daemon.json.bak，然后移除安装清单中的程序、Compose 插件、服务、启动链接及 Docker 服务覆盖配置。备份保存在脚本同目录，不随程序卸载删除，重复卸载不覆盖它；下次安装自动复用，并在启动服务前用 dockerd 校验原样配置。备份无效时安装报错并保留记录，不静默改写备份。父目录被换成符号链接等不安全路径仍会拒绝操作。
+安装记录只保存版本、进度和卸载文件清单，不保存程序或配置的逐文件快照。安装失败可先运行卸载脚本清理后重新安装。不要手动删除安装记录或备份。两个脚本使用脚本同目录下的 .offline-install.lock/ 互斥；强制终止（例如 SIGKILL）可能留下锁，需确认没有安装/卸载进程后再移除该锁目录。
+镜像、容器、卷、Docker 数据目录及 daemon 产生的运行时数据不会自动删除，因此这是程序和服务的卸载，不是整机快照恢复。卸载检测到运行中的容器时会拒绝继续。
 
 ## 排查和维护
 

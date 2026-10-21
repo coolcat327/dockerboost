@@ -24,7 +24,7 @@ test('generated installer and download script are valid Bash and contain require
   assert.match(files['offline_install_docker.sh'], /--validate/);
   assert.match(files['offline_install_docker.sh'], /install -m 755 "\$work"\/docker\/\* \/usr\/bin\//);
   assert.match(files['docker.service'], /ExecStart=\/usr\/bin\/dockerd/);
-  assert.doesNotMatch(files['offline_install_docker.sh'], /\/usr\/local\/bin/);
+  assert.equal(spawnSync('sh', ['-n'], { input: files['offline_uninstall_docker.sh'] }).status, 0);
   const response = await req(`script?arch=aarch64&docker=28.1.1&compose=2.35.1&version=Abcd123_`);
   const script = await response.text();
   assert.equal(spawnSync('sh', ['-n'], { input: script }).status, 0);
@@ -85,9 +85,11 @@ test('download script creates a complete verifiable tar without installing on do
     assert.deepEqual(await readdir(scratch), []);
     const archive = join(dir,'docker-offline-x86_64-docker-28.1.1-compose-2.35.1.tar');
     const listing = spawnSync('tar',['-tf',archive], { encoding:'utf8' });
-    for (const file of ['readme.md','daemon.json','docker.service','offline_install_docker.sh','docker-compose','docker-28.1.1.tgz','SHA256SUMS']) assert.ok(listing.stdout.includes(file),file);
+    const bundleName = 'docker-offline-x86_64-docker-28.1.1-compose-2.35.1';
+    assert.ok(listing.stdout.trim().split('\n').every(path => path.startsWith(`${bundleName}/`)));
+    for (const file of ['readme.md','daemon.json','docker.service','offline_install_docker.sh','offline_uninstall_docker.sh','docker-compose','docker-28.1.1.tgz','SHA256SUMS']) assert.ok(listing.stdout.includes(file),file);
     spawnSync('tar',['-xf',archive],{ cwd:dir });
-    assert.equal(spawnSync('sha256sum',['-c','SHA256SUMS'],{ cwd:dir }).status,0);
+    assert.equal(spawnSync('sha256sum',['-c','SHA256SUMS'],{ cwd:join(dir, bundleName) }).status,0);
     await writeFile(join(dir, 'bin/curl'), '#!/bin/sh\nexit 1\n', { mode: 0o755 });
     await writeFile(join(dir, '.download-docker.sh'), script);
     const failed = spawnSync('sh', ['.download-docker.sh'], {
@@ -126,7 +128,7 @@ fi
     const files = installFiles('x86_64', '29.9.0', '5.6.0', 'https://example.com');
     const installer = files['offline_install_docker.sh'];
     const start = installer.indexOf('work=$(mktemp -d)');
-    const end = installer.indexOf('# Configuration validation succeeded.');
+    const end = installer.indexOf('# Prepare the uninstall manifest');
     const result = spawnSync('bash', ['-euo', 'pipefail'], {
       cwd: temp, encoding: 'utf8',
       input: `data_root=/var/lib/docker\nmirror=\nlog_size=10m\nlog_files=3\nlive=true\n${installer.slice(start, end)}\ncat "$work/daemon.json"\n`

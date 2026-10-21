@@ -9,9 +9,9 @@
 | 路径 | 参数 | 返回与用途 |
 | --- | --- | --- |
 | `/api/install/catalog` | `arch` | JSON `{ docker: string[], compose: string }`：Docker 版本列表和匹配架构的 Compose 最新正式版；缓存 5 分钟 |
-| `/api/install/plan` | `arch`、`docker`、`compose` | JSON `{ files: { 文件名: 内容 } }`：包内 README、配置、服务和安装脚本；不包含二进制 |
+| `/api/install/plan` | `arch`、`docker`、`compose` | JSON `{ files: { 文件名: 内容 } }`：包内 README、配置、服务及成对的安装/卸载脚本；不包含二进制 |
 | `/api/install/asset` | `arch`、`docker`、`compose`、`kind` | 流式返回官方二进制；`kind` 为 `docker` 或 `compose`；缓存 1 天 |
-| `/api/install/script` | `arch`、`docker`、`compose` | Shell 脚本：联网下载所需文件并在本机打包；不设置过期时间 |
+| `/api/install/script` | `arch`、`docker`、`compose` | Shell 脚本：联网下载所需文件并在本机打包；TAR 内包含与包名同名的顶层目录；不设置过期时间 |
 
 `arch` 默认 `x86_64`，支持 `x86_64`、`aarch64`、`armhf`、`ppc64le`、`s390x`。除 catalog 外，`docker` 和 `compose` 必填，格式为 `主版本.次版本.补丁版本`。plan 和 script 返回 `Cache-Control: no-store`。
 

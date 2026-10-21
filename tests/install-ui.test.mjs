@@ -144,3 +144,65 @@ test('catalog waits for architecture selection and refetches the same architectu
     assert.match(panel.querySelector('#install-command').textContent, /arch=x86_64/);
   }
 });
+
+test('browser bundle keeps every file under one folder with working relative checksums', async t => {
+  const { spawnSync } = await import('node:child_process');
+  const { createHash } = await import('node:crypto');
+  const nodes = new Map();
+  const node = () => ({ selectedOptions: [{ textContent: 'x86_64 / amd64' }], value: '', dataset: {}, style: {}, listeners: {}, classList: { toggle() {} },
+    addEventListener(event, fn) { this.listeners[event] = fn; }, replaceChildren() { this.value = ''; },
+    add(option) { this.value ||= option.value; }, setAttribute() {}, querySelector() { return node(); } });
+  const panel = { querySelector(selector) { if (!nodes.has(selector)) nodes.set(selector, node()); return nodes.get(selector); }, querySelectorAll() { return []; } };
+  panel.querySelector('#install-arch').value = 'x86_64';
+  const previous = { Option: globalThis.Option, window: globalThis.window, document: globalThis.document };
+  t.after(() => Object.assign(globalThis, previous));
+  globalThis.Option = function(label, value) { this.value = value; };
+  globalThis.window = { location: { origin: 'https://example.com' } };
+  globalThis.document = { body: { append() {} }, createElement() { return { click() {}, remove() {} }; } };
+  const blobs = new Map();
+  const job = { async getFileHandle(name) { return {
+    async createWritable() {
+      const chunks = [];
+      return { async write(bytes) { chunks.push(bytes.slice()); }, async close() { blobs.set(name, new Blob(chunks)); }, async abort() {} };
+    }, async getFile() { return blobs.get(name); }
+  }; } };
+  const jobs = { async *entries() {}, async getDirectoryHandle() { return job; }, async removeEntry() {} };
+  const root = { async *entries() {}, async getDirectoryHandle(name) {
+    if (name === 'dockerboost-downloads') return jobs;
+    throw new DOMException('Missing', 'NotFoundError');
+  } };
+  const storageDescriptor = Object.getOwnPropertyDescriptor(navigator, 'storage');
+  Object.defineProperty(navigator, 'storage', { configurable: true, value: { async getDirectory() { return root; } } });
+  t.after(() => { if (storageDescriptor) Object.defineProperty(navigator, 'storage', storageDescriptor); else delete navigator.storage; });
+  let saved;
+  t.mock.method(URL, 'createObjectURL', blob => { saved = blob; return 'blob:test'; });
+  t.mock.method(URL, 'revokeObjectURL', () => {});
+  const timers = [];
+  t.mock.method(globalThis, 'setTimeout', callback => { timers.push(callback); return 0; });
+  t.mock.method(globalThis, 'fetch', async url => {
+    if (url.includes('/catalog')) return Response.json({ docker: ['28.1.1'], compose: '2.35.1' });
+    if (url.includes('/plan')) return Response.json({ files: { 'readme.md': 'guide', 'offline_install_docker.sh': '#!/bin/sh\n', 'offline_uninstall_docker.sh': '#!/bin/sh\n' } });
+    const bytes = url.includes('kind=docker') ? new Uint8Array([1, 2, 3]) : new Uint8Array([4, 5]);
+    return new Response(bytes, { headers: { 'content-length': String(bytes.length) } });
+  });
+  feature.init({ panel });
+  await panel.querySelector('#install-arch').listeners.change();
+  await new Promise(resolve => setImmediate(resolve));
+  await panel.querySelector('#install-download').listeners.click();
+  assert.ok(saved, panel.querySelector('#install-status').textContent);
+  const archive = Buffer.from(await saved.arrayBuffer());
+  const folder = 'docker-offline-x86_64-docker-28.1.1-compose-2.35.1';
+  const listing = spawnSync('tar', ['-tf', '-'], { input: archive, encoding: 'utf8' });
+  assert.equal(listing.status, 0, listing.stderr);
+  assert.ok(listing.stdout.trim().split('\n').every(name => name.startsWith(`${folder}/`)));
+  const extract = name => {
+    const result = spawnSync('tar', ['-xOf', '-', `${folder}/${name}`], { input: archive });
+    assert.equal(result.status, 0, result.stderr.toString());
+    return result.stdout;
+  };
+  for (const line of extract('SHA256SUMS').toString().trim().split('\n')) {
+    const [hash, name] = line.split('  ');
+    assert.equal(createHash('sha256').update(extract(name)).digest('hex'), hash);
+  }
+  for (const callback of timers) callback();
+});

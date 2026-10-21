@@ -47,7 +47,7 @@ docker load -i nginx_latest_linux_amd64.tar
 
 - 自动选源按延迟逐批并发查询已配置源，采用第一个成功响应；未缓存镜像可能不可用，不绕过上游鉴权或限流，也不保证所有镜像均可访问。
 - 浏览器下载需要支持 OPFS 的浏览器和足够磁盘空间；网络、上游限流与平台资源限制仍会影响下载。
-- 在线安装使用 LinuxMirrors 脚本。离线安装包面向**全新安装的 systemd Linux**，需 iptables/ip6tables 等系统依赖；支持选择 Linux 架构与 Docker 版本，并匹配 Compose 最新正式版，详细操作见包内 `readme.md`。
+- 在线安装使用 LinuxMirrors 脚本。离线安装包面向**全新安装的 systemd Linux**，需 iptables/ip6tables 等系统依赖；支持选择 Linux 架构与 Docker 版本，并匹配 Compose 最新正式版，解压到同名顶层文件夹，包含带安装记录的幂等安装/卸载脚本；记录、配置备份和锁均保存在脚本同目录；卸载仅清理有安装记录的程序与服务，备份当前配置供下次安装复用，不接管旧版或手动安装。详细操作见包内 `readme.md`。
 - 应用镜像加速配置时需保留 `daemon.json` 的其他字段并重启 Docker；Docker Desktop 在设置界面应用并重启。
 
 ## 本地开发
