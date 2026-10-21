@@ -11,7 +11,7 @@ fail() {
 }
 
 # Check privileges, platform and bundle contents before making system changes.
-[ "$(id -u)" = 0 ] || fail '请用 sudo sh offline_install_docker.sh'
+[ "$(id -u)" = 0 ] || fail '当前用户权限不足，安装 Docker 需要管理员权限。请切换到 root 用户后执行 sh offline_install_docker.sh，或使用 sudo sh offline_install_docker.sh。'
 command -v systemctl >/dev/null || fail '需要 systemd Linux'
 command -v tar >/dev/null || fail '需要 tar'
 # Static Docker bundles do not include the host firewall utilities.
