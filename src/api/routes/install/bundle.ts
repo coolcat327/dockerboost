@@ -7,5 +7,5 @@ export function installFiles(arch: string, docker: string, compose: string, orig
   const daemon = JSON.stringify({ 'data-root': '/var/lib/docker', 'userland-proxy-path': '/usr/bin/docker-proxy', 'registry-mirrors': [], 'log-driver': 'json-file', 'log-opts': { 'max-size': '10m', 'max-file': '3' }, 'live-restore': true }, null, 2) + '\n';
   const installer = offlineInstaller(arch, docker, compose);
   const readme = offlineReadme(arch, docker, compose, origin);
-  return { 'readme.md': readme, 'daemon.json': daemon, 'docker.service': service, 'offline_install_docker.sh': installer, 'offline_uninstall_docker.sh': offlineUninstaller() };
+  return { 'readme.md': readme, 'daemon.json': daemon, 'docker.service': service, 'install_docker.sh': installer, 'uninstall_docker.sh': offlineUninstaller() };
 }

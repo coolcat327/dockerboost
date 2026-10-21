@@ -20,8 +20,8 @@ Docker 静态包包含 docker、dockerd、containerd、runc 等程序；Compose 
 - docker-compose：所选架构的 Compose 程序。
 - daemon.json：Docker daemon 默认配置示例。
 - docker.service：systemd 服务定义。
-- offline_install_docker.sh：交互安装脚本。
-- offline_uninstall_docker.sh：按安装记录恢复的离线卸载脚本。
+- install_docker.sh：交互安装脚本。
+- uninstall_docker.sh：按安装记录恢复的离线卸载脚本。
 - SHA256SUMS：传输完整性校验值，不是独立的官方发布签名。
 
 目标系统须提前安装 iptables 软件包（提供 iptables 和 ip6tables）；Docker 静态包不包含这些系统工具。Debian/Ubuntu 联网时可运行 sudo apt-get update && sudo apt-get install -y iptables；完全离线时需在相同发行版、版本和架构的联网环境准备软件包及其依赖后安装。
@@ -42,7 +42,7 @@ uname -m
 ## 2. 自动安装（推荐）
 
 \`\`\`bash
-sudo sh offline_install_docker.sh
+sudo sh install_docker.sh
 \`\`\`
 
 若存在脚本同目录下的 daemon.json.bak，脚本直接复用该备份并跳过配置询问；否则询问数据目录（默认 /var/lib/docker）、镜像源（默认空，不启用加速；也可输入 none 禁用）、日志大小（10m）、日志数量（3）和 live-restore（true）。按回车使用默认值。
@@ -120,7 +120,7 @@ sudo docker compose up -d --pull never
 先停止正在运行的容器，再执行：
 
 \`\`\`bash
-sudo sh offline_uninstall_docker.sh
+sudo sh uninstall_docker.sh
 \`\`\`
 
 安装记录 install-state/、配置备份 daemon.json.bak 和临时锁目录 .offline-install.lock/ 均放在安装、卸载脚本所在目录。请保留整个解压目录，后续从同一套目录安装或卸载；换一个没有安装记录的目录不会接管现有安装。重复安装同一版本时直接成功，保留安装后修改的配置；已有其他版本的记录时先卸载再安装。不覆盖已有 Docker、Compose、containerd 等程序或服务。

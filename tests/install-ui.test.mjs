@@ -181,7 +181,7 @@ test('browser bundle keeps every file under one folder with working relative che
   t.mock.method(globalThis, 'setTimeout', callback => { timers.push(callback); return 0; });
   t.mock.method(globalThis, 'fetch', async url => {
     if (url.includes('/catalog')) return Response.json({ docker: ['28.1.1'], compose: '2.35.1' });
-    if (url.includes('/plan')) return Response.json({ files: { 'readme.md': 'guide', 'offline_install_docker.sh': '#!/bin/sh\n', 'offline_uninstall_docker.sh': '#!/bin/sh\n' } });
+    if (url.includes('/plan')) return Response.json({ files: { 'readme.md': 'guide', 'install_docker.sh': '#!/bin/sh\n', 'uninstall_docker.sh': '#!/bin/sh\n' } });
     const bytes = url.includes('kind=docker') ? new Uint8Array([1, 2, 3]) : new Uint8Array([4, 5]);
     return new Response(bytes, { headers: { 'content-length': String(bytes.length) } });
   });

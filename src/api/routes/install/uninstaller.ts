@@ -5,7 +5,7 @@ export function offlineUninstaller(): string {
 # Only uninstall an installation recorded by the paired offline installer.
 set -eu
 fail() { echo "错误: $*" >&2; exit 1; }
-[ "$(id -u)" = 0 ] || fail '当前用户权限不足，卸载 Docker 需要管理员权限。请切换到 root 用户后执行 sh offline_uninstall_docker.sh，或使用 sudo sh offline_uninstall_docker.sh。'
+[ "$(id -u)" = 0 ] || fail '当前用户权限不足，卸载 Docker 需要管理员权限。请切换到 root 用户后执行 sh uninstall_docker.sh，或使用 sudo sh uninstall_docker.sh。'
 ${installState}
 if ! exists "$state"; then
   echo '没有对应的安装记录，无需卸载；未修改现有 Docker。'

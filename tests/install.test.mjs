@@ -11,20 +11,20 @@ const req = async path => {
 };
 test('generated installer and download script are valid Bash and contain required files', async () => {
   const files = installFiles('aarch64', '28.1.1', '2.35.1', 'https://example.com');
-  assert.equal(spawnSync('bash', ['-n'], { input: files['offline_install_docker.sh'] }).status, 0);
+  assert.equal(spawnSync('bash', ['-n'], { input: files['install_docker.sh'] }).status, 0);
   assert.deepEqual(JSON.parse(files['daemon.json'])['registry-mirrors'], []);
-  assert.doesNotMatch(files['offline_install_docker.sh'], /https:\/\/example\.com/);
-  assert.match(files['offline_install_docker.sh'], /answer="\$2"/);
+  assert.doesNotMatch(files['install_docker.sh'], /https:\/\/example\.com/);
+  assert.match(files['install_docker.sh'], /answer="\$2"/);
   assert.doesNotMatch(files['readme.md'], /juejin/);
   assert.match(files['readme.md'], /手动安装 Docker/);
   assert.match(files['readme.md'], /作者：coolcat/);
   assert.match(files['readme.md'], /网站：https:\/\/example\.com/);
   assert.match(files['readme.md'], /Linux aarch64.*Docker Engine 28\.1\.1.*Docker Compose 2\.35\.1/);
-  assert.match(files['offline_install_docker.sh'], /cli-plugins\/docker-compose/);
-  assert.match(files['offline_install_docker.sh'], /--validate/);
-  assert.match(files['offline_install_docker.sh'], /install -m 755 "\$work"\/docker\/\* \/usr\/bin\//);
+  assert.match(files['install_docker.sh'], /cli-plugins\/docker-compose/);
+  assert.match(files['install_docker.sh'], /--validate/);
+  assert.match(files['install_docker.sh'], /install -m 755 "\$work"\/docker\/\* \/usr\/bin\//);
   assert.match(files['docker.service'], /ExecStart=\/usr\/bin\/dockerd/);
-  assert.equal(spawnSync('sh', ['-n'], { input: files['offline_uninstall_docker.sh'] }).status, 0);
+  assert.equal(spawnSync('sh', ['-n'], { input: files['uninstall_docker.sh'] }).status, 0);
   const response = await req(`script?arch=aarch64&docker=28.1.1&compose=2.35.1&version=Abcd123_`);
   const script = await response.text();
   assert.equal(spawnSync('sh', ['-n'], { input: script }).status, 0);
@@ -87,7 +87,7 @@ test('download script creates a complete verifiable tar without installing on do
     const listing = spawnSync('tar',['-tf',archive], { encoding:'utf8' });
     const bundleName = 'docker-offline-x86_64-docker-28.1.1-compose-2.35.1';
     assert.ok(listing.stdout.trim().split('\n').every(path => path.startsWith(`${bundleName}/`)));
-    for (const file of ['readme.md','daemon.json','docker.service','offline_install_docker.sh','offline_uninstall_docker.sh','docker-compose','docker-28.1.1.tgz','SHA256SUMS']) assert.ok(listing.stdout.includes(file),file);
+    for (const file of ['readme.md','daemon.json','docker.service','install_docker.sh','uninstall_docker.sh','docker-compose','docker-28.1.1.tgz','SHA256SUMS']) assert.ok(listing.stdout.includes(file),file);
     spawnSync('tar',['-xf',archive],{ cwd:dir });
     assert.equal(spawnSync('sha256sum',['-c','SHA256SUMS'],{ cwd:join(dir, bundleName) }).status,0);
     await writeFile(join(dir, 'bin/curl'), '#!/bin/sh\nexit 1\n', { mode: 0o755 });
@@ -126,7 +126,7 @@ fi
 `, { mode: 0o755 });
     assert.equal(spawnSync('tar', ['-czf', 'docker-29.9.0.tgz', 'docker'], { cwd: temp }).status, 0);
     const files = installFiles('x86_64', '29.9.0', '5.6.0', 'https://example.com');
-    const installer = files['offline_install_docker.sh'];
+    const installer = files['install_docker.sh'];
     const start = installer.indexOf('work=$(mktemp -d)');
     const end = installer.indexOf('# Prepare the uninstall manifest');
     const result = spawnSync('bash', ['-euo', 'pipefail'], {
@@ -151,7 +151,7 @@ test('missing firewall utilities stop the installer before unpacking or system c
     for (const [name, body] of [['dirname', 'echo .'], ['id', 'echo 0'], ['systemctl', 'exit 0'], ['tar', 'exit 0']]) {
       await writeFile(join(dir, 'bin', name), `#!/bin/sh\n${body}\n`, { mode: 0o755 });
     }
-    const script = installFiles('x86_64', '29.9.0', '5.6.0', 'https://example.com')['offline_install_docker.sh'];
+    const script = installFiles('x86_64', '29.9.0', '5.6.0', 'https://example.com')['install_docker.sh'];
     const result = spawnSync('/bin/bash', ['-c', script], { cwd: dir, env: { ...process.env, PATH: join(dir, 'bin') }, encoding: 'utf8' });
     assert.equal(result.status, 1);
     assert.match(result.stderr, /缺少 iptables/);
@@ -161,7 +161,7 @@ test('missing firewall utilities stop the installer before unpacking or system c
 });
 
 test('installer prompts and validation accept defaults in sh and bash', () => {
-  const installer = installFiles('x86_64', '29.9.0', '5.6.0', 'https://example.com')['offline_install_docker.sh'];
+  const installer = installFiles('x86_64', '29.9.0', '5.6.0', 'https://example.com')['install_docker.sh'];
   const prompts = installer.slice(installer.indexOf('ask() {'), installer.indexOf('# Use a disposable directory'));
   for (const shell of ['sh', 'bash', '/bin/dash']) {
     for (const [input, expected, error] of [

@@ -46,7 +46,7 @@ esac`);
     cwd, input: '\n\n\n\n\n', encoding: 'utf8',
     env: { ...process.env, PATH: `${bin}:${root}/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin`, TEST_ROOT: root, ...extra }
   });
-  return { temp, root, run, install: extra => run('offline_install_docker.sh', extra), uninstall: () => run('offline_uninstall_docker.sh') };
+  return { temp, root, run, install: extra => run('install_docker.sh', extra), uninstall: () => run('uninstall_docker.sh') };
 }
 const success = result => assert.equal(result.status, 0, `${result.stdout}\n${result.stderr}`);
 const absent = path => assert.rejects(access(path), { code: 'ENOENT' });
@@ -139,7 +139,7 @@ test('partial installation can roll back without touching files never installed'
 test('running containers prevent uninstall before disable and file removal', async t => {
   const f = await fixture(t);
   success(f.install());
-  const result = f.run('offline_uninstall_docker.sh', { RUNNING_CONTAINERS: 'yes' });
+  const result = f.run('uninstall_docker.sh', { RUNNING_CONTAINERS: 'yes' });
   assert.notEqual(result.status, 0);
   assert.match(result.stderr, /运行中的容器/);
   assert.doesNotMatch(await readFile(join(f.root, 'service-calls'), 'utf8'), /disable/);
@@ -184,7 +184,7 @@ test('a partial uninstall keeps the latest backup and can finish on retry', asyn
 test('unreachable active daemon blocks uninstall before backup, stopping services or removal', async t => {
   const f = await fixture(t);
   success(f.install());
-  const result = f.run('offline_uninstall_docker.sh', { DOCKER_PS_FAIL: 'yes' });
+  const result = f.run('uninstall_docker.sh', { DOCKER_PS_FAIL: 'yes' });
   assert.notEqual(result.status, 0);
   assert.match(result.stderr, /无法确认容器运行状态/);
   assert.doesNotMatch(await readFile(join(f.root, 'service-calls'), 'utf8'), /disable/);
@@ -220,7 +220,7 @@ test('live-restore container processes block uninstall even when the service is 
   const f = await fixture(t);
   success(f.install());
   await rm(join(f.root, 'service-active'));
-  const result = f.run('offline_uninstall_docker.sh', { DOCKER_PS_FAIL: 'yes', RESIDUAL_CONTAINER: 'yes' });
+  const result = f.run('uninstall_docker.sh', { DOCKER_PS_FAIL: 'yes', RESIDUAL_CONTAINER: 'yes' });
   assert.notEqual(result.status, 0);
   assert.match(result.stderr, /仍在运行的容器进程/);
   assert.doesNotMatch(await readFile(join(f.root, 'service-calls'), 'utf8'), /disable/);
@@ -229,12 +229,12 @@ test('live-restore container processes block uninstall even when the service is 
 
 test('both scripts resolve local records and backups from their own folder when called elsewhere', async t => {
   const f = await fixture(t);
-  success(f.run('../offline_install_docker.sh', {}, f.root));
+  success(f.run('../install_docker.sh', {}, f.root));
   await access(join(f.temp, 'install-state/format'));
   await absent(join(f.root, 'install-state'));
   await mkdir(join(f.root, 'var/lib/docker'));
   await writeFile(join(f.root, 'var/lib/docker/user-data'), 'retain');
-  success(f.run('../offline_uninstall_docker.sh', {}, f.root));
+  success(f.run('../uninstall_docker.sh', {}, f.root));
   await absent(join(f.temp, 'install-state'));
   await absent(join(f.temp, '.offline-install.lock'));
   await access(join(f.temp, 'daemon.json.bak'));
