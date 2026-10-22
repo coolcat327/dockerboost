@@ -4,7 +4,7 @@
 
 ## 页面与构建
 
-公共默认配置集中在根目录 `config.js`：`site.author` 为页脚作者署名，`site.links` 包含 GitHub 仓库、在线安装脚本及安装区相关资源链接，`imageSources` 为默认镜像源列表。修改后重新构建或部署生效，Wrangler 开发模式监听该文件；构建校验页面链接使用 HTTPS 并转义后注入静态 HTML，无需运行时接口。Worker 优先使用 `IMAGE_SOURCES` 覆盖默认源，格式见 [接口参考](api.md#镜像源配置)。`config.d.ts` 提供配置类型，新增配置字段时同步维护；功能机制常量保留在所属模块。
+公共默认配置集中在根目录 `config.js`：`site.author` 为页脚作者署名，`site.links` 包含 GitHub 仓库、在线安装脚本及安装区相关资源链接，`imageSources` 为默认镜像源列表。修改后重新构建或部署生效，Wrangler 开发模式监听该文件；构建校验页面链接使用 HTTPS 并转义后注入静态 HTML，无需运行时接口。Worker 优先使用 `IMAGE_SOURCES` 覆盖默认源，格式见 [接口参考](api.md#镜像源配置)。`config.js` 内通过 JSDoc 声明配置类型，并使用 `// @ts-check` 纳入类型检查；新增配置字段时同步维护文件内的类型标注；功能机制常量保留在所属模块。
 
 页面模板位于 `src/client/index.html`，构建时注入配置和版本化资源路径并输出到 `dist/index.html`；`public/` 保留静态资源和托管配置。修改源码或静态资源，不要编辑生成的 `dist/`。CSS 由 `styles/index.css` 构建为一个文件；基础、页面共用、标签专属样式依次导入。共用表单通过工具面板的 CSS 容器查询切换一列、两列及宽屏布局；断点依据面板可用宽度而非整个视口。调整规则时应检查各断点及中英文内容。
 

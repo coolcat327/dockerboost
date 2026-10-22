@@ -1,4 +1,11 @@
+// @ts-check
 // Public defaults shared by the page build and Worker. Do not put secrets here.
+/**
+ * @type {{
+ *   site: { author: string, links: Record<string, string> },
+ *   imageSources: import('./src/api/common/types').RegistrySource[]
+ * }}
+ */
 export const config = {
   site: {
     author: 'COOLCAT',
