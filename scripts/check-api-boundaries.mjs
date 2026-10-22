@@ -44,9 +44,12 @@ export async function checkApiBoundaries(directory) {
       const line = source.getLineAndCharacterOfPosition(item.getStart()).line + 1;
       const fail = message => errors.push(`${path}:${line}: ${message} (${destination})`);
       if (path.startsWith('common/') && targetOwner) fail('common 不能依赖业务路由');
+      if (path.startsWith('platforms/') && targetOwner) fail('平台入口必须通过 app.ts 使用业务路由');
+      if (path.startsWith('platforms/') && destination.startsWith('platforms/') && destination !== path) fail('平台入口不能依赖其他平台');
+      if (['index.ts', 'app.ts'].includes(path) && destination.startsWith('platforms/')) fail('共用应用不能依赖平台入口');
       if (owner && targetOwner && owner !== targetOwner) fail('业务模块不能引用其他业务模块，实际共享能力放 common');
-      if (path === 'index.ts' && destination.startsWith('routes/') && !/^routes\/[^/]+\/index\.ts$/.test(destination)) fail('Worker 入口只能引用业务模块 index.ts');
-      if ((owner || path.startsWith('common/')) && destination === 'index.ts') fail('业务模块和 common 不能反向依赖 Worker 入口');
+      if (['index.ts', 'app.ts'].includes(path) && destination.startsWith('routes/') && !/^routes\/[^/]+\/index\.ts$/.test(destination)) fail('应用入口只能引用业务模块 index.ts');
+      if ((owner || path.startsWith('common/')) && (['index.ts', 'app.ts'].includes(destination) || destination.startsWith('platforms/'))) fail('业务模块和 common 不能反向依赖应用或平台入口');
     }
   }
   for (const name of modules) if (!known.has(resolve(root, 'routes', name, 'index.ts'))) errors.push(`routes/${name}: 缺少公开路由入口 index.ts`);

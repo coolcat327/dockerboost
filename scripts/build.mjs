@@ -30,8 +30,8 @@ async function hashTree(relative) {
     else if (entry.isFile()) { versionHash.update(path); versionHash.update(await readFile(resolve(root, path))); }
   }
 }
-for (const path of ['src', 'public', 'scripts']) await hashTree(path);
-for (const path of ['config.js', 'package.json', 'pnpm-lock.yaml', 'wrangler.jsonc']) {
+for (const path of ['src', 'public', 'scripts', 'edge-functions']) await hashTree(path);
+for (const path of ['config.js', 'package.json', 'pnpm-lock.yaml', 'wrangler.jsonc', 'edgeone.json']) {
   versionHash.update(path); versionHash.update(await readFile(resolve(root, path)));
 }
 const version = versionHash.digest().subarray(0, 6).toString('base64url');

@@ -3,7 +3,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { build } from 'esbuild';
 
-const { outputFiles } = await build({ entryPoints: ['src/api/index.ts'], bundle: true, write: false, format: 'esm', platform: 'neutral' });
+const { outputFiles } = await build({ entryPoints: ['src/api/platforms/cloudflare.ts'], bundle: true, write: false, format: 'esm', platform: 'neutral' });
 const { default: worker } = await import(`data:text/javascript;base64,${Buffer.from(outputFiles[0].text).toString('base64')}`);
 const env = { ASSETS: { fetch: async () => new Response('static page') } };
 const request = (path, options) => worker.fetch(new Request(`https://example.com${path}`, options), env);

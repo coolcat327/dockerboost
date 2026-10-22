@@ -5,14 +5,21 @@ const composeArch: Record<string, string> = { x86_64: 'x86_64', aarch64: 'aarch6
 export async function upstream(url: string) {
   const host = new URL(url).hostname;
   const label = host === 'download.docker.com' ? 'Docker 静态文件源' : host === 'api.github.com' ? 'GitHub Compose API' : 'GitHub Compose 发布页';
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 30000);
   let response: Response;
   try {
     response = await fetch(url, {
       headers: { 'User-Agent': 'DockerBoost', Accept: host === 'api.github.com' ? 'application/vnd.github+json' : '*/*' },
-      signal: AbortSignal.timeout(30000)
+      redirect: 'follow',
+      signal: controller.signal
     });
-  } catch {
+  } catch (error) {
+    console.error(`${label}请求失败`, error);
     throw new HttpError(`${label}连接失败或超时`, 502);
+  } finally {
+    // Only time out waiting for response headers; binary bodies remain streaming.
+    clearTimeout(timer);
   }
   if (!response.ok) {
     await response.body?.cancel();

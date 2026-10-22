@@ -16,7 +16,7 @@ function pathForSource(path: RegistryPath, source: RegistrySource) {
 }
 
 export function proxyHeaders(request: Request) {
-  const headers = new Headers();
+  const headers = new Headers({});
   for (const name of ["accept", "accept-encoding", "authorization", "range", "if-none-match", "if-modified-since", "user-agent"]) {
     const value = request.headers.get(name);
     if (value) headers.set(name, value);
@@ -48,7 +48,7 @@ async function publicFetchFromSource(env: Env, path: RegistryPath, init: Request
   const token = await tokenResponse.json<{ token?: string; access_token?: string }>();
   const value = token.token || token.access_token;
   if (!value) return response;
-  const headers = new Headers(init.headers);
+  const headers = new Headers(init.headers ?? {});
   headers.set("authorization", `Bearer ${value}`);
   return registryFetch(env, sourcePath, { ...init, headers }, source.id);
 }
@@ -118,7 +118,7 @@ export async function registryPublicFetch(env: Env, path: RegistryPath, init: Re
 }
 
 export function passthrough(response: Response) {
-  const headers = new Headers();
+  const headers = new Headers({});
   for (const name of ["content-type", "content-length", "content-range", "docker-content-digest", "etag", "last-modified", "www-authenticate", "accept-ranges"]) {
     const value = response.headers.get(name);
     if (value) headers.set(name, value);

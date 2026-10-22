@@ -8,7 +8,7 @@
 
 **Install Docker. Pull images. Take them offline. All in one place.**
 
-A lightweight Docker toolkit running on Cloudflare Workers.
+A lightweight Docker toolkit for Cloudflare Workers and EdgeOne Pages.
 Install Docker, configure registry mirrors, generate pull commands, and download offline archives from a single page.
 
 [Live demo](https://docker.coolcat.win/) · [Quick start](#local-development) · [Deploy your own](#deployment) · [Use cases](#what-you-can-do) · [Documentation](docs/README.md)
@@ -20,7 +20,7 @@ Install Docker, configure registry mirrors, generate pull commands, and download
 - **One place for everyday tasks**: install, configure, pull, and download, with shared image selection to reduce repeated input.
 - **Prepare for offline environments**: download Docker, Compose, or image archives on a connected machine and transfer them to the destination.
 - **Download images without installing Docker**: export a TAR directly in your browser, or use curl and your local tar utility in a terminal.
-- **Deploy a lightweight edge service**: built with Hono and Cloudflare Workers. The Worker streams files while the client assembles archives.
+- **Deploy a lightweight edge service**: built with Hono for Cloudflare Workers and EdgeOne Edge Functions. The server streams files while the client assembles archives.
 - **Choose your image source**: use automatic source selection or specify a source and architecture. Share links restore page selections.
 
 ## What you can do
@@ -79,7 +79,9 @@ Edit source files rather than generated files in `dist/`. Before contributing, r
 | `src/client/features/` | Page features: install, setup, pull, and download |
 | `src/client/common/` | Shared frontend capabilities, including image selection, localization, download tasks, and file writing |
 | `src/client/styles/` | Page and shared styles imported by index.css; feature styles live alongside their features |
-| `src/api/index.ts` | Hono Worker entry point, business routes, shared error handling, and static asset fallback |
+| `src/api/app.ts` | Shared Hono application, route registration, and error handling |
+| `src/api/platforms/` | Cloudflare and EdgeOne adapters |
+| `edge-functions/` | EdgeOne file routes for `/api` and `/v2` |
 | `src/api/routes/` | install, images, download, registry, share, and status routes, registered by each directory's index.ts |
 | `src/api/common/` | Shared source configuration and selection, Registry requests, image parsing, and HTTP adapters |
 | `public/` | Static assets and hosting configuration |
@@ -91,7 +93,7 @@ Edit source files rather than generated files in `dist/`. Before contributing, r
 | `docs/plans/` | Pending work in pending; delivery records in implemented |
 | `docs/research/` | Research findings and technology assessments |
 | `config.js` | Public page settings and default image sources |
-| `wrangler.jsonc` | Worker bindings, variable overrides, and deployment configuration |
+| `wrangler.jsonc`, `edgeone.json` | Platform build and deployment configuration |
 | `.github/workflows/` | Continuous validation and deployment |
 
 See the [Development reference](docs/development/README.md) for module integration and dependency boundaries, or browse the [Documentation index](docs/README.md).
@@ -133,6 +135,36 @@ pnpm run deploy
 ```
 
 Deployment builds the project automatically. Open the site URL printed by Wrangler when deployment completes.
+
+### EdgeOne development and deployment
+
+Use the project-pinned CLI. The current CLI uses `makers`; the older `pages` command is deprecated. Existing Cloudflare `dev` and `deploy` commands remain supported, alongside explicit `dev:cloudflare` and `deploy:cloudflare` commands.
+
+Sign in and link the project once:
+
+```sh
+pnpm exec edgeone login
+pnpm exec edgeone makers link
+pnpm run dev:edgeone
+```
+
+Choose China or Global according to your account; the account site and acceleration region are separate settings. Do not run init again. The default development URL is `http://localhost:8088`; the CLI combines functions and the frontend server on port 5173. Frontend edits rebuild automatically; refresh the page to see changes. The CLI watches function code. Keep `edgeone.json` devCommand pointing to the frontend server, never to `dev:edgeone` or Wrangler.
+
+```sh
+pnpm run validate
+pnpm run deploy:edgeone:preview
+pnpm run deploy:edgeone
+```
+
+Both production and preview deployment scripts explicitly use `--area overseas` (global coverage excluding mainland China). GitHub Actions invokes the same script and uses the same region. When invoking the CLI directly, always include this option, for example `pnpm exec edgeone makers deploy --area overseas`; otherwise, the CLI defaults to `global`, and overseas Registry requests may still be affected by mainland China network restrictions. Choosing China or Global during login does not configure the deployment region.
+
+Deployment builds and uploads the complete project. Do not upload the static-only `dist/` directory directly. CLI deployment to an existing project requires a direct-upload project. Alternatively, import the Git repository in EdgeOne and use the install/build commands and `dist` output configured in `edgeone.json`, selecting an acceleration region excluding mainland China in the platform settings. Avoid enabling both platform Git deployment and Actions deployment for the same project.
+
+To enable EdgeOne in the existing GitHub Actions workflow, set repository **Variable** `EDGEONE_PROJECT_NAME` and **Secret** `EDGEONE_API_TOKEN`. Without the project name, EdgeOne deployment is skipped. Both platforms share validation and deploy the same commit independently, with separate concurrency groups. Manual deployment of another branch also updates the respective production sites.
+
+Configure runtime variable `IMAGE_SOURCES` in EdgeOne as a JSON array string, or leave it unset to use the default sources. Check production and preview configuration separately. Never commit credentials, tokens, or local environment files.
+
+Pages serves frontend assets directly; only `/api` and `/v2` invoke Edge Functions. No Node.js Cloud Functions or server-side archive assembly are used. Before switching production, test overseas Registry access, authentication, Range/HEAD, large image layers, long transfers, and cancellation on an overseas preview deployment. Local tests cannot establish platform transfer quotas or network performance. See [EdgeOne CLI](https://edgeone.cloud.tencent.com/pages/document/162936923278893056) and [Edge Functions](https://pages.edgeone.ai/document/edge-functions).
 
 ## Documentation
 

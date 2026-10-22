@@ -1,3 +1,4 @@
+import { jsonResponse } from '../../common/http';
 import { HttpError } from '../../common/errors';
 
 const allowedTabs = new Set(['pull', 'download']);
@@ -20,5 +21,5 @@ export async function shareResponse(request: Request): Promise<Response> {
   url.pathname = '/';
   url.search = '';
   url.hash = `${tab}?image=${readableValue(image)}&source=${source}&platform=${readableValue(platform)}`;
-  return Response.json({ url: url.toString() }, { headers: { 'Cache-Control': 'no-store' } });
+  return jsonResponse({ url: url.toString() }, { headers: { 'Cache-Control': 'no-store' } });
 }

@@ -1,5 +1,4 @@
 export interface Env {
-  ASSETS: Fetcher;
   IMAGE_SOURCES?: string | Partial<RegistrySource>[];
 }
 

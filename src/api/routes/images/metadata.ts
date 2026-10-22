@@ -1,3 +1,4 @@
+import { jsonResponse } from '../../common/http';
 import type { Env, ImageConfig, Manifest } from '../../common/types';
 import { requestedImage, imageForSource, resolveImage } from '../../common/images';
 import { registryPublicFetch, OCI_ACCEPT } from '../../common/registry';
@@ -10,7 +11,7 @@ export async function inspectImageResponse(request: Request, env: Env) {
   const sizes = [manifest.config!, ...manifest.layers!].map((descriptor) => descriptor.size);
   const total = sizes.reduce((sum, size) => sum + size, 0);
   const sizeBytes = sizes.every((size) => Number.isSafeInteger(size) && size >= 0) && Number.isSafeInteger(total) ? total : null;
-  return Response.json({ image: image.display, layers: manifest.layers?.length || 0, platform, source: resolvedSource, sizeBytes });
+  return jsonResponse({ image: image.display, layers: manifest.layers?.length || 0, platform, source: resolvedSource, sizeBytes });
 }
 
 async function platformManifest(request: Request, env: Env) {
@@ -23,7 +24,7 @@ export async function platformResponse(request: Request, env: Env) {
   const response = await platformManifest(request, env);
   if (!response.ok) {
     const error = upstreamError(response.status, `镜像仓库返回 ${response.status}`);
-    return Response.json({ error: error.message }, { status: error.status });
+    return jsonResponse({ error: error.message }, { status: error.status });
   }
   const manifest = await response.clone().json<Manifest>().catch(() => undefined);
   if (!manifest?.config || Array.isArray(manifest.manifests)) return response;
@@ -42,5 +43,5 @@ export async function platformResponse(request: Request, env: Env) {
   headers.delete('content-length');
   headers.delete('content-encoding');
   headers.delete('etag');
-  return Response.json({ ...manifest, platforms: [[config.os, config.architecture, config.variant].filter(Boolean).join('/')] }, { headers });
+  return jsonResponse({ ...manifest, platforms: [[config.os, config.architecture, config.variant].filter(Boolean).join('/')] }, { headers });
 }

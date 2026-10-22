@@ -57,6 +57,8 @@ GET 接口使用其他方法返回 405（`Allow: GET`），未知 `/api/*` 返�
 
 默认镜像源集中在根目录 `config.js` 的 `imageSources`。部署时可通过 `IMAGE_SOURCES` 完整覆盖列表，支持 JSON 类型的数组或包含数组的 JSON 字符串；未设置时使用默认配置，空数组或无效值会报错。每个源包含 `id`、`label` 和 HTTPS `url`，并可设置 `naming`（`docker-hub` 或 `native`）、`requiresNamespace`（是否要求 `owner/image`）及 `example`（输入框示例）。这些规则由 `/api/sources` 提供给前端，Worker 也按 `naming` 解析仓库路径。未设置时，`mirror-gcr` 使用 Docker Hub 命名，其余源使用原生路径，`requiresNamespace` 默认为 `false`。默认包含 `mirror.gcr.io`、`ghcr.io`、`quay.io`、`registry.k8s.io`、`registry.gitlab.com`、`mcr.microsoft.com` 与 `public.ecr.aws`。新增镜像源只需更新默认配置或覆盖变量，无需改 Worker 路由或前端源 ID 列表。`UPSTREAM_REGISTRY` 已移除，避免与源列表产生两个默认上游。
 
+EdgeOne 使用同名运行时变量，填写上述列表的 JSON 字符串；开发与部署见 [README](../../README.md#edgeone-开发与部署)。
+
 在 Cloudflare 控制台的 Worker → Settings → Variables and Secrets 中添加名为 `IMAGE_SOURCES`、类型为 JSON 的变量，值直接填写数组：
 
 ```json

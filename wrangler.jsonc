@@ -1,7 +1,7 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "dockerboost",
-  "main": "src/api/index.ts",
+  "main": "src/api/platforms/cloudflare.ts",
   "build": {
     "command": "pnpm run build",
     "watch_dir": [

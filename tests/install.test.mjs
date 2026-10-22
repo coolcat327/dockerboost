@@ -185,3 +185,36 @@ printf '%s|%s|%s|%s|%s' "$data_root" "$mirror" "$log_size" "$log_files" "$live"
     }
   }
 });
+
+test('installation upstream aborts stalled headers after 30 seconds', async t => {
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  t.mock.method(console, 'error', () => {});
+  let signal;
+  t.mock.method(globalThis, 'fetch', async (_url, init) => {
+    signal = init.signal;
+    return new Promise((_resolve, reject) => signal.addEventListener('abort', () => reject(new Error('aborted')), { once: true }));
+  });
+  const request = req('asset?docker=28.1.1&compose=2.35.1&kind=docker');
+  t.mock.timers.tick(29999);
+  assert.equal(signal.aborted, false);
+  t.mock.timers.tick(1);
+  await assert.rejects(request, /Docker 静态文件源连接失败或超时/);
+  assert.equal(signal.aborted, true);
+});
+
+test('installation upstream clears its header timeout before streaming the binary body', async t => {
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  let signal, controller;
+  const stream = new ReadableStream({ start(value) { controller = value; } });
+  t.mock.method(globalThis, 'fetch', async (_url, init) => {
+    signal = init.signal;
+    assert.equal(init.redirect, 'follow');
+    return new Response(stream);
+  });
+  const response = await req('asset?docker=28.1.1&compose=2.35.1&kind=docker');
+  t.mock.timers.tick(30001);
+  assert.equal(signal.aborted, false);
+  controller.enqueue(new TextEncoder().encode('binary'));
+  controller.close();
+  assert.equal(await response.text(), 'binary');
+});

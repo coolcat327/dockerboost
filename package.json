@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "A Docker Hub mirror and OCI image archive exporter for Cloudflare Workers.",
+  "description": "A Docker toolkit for Cloudflare Workers and EdgeOne Pages.",
   "scripts": {
     "build": "node scripts/build.mjs",
     "dev": "wrangler dev",
@@ -11,10 +11,17 @@
     "check": "tsc --noEmit && pnpm run check:architecture",
     "test": "node --test tests/*.test.mjs",
     "validate": "pnpm run check && pnpm test && pnpm run build",
-    "check:architecture": "node scripts/check-api-boundaries.mjs"
+    "check:architecture": "node scripts/check-api-boundaries.mjs",
+    "dev:cloudflare": "wrangler dev",
+    "deploy:cloudflare": "wrangler deploy",
+    "dev:assets": "node scripts/dev-assets.mjs",
+    "dev:edgeone": "edgeone makers dev --port 5173",
+    "deploy:edgeone": "edgeone makers deploy --area overseas",
+    "deploy:edgeone:preview": "edgeone makers deploy --area overseas -e preview"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^5.20260918.1",
+    "edgeone": "1.6.41",
     "esbuild": "^0.25.0",
     "typescript": "^5.9.2",
     "wrangler": "^4.39.0"

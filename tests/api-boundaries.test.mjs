@@ -42,3 +42,30 @@ test('API boundaries reject flat routes and missing module entry points', async 
   assert.equal(errors.length, 2);
   assert.ok(errors.some(error => error.includes('缺少公开路由入口')));
 });
+
+test('platform adapters depend on the shared application without reversing business dependencies', async t => {
+  const root = await fixture(t, {
+    'app.ts': "import './routes/a/index';",
+    'platforms/cloudflare.ts': "import '../app'; import type {Env} from '../common/types';",
+    'platforms/edgeone.ts': "import '../app';",
+    'routes/a/index.ts': '',
+    'common/types.ts': 'export type Env = {};'
+  });
+  assert.deepEqual(await checkApiBoundaries(root), []);
+});
+
+test('architecture rejects platform coupling and bypassing the shared application', async t => {
+  const root = await fixture(t, {
+    'app.ts': "import './platforms/cloudflare'; import './routes/a/internal';",
+    'platforms/cloudflare.ts': "import './edgeone'; import '../routes/a/index';",
+    'platforms/edgeone.ts': '',
+    'routes/a/index.ts': "import '../../platforms/cloudflare'; import '../../app';",
+    'routes/a/internal.ts': '',
+    'common/types.ts': "import '../platforms/edgeone';"
+  });
+  const errors = await checkApiBoundaries(root);
+  assert.equal(errors.length, 7);
+  assert.ok(errors.some(error => error.includes('共用应用不能依赖平台入口')));
+  assert.ok(errors.some(error => error.includes('平台入口不能依赖其他平台')));
+  assert.ok(errors.some(error => error.includes('平台入口必须通过 app.ts')));
+});

@@ -8,7 +8,7 @@
 
 **从安装 Docker 到带走镜像，一个页面搞定。**
 
-部署在 Cloudflare Workers 上的轻量 Docker 工具站。
+支持 Cloudflare Workers 和 EdgeOne Pages 的轻量 Docker 工具站。
 在线安装、镜像加速、拉取命令、离线打包，让不同网络环境下的 Docker 使用更顺手。
 
 [在线体验](https://docker.coolcat.win/) · [快速开始](#本地开发) · [部署自己的站点](#部署) · [使用场景](#你可以用它做什么) · [详细文档](docs/README.md)
@@ -20,7 +20,7 @@
 - **一站完成常用操作**：安装、配置、拉取、下载四个入口，共享镜像选择，减少重复输入。
 - **离线环境也有准备方案**：打包 Docker、Compose 或镜像归档，在联网机器下载后带到目标机器。
 - **下载镜像无需先装 Docker**：浏览器直接导出 TAR，或用 curl 与本机 tar 在终端完成下载。
-- **轻量部署到边缘**：基于 Hono 与 Cloudflare Workers，Worker 流式转发文件，归档在客户端组装。
+- **轻量部署到边缘**：基于 Hono，支持 Cloudflare Workers 与 EdgeOne 边缘函数，服务端流式转发文件，归档在客户端组装。
 - **按需选择镜像源**：支持自动选源、手动指定来源与架构；分享链接可以恢复页面参数。
 
 ## 你可以用它做什么
@@ -79,7 +79,9 @@ pnpm run validate  # 类型检查、测试与构建；CI 使用此命令
 | `src/client/features/` | 页面功能：install（安装）、setup（配置）、pull（拉取）、download（下载） |
 | `src/client/common/` | 前端复用能力，例如镜像选择、语言、浏览器下载任务与文件写入 |
 | `src/client/styles/` | 页面与共用样式，由 index.css 统一导入；功能专属样式留在 features 对应目录 |
-| `src/api/index.ts` | Hono Worker 入口，挂载业务路由并统一处理错误与静态资源回退 |
+| `src/api/app.ts` | 共用 Hono 应用，挂载业务路由并统一处理错误 |
+| `src/api/platforms/` | Cloudflare 与 EdgeOne 平台入口 |
+| `edge-functions/` | EdgeOne 的 `/api` 与 `/v2` 文件路由 |
 | `src/api/routes/` | 业务路由：install、images、download、registry、share、status；各目录 index.ts 注册子路由 |
 | `src/api/common/` | 跨业务复用能力，例如镜像源配置与选择、Registry 请求、镜像解析及 HTTP 适配 |
 | `public/` | 静态资源与托管配置 |
@@ -91,7 +93,7 @@ pnpm run validate  # 类型检查、测试与构建；CI 使用此命令
 | `docs/plans/` | pending 存放待实现或待验收事项，implemented 存放交付记录 |
 | `docs/research/` | 调研结果与选型依据 |
 | `config.js` | 页面公开配置与默认镜像源 |
-| `wrangler.jsonc` | Worker 绑定、变量覆盖与部署配置 |
+| `wrangler.jsonc`、`edgeone.json` | 两个平台的构建与部署配置 |
 | `.github/workflows/` | 持续验证与部署 |
 
 模块接入和依赖边界见 [开发参考](docs/development/README.md)，详细文档按 [索引](docs/README.md) 查阅。
@@ -133,6 +135,36 @@ pnpm run deploy
 ```
 
 部署时会自动构建。部署完成后，使用 Wrangler 输出的站点地址访问。
+
+### EdgeOne 开发与部署
+
+使用项目内锁定的 EdgeOne CLI。当前 CLI 使用 `makers` 命令，旧 `pages` 命令已弃用。Cloudflare 的 `dev`、`deploy` 保持兼容，也可显式使用 `dev:cloudflare`、`deploy:cloudflare`。
+
+首次登录并关联项目：
+
+```sh
+pnpm exec edgeone login
+pnpm exec edgeone makers link
+pnpm run dev:edgeone
+```
+
+登录时按账号选择 China 或 Global；站点与加速区域是两项配置。项目无需再次运行 init。开发入口默认为 `http://localhost:8088`，CLI 将函数与 5173 端口的前端服务整合到同一入口。前端变更自动重新构建，刷新页面查看结果；函数由 CLI 监听。`edgeone.json` 的 `devCommand` 必须保持为前端服务，不能改为 `dev:edgeone` 或 Wrangler。
+
+```sh
+pnpm run validate
+pnpm run deploy:edgeone:preview
+pnpm run deploy:edgeone
+```
+
+生产和预览部署脚本均固定使用 `--area overseas`（全球不含中国大陆），GitHub Actions 调用同一脚本，也使用该区域。直接运行 CLI 时必须带上此参数，例如 `pnpm exec edgeone makers deploy --area overseas`；否则 CLI 默认使用 `global`，海外 Registry 回源仍可能受到中国大陆网络限制。登录时选择 China 或 Global 不能替代此部署区域配置。
+
+部署命令自动构建并部署完整项目，不要直接上传仅包含静态资源的 `dist/`。CLI 发布到已有项目时要求项目为直接上传类型。也可在 EdgeOne 导入 Git 仓库，使用 `edgeone.json` 中的安装、构建命令和 `dist` 输出目录，并在平台设置中选择全球不含中国大陆的加速区域；若使用平台 Git 自动发布，不要再为同一项目启用 Actions 发布。
+
+如需现有 GitHub Actions 同时部署 EdgeOne，在仓库 **Variables** 设置 `EDGEONE_PROJECT_NAME`，在 **Secrets** 设置 `EDGEONE_API_TOKEN`。未设置项目名时跳过 EdgeOne 部署；启用后与 Cloudflare 共用验证、分别发布。两者使用同一提交、独立并发组，手动发布其他分支同样会更新各自生产站点。
+
+在 EdgeOne 控制台配置运行时环境变量 `IMAGE_SOURCES`，值为 JSON 数组字符串；不配置时沿用默认源。生产、预览环境分别检查配置。账号、Token 与本地环境文件不提交 Git。
+
+前端直接由 Pages 托管，仅 `/api`、`/v2` 进入边缘函数；没有 Node.js 云函数或服务端归档。正式切换前，在 overseas 预览环境验证海外 Registry 回源、鉴权、Range/HEAD、大镜像层、长时间传输和取消；本地测试不能确认平台的传输配额与网络表现。参见 [EdgeOne CLI](https://edgeone.cloud.tencent.com/pages/document/162936923278893056) 和 [边缘函数](https://pages.edgeone.ai/document/edge-functions)。
 
 ## 文档与开发导航
 

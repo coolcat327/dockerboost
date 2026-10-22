@@ -1,3 +1,4 @@
+import { jsonResponse } from '../../common/http';
 import type { Env } from '../../common/types';
 import { downloadScript } from './image-archive-script';
 import { requestedImage, resolveImage } from '../../common/images';
@@ -13,5 +14,5 @@ export async function downloadScriptResponse(request: Request, env: Env) {
 }
 
 export function retiredSaveResponse() {
-  return Response.json({ error: 'Use the browser exporter or generated curl download script. This Worker does not build image archives.' }, { status: 410 });
+  return jsonResponse({ error: 'Use the browser exporter or generated curl download script. This Worker does not build image archives.' }, { status: 410 });
 }

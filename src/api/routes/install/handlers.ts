@@ -1,3 +1,4 @@
+import { jsonResponse } from '../../common/http';
 import { upstream, latestComposeVersion } from './releases';
 import { installFiles } from './bundle';
 import { bundleDownloadScript } from './offline-bundle-script';
@@ -25,7 +26,7 @@ export async function catalogResponse(request: Request) {
     latestComposeVersion(arch)
   ]);
   const docker = [...new Set([...listing.matchAll(/href="docker-(\d+\.\d+\.\d+)\.tgz"/g)].map(m => m[1]))].sort((a,b) => b.localeCompare(a, undefined, { numeric: true }));
-  return Response.json({ docker, compose }, { headers: { 'Cache-Control': 'public, max-age=300' } });
+  return jsonResponse({ docker, compose }, { headers: { 'Cache-Control': 'public, max-age=300' } });
 }
 export async function assetResponse(request: Request) {
   const url = new URL(request.url);
@@ -39,7 +40,7 @@ export async function assetResponse(request: Request) {
 }
 export function planResponse(request: Request) {
   const url = new URL(request.url), selected = options(url);
-  return Response.json({ files: installFiles(selected.arch, selected.docker, selected.compose, url.origin) }, { headers: { 'Cache-Control': 'no-store' } });
+  return jsonResponse({ files: installFiles(selected.arch, selected.docker, selected.compose, url.origin) }, { headers: { 'Cache-Control': 'no-store' } });
 }
 export function scriptResponse(request: Request) {
   const url = new URL(request.url), selected = options(url);
