@@ -5,48 +5,28 @@
 .install-card > p { margin:0 0 16px; color:var(--muted); font-size:14px; line-height:1.8; }
 .install-card > p:last-child { margin:16px 0 0; }
 .install-card > p code { color:var(--code); font-family:'DM Mono',monospace; }
-.install-card .command-block { margin-top:24px; }
 .install-card a { color:var(--cyan); text-decoration:none; }
 .install-card a:hover { text-decoration:underline; }
-.install-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)) auto; align-items:end; gap:18px; margin:30px 0 24px; }
+.install-fields { display: grid; grid-template-columns: minmax(0, 1fr); align-items:end; gap:18px; margin:30px 0 24px; }
 .install-fields label { display:block; margin:0; color:var(--ink); font-size:15px; font-weight:700; line-height:1.5; }
-.install-actions { display:grid; grid-template-columns:repeat(2,140px); gap:12px; margin:0; min-width:0; }
-.install-actions button { width:100%; min-width:0; padding:0 12px; white-space:nowrap; }
-.install-actions button:disabled { opacity:.62; cursor:wait; }
+.install-actions { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; margin:0; min-width:0; }
+.install-actions button { width:100%; padding-inline:10px; }
 
-@media (max-width: 650px) { .install-fields { grid-template-columns: 1fr; } }
 .install-package-grid { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:24px; }
 .install-package-grid .command-block { min-width:0; margin-top:0; }
 #install-package-name { overflow-wrap:anywhere; }
 #install-package-tree { white-space:pre; overflow-x:auto; }
-.install-progress-row { display:flex; align-items:center; flex-wrap:nowrap; gap:16px; margin:18px 0 22px; }
-#install-status { flex:0 0 auto; min-width:0; margin:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:#56cfff; font:14px/1.7 'DM Mono',monospace; letter-spacing:.03em; }
-#install-status:hover { overflow-x:auto; text-overflow:clip; }
-#install-speed { flex:0 0 auto; white-space:nowrap; color:#56cfff; font:14px/1.7 'DM Mono',monospace; }
-#install-speed[hidden] { display:none; }
-#install-progress { position:relative; flex:1 1 0; min-width:60px; height:32px; border-radius:16px; background:var(--inset); border:1px solid var(--control-line); overflow:hidden; }
-#install-progress[hidden] { display:none; }
-#install-progress span { position:absolute; inset:0 auto 0 0; width:0; background:linear-gradient(90deg,#087ab4,#20bcec); opacity:.45; }
-#install-progress img { position:absolute; width:30px; height:24px; top:3px; left:4px; }
-#install-progress.is-running img { animation:download-bob .6s ease-in-out infinite alternate; }
-#install-progress.is-indeterminate span { width:100% !important; animation:install-pulse 1s ease-in-out infinite alternate; }
-@keyframes install-pulse { to { opacity:.15; } }
 @media (max-width:800px) { .install-package-grid { grid-template-columns:1fr; } }
-@media (prefers-reduced-motion:reduce) { #install-progress img, #install-progress span { animation:none !important; } }
 
 .install-resource-links { display:flex; flex-wrap:wrap; gap:12px 24px; font-size:14px; line-height:1.8; }
 
-@media (min-width:651px) and (max-width:1000px) { .install-fields { grid-template-columns:repeat(2,minmax(0,1fr)); } .install-actions { grid-column:1 / -1; } }
-
-@media (max-width:650px) { .install-progress-row { flex-wrap:wrap; } #install-status { flex:0 1 auto; } #install-progress { flex-basis:100%; } }
-
-@media (max-width:600px) {
-  .install-actions { width:min(100%,288px); grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; justify-self:center; }
-  .install-actions button { height:52px; padding:0 8px; font-size:14px; }
+@container workspace (min-width:540px) {
+  .install-fields { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .install-actions { grid-column:1 / -1;gap:18px; }
+}
+@container workspace (min-width:920px) {
+  .install-fields { grid-template-columns:repeat(2,minmax(0,1fr)) 280px; }
+  .install-actions { grid-column:auto;gap:12px; }
 }
 
-#install-download.is-stoppable { background:var(--danger); }
-#install-download.is-stoppable:hover { background:var(--danger-hover); }
-
-#install-progress span { transition:width var(--motion-fast) linear; }
-#install-progress img { transition:left var(--motion-fast) linear; }
+@media (max-width:600px) { .install-actions { gap:8px; } }

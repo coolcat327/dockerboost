@@ -29,7 +29,7 @@ footer a, .footer-author { color: var(--cyan); text-decoration: none; }
   .shell { width: calc(100% - 56px); }
   .nav { height: 76px; }
   footer { min-height:64px;gap:12px;padding:18px 0;font-size:11px;letter-spacing:.04em; }
-  .footer-by, .footer-scope { display:none; }
+  .footer-by { display:none; }
 }
 @media (max-width: 600px) {
   .shell { width: calc(100% - 40px); }
@@ -42,7 +42,6 @@ button { transition:background-color var(--motion-fast),color var(--motion-fast)
 button:disabled, select:disabled, [aria-disabled="true"] { opacity:.5; }
 input::placeholder { color:var(--subtle);opacity:1; }
 .copy-all.is-copied { color:var(--success); }
-.copy-all.is-copied::after { content:'✓';margin-left:4px; }
 @media(prefers-reduced-motion:reduce) { html { scroll-behavior:auto; } *, *::before, *::after { animation:none !important;transition:none !important; } }
 
 .language { white-space:nowrap; }

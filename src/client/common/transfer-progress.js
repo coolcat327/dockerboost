@@ -19,8 +19,9 @@ export function formatImageMetadata(details, layerUnit, separator = ' · ') {
   return [layers, size].filter(Boolean).join(separator);
 }
 
-export function formatDuration(milliseconds) {
+export function formatDuration(milliseconds, language = 'zh-CN') {
   const tenths = Math.max(0, Math.round(milliseconds / 100));
+  if (language === 'en') return tenths < 600 ? `${(tenths / 10).toFixed(1)}s` : `${Math.floor(tenths / 600)}m ${((tenths % 600) / 10).toFixed(1)}s`;
   if (tenths < 600) return `${(tenths / 10).toFixed(1)}秒`;
   return `${Math.floor(tenths / 600)}分${((tenths % 600) / 10).toFixed(1)}秒`;
 }

@@ -15,3 +15,5 @@
 后续通过 MCP 读取 `@react-bits/BorderGlow-JS-CSS` 完整示例，借鉴局部边缘光，以现有指针坐标与 CSS 遮罩实现蓝银描边。按钮扫光为项目自有 CSS 装饰。实现与验证边界见 [交付记录](../plans/implemented/bits-polish.md)。
 
 后续采用组件时记录准确名称、来源和取舍；直接复制源码前核对所选版本的依赖与许可。官方接入说明：[React Bits MCP](https://reactbits.dev/get-started/mcp)。
+
+2026-10-22 通过 shadcn MCP 搜索并读取 `@react-bits/StarBorder-JS-CSS` 完整示例（[StarBorder](https://reactbits.dev/animations/star-border)）。其实现依赖 React hooks、Canvas 与逐帧绘制。本次采用按钮边缘高光的视觉思路，以现有 CSS 内描边、单次扫光和短暂按压实现；没有复制组件源码或增加依赖，避免为按钮装饰增加持续渲染。

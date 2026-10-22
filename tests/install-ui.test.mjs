@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { feature } from '../src/client/features/install/index.js';
 test('installation switches all labels and command hints without losing versions', async t => {
   const nodes = new Map();
-  function node() { return { selectedOptions:[{ textContent:'x86_64 / amd64' }], value:'', textContent:'', innerHTML:'', dataset:{}, listeners:{}, style:{}, classList:{ toggle() {} }, addEventListener(event,fn) { this.listeners[event]=fn; }, replaceChildren() { this.value=''; }, add(option) { this.value ||= option.value; }, setAttribute() {}, querySelector() { return node(); } }; }
+  function node() { return { selectedOptions:[{ textContent:'x86_64 / amd64' }], value:'', textContent:'', innerHTML:'', dataset:{}, listeners:{}, style:{}, classList:{ toggle() {} }, addEventListener(event,fn) { this.listeners[event]=fn; }, replaceChildren() { this.value=''; }, add(option) { this.value ||= option.value; }, setAttribute() {}, removeAttribute() {}, querySelector() { return node(); } }; }
   const panel = { querySelector(selector) { if (!nodes.has(selector)) nodes.set(selector,node()); return nodes.get(selector); }, querySelectorAll() { return labels; } };
   const labels = ['online','offline','download','reload','installHelp','cpu'].map(key => ({ dataset:{ installText:key } }));
   panel.querySelector('#install-arch').value='x86_64';
@@ -41,7 +41,7 @@ test('installation can stop a pending request, clean its task and download again
   const nodes = new Map();
   const node = () => ({ selectedOptions: [{ textContent: 'x86_64 / amd64' }], value: '', dataset: {}, style: {}, listeners: {}, classList: { toggle() {} },
     addEventListener(event, fn) { this.listeners[event] = fn; }, replaceChildren() { this.value = ''; },
-    add(option) { this.value ||= option.value; }, setAttribute() {}, querySelector() { return node(); } });
+    add(option) { this.value ||= option.value; }, setAttribute() {}, removeAttribute() {}, querySelector() { return node(); } });
   const panel = { querySelector(selector) { if (!nodes.has(selector)) nodes.set(selector, node()); return nodes.get(selector); }, querySelectorAll() { return []; } };
   panel.querySelector('#install-arch').value = 'x86_64';
   const previousOption = globalThis.Option, previousWindow = globalThis.window;
@@ -53,7 +53,7 @@ test('installation can stop a pending request, clean its task and download again
   const job = { async getFileHandle() { return {
     async createWritable() { return {
       async write() {
-        progressMessages.push(panel.querySelector('#install-status').textContent);
+        progressMessages.push(['#install-status', '#install-speed', '#install-detail'].map(selector => panel.querySelector(selector).textContent).join(' · '));
         if (progressMessages.length === 2) await panel.querySelector('#install-download').listeners.click();
       }, async close() {}, async abort() {}
     }; }, async getFile() { return new Blob(); }
@@ -99,22 +99,22 @@ test('installation can stop a pending request, clean its task and download again
     await running;
     assert.equal(removed, attempt + 1);
     assert.equal(button.textContent, 'Download');
-    assert.equal(panel.querySelector('#install-status').textContent, 'Download cancelled');
+    assert.equal(panel.querySelector('#install-status').textContent, 'Download stopped');
     assert.equal(panel.querySelector('#install-arch').disabled, false);
   }
   assert.equal(requests, 2);
   progressMode = true;
   await button.listeners.click();
-  assert.match(progressMessages[1], /33% · 1\.0\/3\.0 MB · docker-compose/);
+  assert.match(progressMessages[1], /33% · 1\.0 MB \/ 3\.0 MB .*docker-compose/);
   assert.equal(removed, 3);
-  assert.equal(panel.querySelector('#install-status').textContent, 'Download cancelled');
+  assert.equal(panel.querySelector('#install-status').textContent, 'Download stopped');
 });
 
 test('catalog waits for architecture selection and refetches the same architecture without cache', async t => {
   const nodes = new Map();
   const node = () => ({ value: '', selectedOptions: [{ textContent: 'x86_64 / amd64' }], dataset: {}, style: {}, listeners: {}, classList: { toggle() {} },
     addEventListener(event, fn) { this.listeners[event] = fn; }, replaceChildren() { this.value = ''; },
-    add(option) { this.value ||= option.value; }, setAttribute() {}, querySelector() { return node(); } });
+    add(option) { this.value ||= option.value; }, setAttribute() {}, removeAttribute() {}, querySelector() { return node(); } });
   const panel = { querySelector(selector) { if (!nodes.has(selector)) nodes.set(selector, node()); return nodes.get(selector); }, querySelectorAll() { return []; } };
   const previousOption = globalThis.Option, previousWindow = globalThis.window;
   t.after(() => { globalThis.Option = previousOption; globalThis.window = previousWindow; });
@@ -151,7 +151,7 @@ test('browser bundle keeps every file under one folder with working relative che
   const nodes = new Map();
   const node = () => ({ selectedOptions: [{ textContent: 'x86_64 / amd64' }], value: '', dataset: {}, style: {}, listeners: {}, classList: { toggle() {} },
     addEventListener(event, fn) { this.listeners[event] = fn; }, replaceChildren() { this.value = ''; },
-    add(option) { this.value ||= option.value; }, setAttribute() {}, querySelector() { return node(); } });
+    add(option) { this.value ||= option.value; }, setAttribute() {}, removeAttribute() {}, querySelector() { return node(); } });
   const panel = { querySelector(selector) { if (!nodes.has(selector)) nodes.set(selector, node()); return nodes.get(selector); }, querySelectorAll() { return []; } };
   panel.querySelector('#install-arch').value = 'x86_64';
   const previous = { Option: globalThis.Option, window: globalThis.window, document: globalThis.document };

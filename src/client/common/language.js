@@ -24,7 +24,7 @@ function renderPanel(panel, message) {
   setText(panel, '.panel-copy p', message.description, true);
   setText(panel, '.command-meta span', message.meta);
   panel.querySelectorAll('.copy-all').forEach((button) => {
-    button.innerHTML = `<b>⧉</b> ${message.copy}`;
+    button.textContent = message.copy;
   });
   if (message.label) {
     setText(panel, '.image-fields label', `<span>${message.label}</span><span class="image-label-detail">${message.labelDetail || ''}</span>`, true);

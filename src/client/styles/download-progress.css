@@ -1,0 +1,29 @@
+/* One progress layout for image archives and offline installation bundles. */
+.transfer-status {
+  display:grid;grid-template-columns:minmax(0,1fr);gap:10px;
+  margin:20px 0 24px;padding:18px;border:1px solid var(--line);border-radius:10px;background:var(--inset);
+}
+.transfer-status[hidden], .transfer-status [hidden] { display:none; }
+.transfer-status > [role="status"] { margin:0;color:var(--cyan);font:600 14px/1.7 Manrope,sans-serif;overflow-wrap:anywhere; }
+.transfer-detail, .transfer-metrics { min-width:0;margin:0;color:var(--muted);font:13px/1.8 'DM Mono',monospace;overflow-wrap:anywhere; }
+.transfer-detail { color:var(--code); }
+.transfer-status:not([data-phase="error"]) .transfer-detail { max-width:min(100%,72ch);overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
+.transfer-track { position:relative;min-width:0;height:28px;overflow:hidden;border:1px solid var(--control-line);border-radius:14px;background:var(--surface); }
+.transfer-track > span { position:absolute;inset:0 auto 0 0;width:0;background:linear-gradient(90deg,var(--blue),var(--cyan));opacity:.35;transition:width var(--motion-fast) linear; }
+.transfer-track > img { position:absolute;top:2px;left:4px;width:30px;height:22px;transition:left var(--motion-fast) linear; }
+.transfer-track.is-indeterminate > img { visibility:hidden; }
+.transfer-status[data-phase="done"] { border-color:color-mix(in srgb,var(--success) 27%,transparent); }
+.transfer-status[data-phase="done"] > [role="status"] { color:var(--success); }
+.transfer-status[data-phase="done"] .transfer-track > span { background:var(--success); }
+.transfer-status[data-phase="error"] > [role="status"] { color:color-mix(in srgb,var(--danger) 50%,var(--ink)); }
+.transfer-status[data-phase="cancelled"] > [role="status"] { color:var(--muted); }
+@container workspace (min-width:780px) {
+  .transfer-status { grid-template-columns:minmax(0,1fr) auto;column-gap:24px; }
+  .transfer-status > [role="status"] { grid-column:1;grid-row:1; }
+  .transfer-metrics { grid-column:2;grid-row:1;text-align:right; }
+  .transfer-detail, .transfer-track { grid-column:1 / -1; }
+}
+@media (prefers-reduced-motion:no-preference) {
+  .transfer-track.is-indeterminate > span { animation:transfer-pulse 1.2s ease-in-out infinite alternate; }
+  @keyframes transfer-pulse { to { opacity:.15; } }
+}

@@ -22,7 +22,7 @@ async function exportImage({ repository, reference, repoTag, source, platform, f
   const job = await directory(base, [downloadDirectory, sessionId], false);
   // Each download owns a temporary session; the UI removes it after save handoff.
   await removeDirectory(job, 'export');
-  self.postMessage({ phase: 'resolve', message: '正在解析镜像…' });
+  self.postMessage({ phase: 'resolve' });
   const sourceQuery = source ? `?source=${encodeURIComponent(source)}` : '';
   let manifest = await fetchJson(`/v2/${repository}/manifests/${encodeURIComponent(reference)}${sourceQuery}`, version);
   if (Array.isArray(manifest.manifests)) { const selected = manifest.manifests.find((item) => platformMatch(item, platform)); if (!selected) throw new Error(`未找到 ${platform} 架构`); manifest = await fetchJson(`/v2/${repository}/manifests/${selected.digest}${sourceQuery}`, version); }
@@ -36,7 +36,7 @@ async function exportImage({ repository, reference, repoTag, source, platform, f
       const cachedFile = await cached.getFile();
       if (cachedFile.size === Number(descriptor.size)) {
         progressBytes[index] = Number(descriptor.size);
-        self.postMessage({ phase: 'download', completed: completed + progressBytes.reduce((sum, value) => sum + value, 0), total, cached: true });
+        self.postMessage({ phase: 'download', completed: completed + progressBytes.reduce((sum, value) => sum + value, 0), total });
         return;
       }
       await directory(job, blobPath.slice(0, -1), false).then((parent) => parent.removeEntry(blobPath.at(-1))).catch(() => {});
@@ -68,7 +68,7 @@ async function exportImage({ repository, reference, repoTag, source, platform, f
   for (const descriptor of descriptors) {
     entries.push([`blobs/sha256/${digestHex(descriptor.digest)}`, await (await file(job, ['blobs', 'sha256', digestHex(descriptor.digest)], false)).getFile()]);
   }
-  self.postMessage({ phase: 'export', message: '正在本地打包镜像…' });
+  self.postMessage({ phase: 'export' });
   const output = await file(job, ['export', filename]);
   await writeOpfsFile(output, writable => writeArchive(writable, entries));
   const archive = await output.getFile();

@@ -27,6 +27,8 @@
 
 | 已实现记录 | 范围 |
 | --- | --- |
+| [统一下载信息与进度](implemented/unified-download-progress.md) | 两类下载共用展示、真实进度与状态重置 |
+| [工具区视觉与响应式控件](implemented/responsive-controls.md) | 按钮层级、表单容器查询与交互反馈 |
 | [炭灰视觉与工具区反馈](implemented/visual-refinement.md) | 主题、动效与状态反馈 |
 | [Bits 视觉细节增强](implemented/bits-polish.md) | 边缘光与按钮反馈 |
 | [Hono 路由与业务目录迁移](implemented/hono-routing.md) | 路由分层与 SHA/TAR 依赖替换 |
