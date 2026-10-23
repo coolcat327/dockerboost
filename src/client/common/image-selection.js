@@ -22,6 +22,8 @@ export function createImageSelection({ panel, locale, messages, flash, store, on
   let requestController;
   let requestToken = 0;
   let inputTimer;
+  let disposed = false;
+  let unsubscribe;
   let architectureState = 'waiting';
   const storeOrigin = Symbol('image-selection');
   const platformListeners = new Set();
@@ -79,6 +81,7 @@ export function createImageSelection({ panel, locale, messages, flash, store, on
     store?.update({ platform: architecture.value }, storeOrigin);
   };
   const inspect = async () => {
+    if (disposed) return;
     requestController?.abort();
     const controller = new AbortController();
     requestController = controller;
@@ -122,12 +125,23 @@ export function createImageSelection({ panel, locale, messages, flash, store, on
       if (requestController === controller) requestController = undefined;
     }
   };
+  const loadSources = () => {
+    const sourcesRequest = store ? store.lookupSources() : fetch('/api/sources').then(async (response) => {
+      if (!response.ok) throw new Error('无法读取镜像源');
+      return response.json();
+    });
+    return sourcesRequest.then(({ sources }) => {
+      if (disposed) return;
+      setSources(sources);
+      if (image.value.trim()) inspect();
+    }).catch(() => { if (!disposed) flash('镜像源列表加载失败，暂使用默认镜像源。'); });
+  };
   const init = () => {
     reset();
     if (store) {
       const initial = store.snapshot();
       image.value = initial.image;
-      store.subscribe((snapshot, origin) => {
+      unsubscribe = store.subscribe((snapshot, origin) => {
         if (origin === storeOrigin) return;
         const imageChanged = image.value !== snapshot.image;
         const sourceChanged = source.value !== snapshot.source;
@@ -149,14 +163,7 @@ export function createImageSelection({ panel, locale, messages, flash, store, on
         if (image.value.trim() && sourceAvailable) inputTimer = setTimeout(inspect, INPUT_IDLE_MS);
       });
     }
-    const sourcesRequest = store ? store.lookupSources() : fetch('/api/sources').then(async (response) => {
-      if (!response.ok) throw new Error('无法读取镜像源');
-      return response.json();
-    });
-    sourcesRequest.then(({ sources }) => {
-      setSources(sources);
-      if (image.value.trim()) inspect();
-    }).catch(() => flash('镜像源列表加载失败，暂使用默认镜像源。'));
+    void loadSources();
     source.addEventListener('change', () => {
       clearTimeout(inputTimer);
       resolvedSource = source.value === 'auto' ? 'mirror-gcr' : source.value;
@@ -190,6 +197,8 @@ export function createImageSelection({ panel, locale, messages, flash, store, on
   };
   return {
     init,
+    reloadSources: loadSources,
+    dispose: () => { disposed = true; unsubscribe?.(); clearTimeout(inputTimer); requestController?.abort(); requestToken++; },
     setLanguage,
     current: () => ({ image: image.value, source: requestedSource(), platform: architecture.value, resolvedSource }),
     resolve: () => normalise(image.value, effectiveSource()),

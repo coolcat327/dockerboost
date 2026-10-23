@@ -32,3 +32,13 @@ test('batch script uses encoded API parameters, temporary scripts and fail-fast 
   assert.match(script, /sh "\$tmp\/1.sh"/);
   assert.equal(spawnSync('sh', ['-n'], { input: script }).status, 0);
 });
+
+test('batch terminal commands match single-image downloads and stop on failure', async () => {
+  const { batchCommands } = await import('../src/client/features/download/compose.js');
+  const entry = { image: 'nginx:latest', platform: 'linux/amd64', source: 'auto' };
+  const command = batchCommands([entry, entry, { ...entry, image: 'redis:7' }], 'https://example.com');
+  assert.equal((command.match(/curl -fsSL/g) || []).length, 2);
+  assert.match(command, /-o \.download-image-1\.sh "https:\/\/example.com\/api\/download-script\?image=nginx%3Alatest&platform=linux%2Famd64&source=auto" && sh \.download-image-1\.sh &&\n/);
+  assert.match(command, /sh \.download-image-2\.sh$/);
+  assert.doesNotMatch(command, /#!|mktemp/);
+});

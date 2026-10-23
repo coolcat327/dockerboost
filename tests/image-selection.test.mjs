@@ -292,3 +292,31 @@ test('source catalog shares pending and successful requests and retries after fa
   assert.equal(store.lookupSources(), retry, 'choice changes retain the source catalog');
   assert.equal(calls, 2);
 });
+
+test('queue selection retries source loading and disposal ignores pending resolution', async () => {
+  const original = { Option: globalThis.Option, fetch: globalThis.fetch, window: globalThis.window };
+  globalThis.Option = class { constructor(textContent, value) { this.textContent = textContent; this.value = value; } };
+  globalThis.window = { location: { host: 'proxy.test' } };
+  let catalogCalls = 0, ready = 0, release;
+  globalThis.fetch = async url => {
+    if (url === '/api/sources') {
+      if (++catalogCalls === 1) throw new Error('offline');
+      return { ok: true, json: async () => ({ sources: [{ id: 'mirror-gcr', label: 'Docker Hub' }] }) };
+    }
+    return new Promise(resolve => { release = () => resolve({ ok: true, headers: { get: () => 'mirror-gcr' }, json: async () => ({ platforms: ['linux/amd64'] }) }); });
+  };
+  try {
+    const store = createSelectionStore(); store.update({ image: 'nginx:latest' });
+    const controls = panel();
+    const selection = createImageSelection({ panel: controls, store,
+      locale: () => ({ waitingPlatforms: 'Waiting', loadingPlatforms: 'Loading', noPlatforms: 'None' }),
+      messages: () => ({ automatic: 'Auto' }), flash: () => {}, onReady: () => ready++ });
+    selection.init(); await new Promise(setImmediate);
+    assert.equal(catalogCalls, 1);
+    await selection.reloadSources(); await new Promise(setImmediate);
+    assert.equal(catalogCalls, 2);
+    assert.equal(typeof release, 'function');
+    selection.dispose(); release(); await new Promise(setImmediate);
+    assert.equal(ready, 0, 'removed queue jobs cannot become ready or auto-start');
+  } finally { Object.assign(globalThis, original); }
+});

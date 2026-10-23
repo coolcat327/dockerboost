@@ -154,7 +154,7 @@ export const feature = {
       showInspection();
     } catch { /* wait for a valid name */ }
   });
-  const batch = initBatch({ panel, selectionStore, singleBusy: () => !!activeExport });
+  const batch = initBatch({ panel, locale, messages, flash, selectionStore, singleBusy: () => !!activeExport });
   return { setLanguage: (message) => {
     batch.setLanguage(message === feature.messages.en);
     selection.setLanguage();

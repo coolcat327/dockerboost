@@ -31,3 +31,14 @@ export function batchScript(entries, origin) {
   });
   return ['#!/bin/sh', 'set -eu', 'tmp=$(mktemp -d)', `trap 'rm -rf "$tmp"' EXIT HUP INT TERM`, ...commands, ''].join('\n');
 }
+
+// Match the single-image terminal workflow; && prevents later commands after failure.
+export function batchCommands(entries, origin) {
+  const unique = [...new Map(entries.map(entry => [JSON.stringify([entry.image, entry.platform, entry.source]), entry])).values()];
+  return unique.map(({ image, platform, source = 'auto' }, index) => {
+    const url = new URL('/api/download-script', origin);
+    url.search = new URLSearchParams({ image, platform, source }).toString();
+    const file = `.download-image-${index + 1}.sh`;
+    return `curl -fsSL -o ${file} "${url.href}" && sh ${file}`;
+  }).join(' &&\n');
+}

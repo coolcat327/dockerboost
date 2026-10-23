@@ -15,7 +15,7 @@ Install Docker, configure registry mirrors, generate pull commands, and download
 
 </div>
 
-The Download tab offers Single and Batch modes: paste or select Compose YAML, select public images, and download individual TAR archives with five concurrent image tasks, per-image stop/retry controls and select-all, or copy/save a batch download script. Expand variables and multiple files with `docker compose config` first; image builds are not executed.
+The Download tab offers Single and Batch modes: paste or select Compose YAML, automatically parse the configuration and add public images individually to the download queue below, then download individual TAR archives with five concurrent image tasks, per-image download/stop/retry/remove controls, or copy batch terminal commands. Expand variables and multiple files with `docker compose config` first; image builds are not executed.
 
 ## Why DockerBoost
 

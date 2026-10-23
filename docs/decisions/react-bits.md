@@ -17,3 +17,7 @@
 后续采用组件时记录准确名称、来源和取舍；直接复制源码前核对所选版本的依赖与许可。官方接入说明：[React Bits MCP](https://reactbits.dev/get-started/mcp)。
 
 2026-10-22 通过 shadcn MCP 搜索并读取 `@react-bits/StarBorder-JS-CSS` 完整示例（[StarBorder](https://reactbits.dev/animations/star-border)）。其实现依赖 React hooks、Canvas 与逐帧绘制。本次采用按钮边缘高光的视觉思路，以现有 CSS 内描边、单次扫光和短暂按压实现；没有复制组件源码或增加依赖，避免为按钮装饰增加持续渲染。
+
+2026-10-23 通过 shadcn MCP 搜索并读取 `@react-bits/AnimatedList-JS-CSS` 完整示例（[AnimatedList](https://reactbits.dev/components/animated-list)）。该示例依赖 React 与 Hugeicons，并包含滚动观察和弹簧动画。本次仅参考列表层次与入场方向，下载队列采用原生 CSS 单次 transform / opacity 动画，复用项目变量，不复制源码或引入依赖；减少动态效果时关闭动画。
+
+2026-10-23 为下载队列通过 shadcn MCP 搜索 Table 并读取 `@shadcn/table-demo`、`@shadcn/data-table-demo`；同时查阅 [shadcn Table](https://ui.shadcn.com/docs/components/base/table)、[Data Table](https://ui.shadcn.com/docs/components/base/data-table) 和 [Tabulator 响应式布局](https://www.tabulator.info/docs/6.x/layout/)。shadcn 示例基于 React，Data Table 还使用 TanStack Table、Lucide 及表格交互控件；Tabulator 提供按宽度折叠列到行下方的布局。本项目仅需要任务状态与控制，借鉴表头层次、列间留白及窄屏内容下移思路，用现有 CSS 容器查询实现，不复制组件源码或添加依赖。

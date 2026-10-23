@@ -79,7 +79,7 @@ window.addEventListener('resize', positionIndicator);
 document.fonts?.ready.then(positionIndicator);
 const copyTimers = new WeakMap();
 document.addEventListener('click', async (event) => {
-  const button = event.target.closest('.copy-all');
+  const button = event.target.closest('.copy-all[data-copy]');
   if (!button) return;
   const target = document.getElementById(button.dataset.copy);
   try {
