@@ -1,6 +1,6 @@
 # SHA-256 与 TAR 依赖选型
 
-决策日期：2026-10-16。当时采用 @noble/hashes 2.4.0 与 modern-tar 0.8.6，只替换算法和格式编码，不调整网络下载调度及 OPFS 生命周期。本文保留选型依据；当前任务机制见 [下载任务与缓存](../development/downloads.md)，实际依赖版本以 package.json 和锁文件为准。
+决策日期：2026-10-16。当时采用 @noble/hashes 2.4.0 与 modern-tar 0.8.6，只替换算法和格式编码，不调整网络下载调度及 OPFS 生命周期。本文保留选型依据；当前任务机制见 [下载任务与缓存](../downloads.md)，实际依赖版本以 package.json 和锁文件为准。
 
 ## 增量 SHA-256
 

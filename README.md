@@ -41,7 +41,7 @@
 docker load -i nginx_latest_linux_amd64.tar
 ```
 
-浏览器下载使用 OPFS 流式暂存镜像层并在本地组装 TAR；终端下载使用 curl、本机 tar 和常见 shell 工具，无需 Docker、jq 或 Skopeo。安装包与镜像下载均支持停止并清理暂存，具体规则见 [下载任务与缓存](docs/development/downloads.md)。
+浏览器下载使用 OPFS 流式暂存镜像层并在本地组装 TAR；终端下载使用 curl、本机 tar 和常见 shell 工具，无需 Docker、jq 或 Skopeo。安装包与镜像下载均支持停止并清理暂存，具体规则见 [下载任务与缓存](docs/downloads.md)。
 
 ### 先了解这些使用边界
 
@@ -68,7 +68,7 @@ pnpm run build     # 生成 dist
 pnpm run validate  # 类型检查、测试与构建；CI 使用此命令
 ```
 
-修改源码，不手工编辑 `dist/`。参与开发前阅读 [AGENTS.md](AGENTS.md)，模块接入与依赖边界见 [开发参考](docs/development/README.md)。
+修改源码，不手工编辑 `dist/`。参与开发前阅读 [AGENTS.md](AGENTS.md)，模块接入与依赖边界见 [开发参考](docs/architecture.md)。
 
 ## 项目结构
 
@@ -88,22 +88,22 @@ pnpm run validate  # 类型检查、测试与构建；CI 使用此命令
 | `scripts/` | 构建、发布标识和架构检查 |
 | `tests/` | 接口、安装脚本、归档及浏览器下载等回归测试 |
 | `docs/` | 文档总索引，各专题按职责分目录维护 |
-| `docs/development/` | 前后端接入、接口契约、下载实现与开发工具配置 |
-| `docs/design/` | 视觉规范与设计流程 |
+| `docs/` | 当前架构、开发、接口、下载与视觉专题 |
+| `docs/decisions/` | 选型与决策依据 |
+| `docs/archive/` | 已完成计划与历史验证 |
 | `docs/plans/` | pending 存放待实现或待验收事项，implemented 存放交付记录 |
-| `docs/research/` | 调研结果与选型依据 |
 | `config.js` | 页面公开配置与默认镜像源 |
 | `wrangler.jsonc`、`edgeone.json` | 两个平台的构建与部署配置 |
 | `.github/workflows/` | 持续验证与部署 |
 
-模块接入和依赖边界见 [开发参考](docs/development/README.md)，详细文档按 [索引](docs/README.md) 查阅。
+模块接入和依赖边界见 [开发参考](docs/architecture.md)，详细文档按 [索引](docs/README.md) 查阅。
 
 ## 部署
 
 ### 通过 GitHub Actions 部署
 
 1. 将项目推送到自己的 GitHub 仓库，建议将默认分支设为 `main`。
-2. 在 `wrangler.jsonc` 中设置 Worker 名称；页面链接、作者与默认镜像源在根目录 `config.js` 中配置。可用 JSON 类型变量 `IMAGE_SOURCES` 覆盖镜像源列表。镜像源字段与路径规则见 [接口参考](docs/development/api.md#镜像源配置)。
+2. 在 `wrangler.jsonc` 中设置 Worker 名称；页面链接、作者与默认镜像源在根目录 `config.js` 中配置。可用 JSON 类型变量 `IMAGE_SOURCES` 覆盖镜像源列表。镜像源字段与路径规则见 [接口参考](docs/api.md#镜像源配置)。
 3. 在仓库 **Settings → Secrets and variables → Actions** 中添加以下 Repository secrets：
 
    | Secret | 用途 |
@@ -169,7 +169,7 @@ pnpm run deploy:edgeone
 ## 文档与开发导航
 
 - [文档索引](docs/README.md)：按任务查阅项目文档。
-- [开发参考](docs/development/README.md)：模块结构、接口接入与依赖边界。
-- [接口参考](docs/development/api.md)：API 契约、Registry 与镜像源配置。
-- [下载任务与缓存](docs/development/downloads.md)：浏览器与终端下载、暂存与清理机制。
-- [视觉规范](docs/design/visual-style.md)：页面风格与交互约束。
+- [开发参考](docs/architecture.md)：模块结构、接口接入与依赖边界。
+- [接口参考](docs/api.md)：API 契约、Registry 与镜像源配置。
+- [下载任务与缓存](docs/downloads.md)：浏览器与终端下载、暂存与清理机制。
+- [视觉规范](docs/ui.md)：页面风格与交互约束。

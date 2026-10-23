@@ -1,6 +1,6 @@
 # 后端开发
 
-本文维护服务端模块接入与路由注册。共用边界见 [开发参考](README.md)，HTTP 契约与镜像源配置见 [接口参考](api.md)，下载生命周期见 [下载任务与缓存](downloads.md)。
+本文维护服务端模块接入与路由注册。共用边界见 [开发参考](architecture.md)，HTTP 契约与镜像源配置见 [接口参考](api.md)，下载生命周期见 [下载任务与缓存](downloads.md)。
 
 ## 新增服务端接口
 
@@ -34,4 +34,4 @@ getRoute(exampleRoutes, '/preview', c => previewResponse(c.req.raw, c.env));
 
 `app.ts` 的 createApiApp 统一注册业务、错误映射与未知 API 404，接收可选静态回退函数。`platforms/cloudflare.ts` 注入 Cloudflare ASSETS 回退；`platforms/edgeone.ts` 将 EdgeOne context.request/context.env 传给共用应用。JSON 响应统一使用 common/http.ts 的 jsonResponse，避免依赖 EdgeOne 缺少的静态 Response.json；响应实例的 json() 解析仍可使用。安装上游请求使用 AbortController 与可清理定时器限制响应头等待时间，不依赖静态 AbortSignal.timeout，也不对后续二进制响应流施加该时限。公共 Env 只声明业务配置，CloudflareEnv 在 Cloudflare 平台入口声明资源绑定。业务代码不得反向依赖这些入口；app.ts 不依赖 platforms，平台入口只能通过 app.ts 使用业务路由，两个平台入口不互相依赖。
 
-EdgeOne 按项目根目录 edge-functions 发现文件路由，因此该目录保留为平台约定的薄入口，不承载业务或完整适配逻辑；api、v2 目录的文件只重导出 src/api/platforms/edgeone.ts，分别显式覆盖根路径与多级路径；使用通用 onRequest 保留 Registry 方法透传及 API 方法检查。新增既有前缀下的接口只修改业务路由，无需增加平台入口。开发、部署命令见 [README](../../README.md#edgeone-开发与部署)。
+EdgeOne 按项目根目录 edge-functions 发现文件路由，因此该目录保留为平台约定的薄入口，不承载业务或完整适配逻辑；api、v2 目录的文件只重导出 src/api/platforms/edgeone.ts，分别显式覆盖根路径与多级路径；使用通用 onRequest 保留 Registry 方法透传及 API 方法检查。新增既有前缀下的接口只修改业务路由，无需增加平台入口。开发、部署命令见 [README](../README.md#edgeone-开发与部署)。

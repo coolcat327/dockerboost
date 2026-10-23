@@ -9,7 +9,7 @@
 - [docs/README.md](docs/README.md) 是详细文档入口；接入步骤、接口契约、下载机制和设计要求在所属专题维护，不重复抄录。
 - 计划按任务读取，不视为当前行为或通用约束；实现完成后记录验证结果并归档。
 
-前端模块或接口接入读 [开发参考](docs/development/README.md)，接口契约与镜像源读 [接口参考](docs/development/api.md)，下载、OPFS 或缓存读 [下载机制](docs/development/downloads.md)，视觉变更读 [视觉规范](docs/design/visual-style.md)。需要设计方案时读 [设计与实现流程](docs/design/workflow.md)，方案须覆盖代码结构及与现有实现的对接。
+按任务从 [文档导航](docs/README.md) 直接阅读所属专题；不默认通读历史归档。复杂方案覆盖代码结构、现有实现对接与验证安排。普通修正的交付信息保留在提交或 PR，无需追加长期计划日志。
 
 ## 开发约束
 

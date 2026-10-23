@@ -41,7 +41,7 @@ Choose an image and architecture on the page, download the archive, then import 
 docker load -i nginx_latest_linux_amd64.tar
 ```
 
-Browser downloads stream image layers into OPFS temporary storage and assemble the TAR locally. Terminal downloads use curl, local tar, and common shell tools, without Docker, jq, or Skopeo. Both installation bundles and image downloads support cancellation and temporary file cleanup. See [Download tasks and caching](docs/development/downloads.md) for details.
+Browser downloads stream image layers into OPFS temporary storage and assemble the TAR locally. Terminal downloads use curl, local tar, and common shell tools, without Docker, jq, or Skopeo. Both installation bundles and image downloads support cancellation and temporary file cleanup. See [Download tasks and caching](docs/downloads.md) for details.
 
 ### Requirements and limitations
 
@@ -68,7 +68,7 @@ pnpm run build     # Generate dist
 pnpm run validate  # Type checks, tests, and build; also used in CI
 ```
 
-Edit source files rather than generated files in `dist/`. Before contributing, read [AGENTS.md](AGENTS.md). See the [Development reference](docs/development/README.md) for module integration and dependency boundaries.
+Edit source files rather than generated files in `dist/`. Before contributing, read [AGENTS.md](AGENTS.md). See the [Development reference](docs/architecture.md) for module integration and dependency boundaries.
 
 ## Project structure
 
@@ -88,22 +88,22 @@ Edit source files rather than generated files in `dist/`. Before contributing, r
 | `scripts/` | Build tooling, release identifiers, and architecture checks |
 | `tests/` | Regression tests for APIs, installation scripts, archives, and browser downloads |
 | `docs/` | Documentation index; topic guides are organized by responsibility |
-| `docs/development/` | Frontend and backend integration, API contracts, download implementation, and development tool setup |
-| `docs/design/` | Visual guidelines and design workflow |
+| `docs/` | Current architecture, development, API, download, and UI topics |
+| `docs/decisions/` | Decision rationale |
+| `docs/archive/` | Completed plans and historical validation |
 | `docs/plans/` | Pending work in pending; delivery records in implemented |
-| `docs/research/` | Research findings and technology assessments |
 | `config.js` | Public page settings and default image sources |
 | `wrangler.jsonc`, `edgeone.json` | Platform build and deployment configuration |
 | `.github/workflows/` | Continuous validation and deployment |
 
-See the [Development reference](docs/development/README.md) for module integration and dependency boundaries, or browse the [Documentation index](docs/README.md).
+See the [Development reference](docs/architecture.md) for module integration and dependency boundaries, or browse the [Documentation index](docs/README.md).
 
 ## Deployment
 
 ### Deploy with GitHub Actions
 
 1. Push the project to your GitHub repository. Set `main` as the default branch for the default manual selection described below.
-2. Set the Worker name in `wrangler.jsonc`. Configure page links, author, and default image sources in the root `config.js`. Override the source list with the JSON variable `IMAGE_SOURCES` if needed. See [Image source configuration](docs/development/api.md#镜像源配置) for fields and path rules.
+2. Set the Worker name in `wrangler.jsonc`. Configure page links, author, and default image sources in the root `config.js`. Override the source list with the JSON variable `IMAGE_SOURCES` if needed. See [Image source configuration](docs/api.md#镜像源配置) for fields and path rules.
 3. Add these repository secrets under **Settings → Secrets and variables → Actions**:
 
    | Secret | Purpose |
@@ -171,7 +171,7 @@ Pages serves frontend assets directly; only `/api` and `/v2` invoke Edge Functio
 The detailed documentation is currently in Chinese.
 
 - [Documentation index](docs/README.md): find documentation by task.
-- [Development reference](docs/development/README.md): module structure, API integration, and dependency boundaries.
-- [API reference](docs/development/api.md): API contracts, Registry behavior, and image source configuration.
-- [Download tasks and caching](docs/development/downloads.md): browser and terminal downloads, temporary storage, and cleanup.
-- [Visual guidelines](docs/design/visual-style.md): page styling and interaction requirements.
+- [Development reference](docs/architecture.md): module structure, API integration, and dependency boundaries.
+- [API reference](docs/api.md): API contracts, Registry behavior, and image source configuration.
+- [Download tasks and caching](docs/downloads.md): browser and terminal downloads, temporary storage, and cleanup.
+- [Visual guidelines](docs/ui.md): page styling and interaction requirements.
