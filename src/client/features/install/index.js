@@ -1,3 +1,4 @@
+import { retryDownload } from '../../common/download-retry.js';
 import { buildVersion, downloadRequestUrl } from '../../common/download-cache-policy.js';
 import { writeOpfsFile, writeOpfsStream } from '../../common/opfs-file-writer.js';
 import { clearDownloadCaches, createDownloadTask } from '../../common/browser-download-task.js';
@@ -97,8 +98,6 @@ export const feature = {
       if (busy) { controller.abort(); return; }
       controller = new AbortController();
       const { signal } = controller;
-      let task;
-      const responses = [];
       try {
         busy = true; state = 'transfer'; ready(); arch.disabled = docker.disabled = true;
         invalidate();
@@ -106,63 +105,80 @@ export const feature = {
         const filename = `${bundleName()}.tar`;
         progress.start(filename);
         if (!navigator.storage?.getDirectory) throw new Error(text.unsupported);
-        task = await createDownloadTask('install');
-        signal.throwIfAborted();
-        const job = task.directory;
-        const { files } = await json(`/api/install/plan?${q}`, signal);
-        const encoder = new TextEncoder();
-        const entries = Object.entries(files).map(([name, text]) => [name, encoder.encode(text)]);
-        let total = 0;
-        const hashes = new Map();
-        const assets = [['docker', `docker-${docker.value}.tgz`], ['compose', 'docker-compose']];
-        progress.update({ phase: 'download', completed: 0 });
-        // Open both requests to obtain the combined size before reporting progress.
-        await Promise.all(assets.map(async ([kind, name], index) => {
-          const response = await fetch(`/api/install/asset?${q}&kind=${kind}`, { signal });
-          responses[index] = response;
-          if (!response.ok) throw new Error(`${text.failed}: ${name} (${response.status})`);
-        }));
-        const sizes = responses.map(response => Number(response.headers.get('content-length')));
-        const expected = sizes.every(size => size > 0) ? sizes.reduce((sum, size) => sum + size, 0) : 0;
-        for (const [index, [, name]] of assets.entries()) {
-          signal.throwIfAborted();
-          progress.update({ phase: 'download', name, completed: total, total: expected });
-          const r = responses[index];
-          const fileHandle = await job.getFileHandle(name, { create: true });
-          const hash = new Sha256();
-          await writeOpfsStream(fileHandle, r.body, {
-            signal,
-            onChunk(value) {
-              total += value.byteLength; hash.update(value);
+        await retryDownload(async attempt => {
+          let task;
+          const responses = [], requests = [];
+          const attemptController = new AbortController();
+          const abortAttempt = () => attemptController.abort(signal.reason);
+          signal.addEventListener('abort', abortAttempt, { once: true });
+          if (signal.aborted) abortAttempt();
+          const attemptSignal = attemptController.signal;
+          try {
+            if (attempt > 0) progress.start(filename, { preserveStartedAt: true });
+            task = await createDownloadTask('install');
+            attemptSignal.throwIfAborted();
+            const job = task.directory;
+            const { files } = await json(`/api/install/plan?${q}`, attemptSignal);
+            const encoder = new TextEncoder();
+            const entries = Object.entries(files).map(([name, text]) => [name, encoder.encode(text)]);
+            let total = 0;
+            const hashes = new Map();
+            const assets = [['docker', `docker-${docker.value}.tgz`], ['compose', 'docker-compose']];
+            progress.update({ phase: 'download', completed: 0 });
+            // Open both requests to obtain the combined size before reporting progress.
+            requests.push(...assets.map(async ([kind, name], index) => {
+              const response = await fetch(`/api/install/asset?${q}&kind=${kind}`, { signal: attemptSignal });
+              responses[index] = response;
+              if (!response.ok) throw new Error(`${text.failed}: ${name} (${response.status})`);
+            }));
+            await Promise.all(requests);
+            const sizes = responses.map(response => Number(response.headers.get('content-length')));
+            const expected = sizes.every(size => size > 0) ? sizes.reduce((sum, size) => sum + size, 0) : 0;
+            for (const [index, [, name]] of assets.entries()) {
+              attemptSignal.throwIfAborted();
               progress.update({ phase: 'download', name, completed: total, total: expected });
-            }
-          });
+              const r = responses[index];
+              const fileHandle = await job.getFileHandle(name, { create: true });
+              const hash = new Sha256();
+              await writeOpfsStream(fileHandle, r.body, {
+                signal: attemptSignal,
+                onChunk(value) {
+                  total += value.byteLength; hash.update(value);
+                  progress.update({ phase: 'download', name, completed: total, total: expected });
+                }
+              });
 
-          hashes.set(name, hash.hex());
-          entries.push([name, await fileHandle.getFile()]);
-        }
-        progress.update({ phase: 'export', name: filename });
-        let sums = '';
-        for (const [name, data] of entries) {
-          const hash = hashes.get(name) || new Sha256().update(data).hex();
-          sums += `${hash}  ${name}\n`;
-        }
-        entries.push(['SHA256SUMS', encoder.encode(sums)]);
-        {
-          const archiveHandle = await job.getFileHandle(filename, { create: true });
-          await writeOpfsFile(archiveHandle, writable => writeArchive(writable, entries.map(([name, data]) => [`${filename.slice(0, -4)}/${name}`, data]), { signal }), { signal });
-          const archive = await archiveHandle.getFile();
-          signal.throwIfAborted();
-          progress.update({ phase: 'handoff' });
-          task.save(archive, filename);
-          progress.complete({ filename, size: archive.size });
-        }
+              hashes.set(name, hash.hex());
+              entries.push([name, await fileHandle.getFile()]);
+            }
+            progress.update({ phase: 'export', name: filename });
+            let sums = '';
+            for (const [name, data] of entries) {
+              const hash = hashes.get(name) || new Sha256().update(data).hex();
+              sums += `${hash}  ${name}\n`;
+            }
+            entries.push(['SHA256SUMS', encoder.encode(sums)]);
+            {
+              const archiveHandle = await job.getFileHandle(filename, { create: true });
+              await writeOpfsFile(archiveHandle, writable => writeArchive(writable, entries.map(([name, data]) => [`${filename.slice(0, -4)}/${name}`, data]), { signal: attemptSignal }), { signal: attemptSignal });
+              const archive = await archiveHandle.getFile();
+              attemptSignal.throwIfAborted();
+              progress.update({ phase: 'handoff' });
+              task.save(archive, filename);
+              progress.complete({ filename, size: archive.size });
+            }
+          } finally {
+            attemptController.abort();
+            await Promise.allSettled(requests);
+            await Promise.all(responses.map(response => response.body?.cancel().catch(() => {})));
+            await task?.finish().catch(() => {});
+            signal.removeEventListener('abort', abortAttempt);
+          }
+        }, { signal, onRetry: (error, retry) => progress.retry(error, retry) });
       } catch (error) {
         progress.fail(error, signal.aborted);
       } finally {
         controller.abort();
-        await Promise.all(responses.map(response => response.body?.cancel().catch(() => {})));
-        await task?.finish().catch(() => {});
         controller = null; busy = false;
         arch.disabled = docker.disabled = false; ready();
       }

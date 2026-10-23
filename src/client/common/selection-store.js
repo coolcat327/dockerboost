@@ -18,9 +18,9 @@ export function createSelectionStore() {
       });
       return promise;
     },
-    lookupPlatforms(url) {
-      if (platformLookup?.url === url) return platformLookup.promise;
-      const promise = fetch(url).then(async (response) => ({
+    lookupPlatforms(url, { refresh = false } = {}) {
+      if (!refresh && platformLookup?.url === url) return platformLookup.promise;
+      const promise = fetch(url, refresh ? { cache: 'no-store' } : undefined).then(async (response) => ({
         ok: response.ok,
         manifest: await response.json(),
         source: response.headers.get('x-dockerboost-source')

@@ -206,3 +206,46 @@ test('browser bundle keeps every file under one folder with working relative che
   }
   for (const callback of timers) callback();
 });
+
+test('installation retries three times with clean tasks before exposing final failure', async t => {
+  const nodes = new Map();
+  const node = () => ({ value: '', selectedOptions: [{ textContent: 'x86_64 / amd64' }], dataset: {}, style: {}, listeners: {}, classList: { toggle() {} },
+    addEventListener(event, fn) { this.listeners[event] = fn; }, replaceChildren() { this.value = ''; },
+    add(option) { this.value ||= option.value; }, setAttribute() {}, removeAttribute() {}, querySelector() { return node(); } });
+  const panel = { querySelector(selector) { if (!nodes.has(selector)) nodes.set(selector, node()); return nodes.get(selector); }, querySelectorAll() { return []; } };
+  const previous = { Option: globalThis.Option, window: globalThis.window };
+  t.after(() => Object.assign(globalThis, previous));
+  globalThis.Option = function(label, value) { this.value = value; };
+  globalThis.window = { location: { origin: 'https://example.com' } };
+  let created = 0, cleaned = 0, plans = 0;
+  const jobs = { async *entries() {}, async getDirectoryHandle() {
+    assert.equal(created, cleaned, 'previous task must finish cleanup before retry');
+    created++; return {};
+  }, async removeEntry() { cleaned++; } };
+  const root = { async *entries() {}, async getDirectoryHandle(name) {
+    if (name === 'dockerboost-downloads') return jobs;
+    throw new DOMException('Missing', 'NotFoundError');
+  } };
+  const storageDescriptor = Object.getOwnPropertyDescriptor(navigator, 'storage');
+  Object.defineProperty(navigator, 'storage', { configurable: true, value: { async getDirectory() { return root; } } });
+  t.after(() => { if (storageDescriptor) Object.defineProperty(navigator, 'storage', storageDescriptor); else delete navigator.storage; });
+  const delays = [];
+  t.mock.method(globalThis, 'setTimeout', (callback, delay) => { delays.push(delay); queueMicrotask(callback); return 0; });
+  t.mock.method(globalThis, 'fetch', async url => {
+    if (url.includes('/catalog')) return Response.json({ docker: ['28.1.1'], compose: '2.35.1' });
+    plans++;
+    throw new Error(`network error ${plans}`);
+  });
+  feature.init({ panel });
+  panel.querySelector('#install-arch').value = 'x86_64';
+  await panel.querySelector('#install-arch').listeners.change();
+  await new Promise(setImmediate);
+  await panel.querySelector('#install-download').listeners.click();
+  assert.equal(plans, 4);
+  assert.equal(created, 4);
+  assert.equal(cleaned, 4);
+  assert.deepEqual(delays, [1000, 2000, 4000]);
+  assert.equal(panel.querySelector('#install-status').textContent, '下载失败');
+  assert.equal(panel.querySelector('#install-detail').textContent, 'network error 4');
+  assert.equal(panel.querySelector('#install-download').textContent, '下载');
+});

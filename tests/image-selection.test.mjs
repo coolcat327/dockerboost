@@ -320,3 +320,42 @@ test('queue selection retries source loading and disposal ignores pending resolu
     assert.equal(ready, 0, 'removed queue jobs cannot become ready or auto-start');
   } finally { Object.assign(globalThis, original); }
 });
+
+test('reparsing refetches platforms after success or failure while preserving catalog and platform choice', async t => {
+  const original = { Option: globalThis.Option, window: globalThis.window };
+  t.after(() => Object.assign(globalThis, original));
+  globalThis.Option = class { constructor(textContent, value) { this.textContent = textContent; this.value = value; } };
+  globalThis.window = { location: { host: 'proxy.test' } };
+  let catalogs = 0, ready = 0, failed = 0;
+  const requests = [];
+  t.mock.method(globalThis, 'fetch', async (url, options) => {
+    if (url === '/api/sources') {
+      catalogs++;
+      return Response.json({ sources: [{ id: 'mirror-gcr', label: 'Docker Hub' }] });
+    }
+    requests.push({ url, options });
+    if (requests.length === 2) return Response.json({ error: 'temporarily unavailable' }, { status: 503 });
+    return Response.json({ platforms: requests.length === 1 ? ['linux/amd64', 'linux/arm64/v8'] : ['linux/arm64/v8', 'linux/arm64/v9'] },
+      { headers: { 'x-dockerboost-source': 'mirror-gcr' } });
+  });
+  const store = createSelectionStore();
+  store.update({ image: 'nginx:latest', platform: 'linux/arm64/v8' });
+  const controls = panel();
+  const selection = createImageSelection({ panel: controls, store,
+    locale: () => ({ waitingPlatforms: 'Waiting', loadingPlatforms: 'Loading', noPlatforms: 'None' }),
+    messages: () => ({ automatic: 'Auto' }), flash: () => {}, onReady: () => ready++, onError: () => failed++ });
+  t.after(() => selection.dispose());
+  selection.init(); await new Promise(setImmediate);
+  assert.equal(ready, 1);
+  assert.equal(controls.architecture.value, 'linux/arm64/v8');
+  await selection.reloadSources(); await new Promise(setImmediate);
+  assert.equal(failed, 1, 'manual refresh must not reuse the successful platform response');
+  await selection.reloadSources(); await new Promise(setImmediate);
+  assert.equal(ready, 2, 'another refresh recovers from an HTTP failure');
+  assert.equal(catalogs, 1, 'all attempts retain the shared source catalog');
+  assert.equal(requests.length, 3);
+  assert.ok(requests.every(request => request.url === requests[0].url));
+  assert.ok(requests.slice(1).every(request => request.options.cache === 'no-store'));
+  assert.deepEqual(controls.architecture.options.map(option => option.value), ['linux/arm64/v8', 'linux/arm64/v9']);
+  assert.equal(controls.architecture.value, 'linux/arm64/v8');
+});

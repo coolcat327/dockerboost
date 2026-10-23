@@ -80,7 +80,7 @@ export function createImageSelection({ panel, locale, messages, flash, store, on
         : platforms.includes('linux/amd64') ? 'linux/amd64' : platforms[0];
     store?.update({ platform: architecture.value }, storeOrigin);
   };
-  const inspect = async () => {
+  const inspect = async ({ refresh = false } = {}) => {
     if (disposed) return;
     requestController?.abort();
     const controller = new AbortController();
@@ -95,7 +95,7 @@ export function createImageSelection({ panel, locale, messages, flash, store, on
       architecture.replaceChildren(new Option(locale().loadingPlatforms, ''));
       const lookupImage = parsed.source === 'auto' ? parsed.original : parsed.upstream;
       const url = `/api/platforms?image=${encodeURIComponent(lookupImage)}&source=${encodeURIComponent(parsed.source)}`;
-      const result = store ? await store.lookupPlatforms(url) : await fetch(url, { signal: controller.signal }).then(async (response) => ({
+      const result = store ? await store.lookupPlatforms(url, { refresh }) : await fetch(url, { signal: controller.signal }).then(async (response) => ({
         ok: response.ok,
         manifest: await response.json(),
         source: response.headers.get('x-dockerboost-source')
@@ -125,7 +125,7 @@ export function createImageSelection({ panel, locale, messages, flash, store, on
       if (requestController === controller) requestController = undefined;
     }
   };
-  const loadSources = () => {
+  const loadSources = (refresh = false) => {
     const sourcesRequest = store ? store.lookupSources() : fetch('/api/sources').then(async (response) => {
       if (!response.ok) throw new Error('无法读取镜像源');
       return response.json();
@@ -133,7 +133,7 @@ export function createImageSelection({ panel, locale, messages, flash, store, on
     return sourcesRequest.then(({ sources }) => {
       if (disposed) return;
       setSources(sources);
-      if (image.value.trim()) inspect();
+      if (image.value.trim()) void inspect({ refresh });
     }).catch(() => { if (!disposed) flash('镜像源列表加载失败，暂使用默认镜像源。'); });
   };
   const init = () => {
@@ -197,7 +197,7 @@ export function createImageSelection({ panel, locale, messages, flash, store, on
   };
   return {
     init,
-    reloadSources: loadSources,
+    reloadSources: () => loadSources(true),
     dispose: () => { disposed = true; unsubscribe?.(); clearTimeout(inputTimer); requestController?.abort(); requestToken++; },
     setLanguage,
     current: () => ({ image: image.value, source: requestedSource(), platform: architecture.value, resolvedSource }),

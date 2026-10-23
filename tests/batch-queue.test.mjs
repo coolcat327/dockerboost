@@ -30,3 +30,24 @@ test('stop all cancels queued work without starting it; failures can be retried'
   queue.add(a); await tick(); assert.equal(a.state, 'failed'); assert.equal(a.error, 'network');
   queue.add(a); await tick(); assert.equal(count, 2);
 });
+
+test('backoff retains its concurrency slot and stop all cancels retry plus queued jobs', async () => {
+  const { retryDownload } = await import('../src/client/common/download-retry.js');
+  let notify, calls = 0;
+  const waiting = new Promise(resolve => { notify = resolve; });
+  const queue = createBatchQueue((_job, signal) => retryDownload(async () => {
+    calls++; throw new Error('network');
+  }, { signal, onRetry: () => notify() }), () => {}, 1);
+  const first = {}, second = {};
+  queue.add(first); queue.add(second);
+  await waiting;
+  assert.equal(first.state, 'running');
+  assert.equal(second.state, 'queued');
+  assert.equal(queue.busy, true);
+  queue.stopAll();
+  await tick();
+  assert.equal(first.state, 'stopped');
+  assert.equal(second.state, 'stopped');
+  assert.equal(calls, 1);
+  assert.equal(queue.busy, false);
+});

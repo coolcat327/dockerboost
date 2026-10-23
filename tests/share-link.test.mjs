@@ -26,3 +26,13 @@ test('invalid or oversized shared state is ignored', () => {
   assert.equal(restoreSharedState(hashFor({ tab: 'pull', image: 'nginx:latest', source: 'bad source', platform: '' })), null);
   assert.equal(restoreSharedState(hashFor({ tab: 'pull', image: 'nginx:latest', source: 'auto', platform: 'linux/arm64/bad/extra' })), null);
 });
+
+test('shared clipboard helper reports a successful copy to both share entry points', async t => {
+  const { copyLink } = await import('../src/client/common/share-link.js');
+  const descriptor = Object.getOwnPropertyDescriptor(navigator, 'clipboard');
+  let copied;
+  Object.defineProperty(navigator, 'clipboard', { configurable: true, value: { async writeText(value) { copied = value; } } });
+  t.after(() => { if (descriptor) Object.defineProperty(navigator, 'clipboard', descriptor); else delete navigator.clipboard; });
+  assert.equal(await copyLink('https://example.com/#download-batch?v=1', () => ({})), true);
+  assert.equal(copied, 'https://example.com/#download-batch?v=1');
+});

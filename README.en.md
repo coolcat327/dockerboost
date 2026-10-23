@@ -33,7 +33,7 @@ The Download tab offers Single and Batch modes: paste or select Compose YAML, au
 | Configure a registry mirror | Generate configuration commands, back up existing settings, and get recovery commands |
 | Pull an image for a specific architecture | Enter an image name or paste a `docker pull` command to generate pull and tagging commands |
 | Prepare images for an offline machine | Download a TAR in your browser or terminal, transfer it, and import it with `docker load` |
-| Share an image selection with a teammate | Copy a share link that restores the image, source, architecture, and other page parameters |
+| Share image selections with a teammate | Share a single image selection or a complete download queue; queue links automatically add and resolve the images when opened |
 
 ### Take an image offline in a single archive
 

@@ -1,3 +1,5 @@
+export const queueSharePrefix = '#download-batch?';
+
 export function restoreSharedState(hash) {
   const fragment = hash.startsWith('#') ? hash.slice(1) : hash;
   const readable = /^(pull|download)\?(.+)$/.exec(fragment);
@@ -11,9 +13,9 @@ export function restoreSharedState(hash) {
   return { tab: state.tab, image: state.image, source: state.source, platform: state.platform };
 }
 
-async function copyLink(url, messages) {
+export async function copyLink(url, messages) {
   if (navigator.clipboard?.writeText) {
-    try { await navigator.clipboard.writeText(url); return; } catch { /* use the browser fallback */ }
+    try { await navigator.clipboard.writeText(url); return true; } catch { /* use the browser fallback */ }
   }
   const field = document.createElement('textarea');
   field.value = url;

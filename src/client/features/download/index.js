@@ -6,6 +6,7 @@ import { createDownloadProgress } from '../../common/download-progress.js';
 import { archiveFilename } from '../../common/image-reference.js';
 import { createImageSelection } from '../../common/image-selection.js';
 import { shareSelection } from '../../common/share-link.js';
+import { retryDownload } from '../../common/download-retry.js';
 
 export const feature = {
   id: 'download',
@@ -26,7 +27,7 @@ export const feature = {
       browser: 'Download', stop: 'Stop download', layerUnit: 'layers', sizeSeparator: ' · ', share: 'Share', shareCopied: 'Share link copied', shareGenerated: 'Share link is ready', shareNeedsImage: 'Enter an image name first', shareFailed: 'Could not create a share link', shareCopyManually: 'Copy this share link', shareCopyFailed: 'Could not copy the share link', meta: 'Terminal download', copy: 'Copy all', note: 'Only public images are supported.'
     }
   },
-  init({ panel, locale, messages, flash, selectionStore }) {
+  init({ panel, locale, messages, flash, selectionStore, sharedBatchHash }) {
   void clearDownloadCaches().catch(() => {});
   const lookupResult = panel.querySelector('#lookup-result');
   const lookupStatus = panel.querySelector('#lookup-status');
@@ -107,8 +108,10 @@ export const feature = {
       const { platform, resolvedSource } = selection.current();
       const image = selection.resolve();
       const filename = archiveFilename(image.original, platform);
-      progress.update({ phase: 'preparing', name: filename });
-      const result = await exportArchive({ image, platform, source: resolvedSource, signal: exportTask.controller.signal, onProgress: event => progress.update(event) });
+      const result = await retryDownload(attempt => {
+        progress.start(filename, { preserveStartedAt: attempt > 0 });
+        return exportArchive({ image, platform, source: resolvedSource, signal: exportTask.controller.signal, onProgress: event => progress.update(event) });
+      }, { signal: exportTask.controller.signal, onRetry: (error, retry) => progress.retry(error, retry) });
       progress.complete({ filename: result.filename, size: result.archive.size });
     } catch (error) {
       progress.fail(error, exportTask.controller.signal.aborted);
@@ -154,7 +157,7 @@ export const feature = {
       showInspection();
     } catch { /* wait for a valid name */ }
   });
-  const batch = initBatch({ panel, locale, messages, flash, selectionStore, singleBusy: () => !!activeExport });
+  const batch = initBatch({ panel, locale, messages, flash, selectionStore, sharedBatchHash, singleBusy: () => !!activeExport });
   return { setLanguage: (message) => {
     batch.setLanguage(message === feature.messages.en);
     selection.setLanguage();

@@ -3,7 +3,7 @@ import { initPageMotion } from './page-motion.js';
 import { initHeroIntro } from './hero-intro.js';
 import { createLanguage } from './common/language.js';
 import { createSelectionStore } from './common/selection-store.js';
-import { restoreSharedState } from './common/share-link.js';
+import { restoreSharedState, queueSharePrefix } from './common/share-link.js';
 
 const toast = document.querySelector('#toast');
 const flash = (message) => {
@@ -13,6 +13,7 @@ const flash = (message) => {
 };
 const language = createLanguage();
 const sharedState = restoreSharedState(window.location.hash);
+const sharedBatchHash = window.location.hash.startsWith(queueSharePrefix) ? window.location.hash : '';
 const selectionGroups = new Map();
 const registrations = features.map((feature) => {
   const tab = document.querySelector(`.tool-tab[data-tab="${feature.id}"]`);
@@ -24,7 +25,7 @@ const registrations = features.map((feature) => {
     selectionGroups.set(feature.selectionGroup, store);
   }
   const selectionStore = selectionGroups.get(feature.selectionGroup);
-  const instance = feature.init({ panel, locale: language.locale, messages: () => language.messages(feature), flash, selectionStore });
+  const instance = feature.init({ panel, locale: language.locale, messages: () => language.messages(feature), flash, selectionStore, sharedBatchHash });
   return { feature, tab, panel, instance };
 });
 language.bind(registrations);
@@ -70,7 +71,7 @@ registrations.forEach(({ feature, tab, panel }, index) => {
     registrations[target].tab.scrollIntoView({ block: 'nearest', inline: 'nearest' });
   });
 });
-selectTab(sharedState?.tab || registrations[0].feature.id);
+selectTab(sharedState?.tab || (sharedBatchHash ? 'download' : registrations[0].feature.id));
 if ('ResizeObserver' in window) {
   const observer = new ResizeObserver(positionIndicator);
   registrations.forEach(({ tab }) => observer.observe(tab));

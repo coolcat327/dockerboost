@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { composeImages, batchScript } from '../src/client/features/download/compose.js';
+import { composeImages, batchCommands } from '../src/client/features/download/compose.js';
 import { spawnSync } from 'node:child_process';
 
 test('Compose groups services by image and platform, supports YAML aliases', () => {
@@ -23,22 +23,14 @@ test('Compose preserves digest references and reports malformed platforms', () =
   assert.equal(composeImages(`services:\n  a:\n    image: redis@${digest}`).images[0].image, `redis@${digest}`);
   assert.equal(composeImages('services:\n  a:\n    image: nginx\n    platform: 42').issues.length, 1);
 });
-test('batch script uses encoded API parameters, temporary scripts and fail-fast execution', () => {
-  const script = batchScript([{ image: 'nginx:1.27', platform: 'linux/amd64', source: 'auto' }, { image: 'redis@sha256:abc', platform: 'linux/arm64', source: 'mirror-gcr' }], 'https://example.com');
-  assert.match(script, /set -eu/);
-  assert.match(script, /mktemp -d/);
-  assert.match(script, /image=nginx%3A1.27/);
-  assert.match(script, /platform=linux%2Farm64/);
-  assert.match(script, /sh "\$tmp\/1.sh"/);
-  assert.equal(spawnSync('sh', ['-n'], { input: script }).status, 0);
-});
-
-test('batch terminal commands match single-image downloads and stop on failure', async () => {
-  const { batchCommands } = await import('../src/client/features/download/compose.js');
-  const entry = { image: 'nginx:latest', platform: 'linux/amd64', source: 'auto' };
-  const command = batchCommands([entry, entry, { ...entry, image: 'redis:7' }], 'https://example.com');
-  assert.equal((command.match(/curl -fsSL/g) || []).length, 2);
-  assert.match(command, /-o \.download-image-1\.sh "https:\/\/example.com\/api\/download-script\?image=nginx%3Alatest&platform=linux%2Famd64&source=auto" && sh \.download-image-1\.sh &&\n/);
-  assert.match(command, /sh \.download-image-2\.sh$/);
-  assert.doesNotMatch(command, /#!|mktemp/);
+test('batch terminal command fetches one helper and lists deduplicated image parameters', () => {
+  const entry = { image: 'nginx:latest', platform: 'linux/amd64' };
+  const command = batchCommands([entry, { ...entry, source: 'auto' }, { ...entry, image: 'redis:7', platform: 'linux/arm64/v8' }], 'https://example.com');
+  assert.equal((command.match(/curl -fsSL/g) || []).length, 1);
+  assert.match(command, /https:\/\/example.com\/download-images\.sh/);
+  assert.match(command, /'nginx:latest' 'linux\/amd64' 'auto'/);
+  assert.match(command, /'redis:7' 'linux\/arm64\/v8' 'auto'/);
+  assert.equal((command.match(/'nginx:latest'/g) || []).length, 1);
+  assert.equal(spawnSync('sh', ['-n'], { input: command }).status, 0);
+  assert.equal(batchCommands([], 'https://example.com'), '');
 });

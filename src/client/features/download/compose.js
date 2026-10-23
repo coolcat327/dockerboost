@@ -22,23 +22,12 @@ export function composeImages(text) {
   return { images: [...images.values()], issues };
 }
 
-export function batchScript(entries, origin) {
-  const unique = [...new Map(entries.map(entry => [JSON.stringify([entry.image, entry.platform, entry.source]), entry])).values()];
-  const commands = unique.map(({ image, platform, source = 'auto' }, index) => {
-    const url = new URL('/api/download-script', origin);
-    url.search = new URLSearchParams({ image, platform, source }).toString();
-    return `curl -fsSL '${url.href}' -o "$tmp/${index}.sh"\nsh "$tmp/${index}.sh"`;
-  });
-  return ['#!/bin/sh', 'set -eu', 'tmp=$(mktemp -d)', `trap 'rm -rf "$tmp"' EXIT HUP INT TERM`, ...commands, ''].join('\n');
-}
+const shellQuote = value => "'" + String(value).replaceAll("'", "'\"'\"'") + "'";
 
-// Match the single-image terminal workflow; && prevents later commands after failure.
 export function batchCommands(entries, origin) {
-  const unique = [...new Map(entries.map(entry => [JSON.stringify([entry.image, entry.platform, entry.source]), entry])).values()];
-  return unique.map(({ image, platform, source = 'auto' }, index) => {
-    const url = new URL('/api/download-script', origin);
-    url.search = new URLSearchParams({ image, platform, source }).toString();
-    const file = `.download-image-${index + 1}.sh`;
-    return `curl -fsSL -o ${file} "${url.href}" && sh ${file}`;
-  }).join(' &&\n');
+  const unique = [...new Map(entries.map(({ image, platform, source = 'auto' }) => [JSON.stringify([image, platform, source]), { image, platform, source }])).values()];
+  if (!unique.length) return '';
+  const base = new URL(origin).origin;
+  const rows = unique.map(({ image, platform, source }) => `  ${[image, platform, source].map(shellQuote).join(' ')}`);
+  return `curl -fsSL -o .download-images.sh ${shellQuote(`${base}/download-images.sh`)} && sh .download-images.sh ${shellQuote(base)} \\\n${rows.join(' \\\n')}`;
 }
