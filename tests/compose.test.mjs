@@ -1,0 +1,34 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { composeImages, batchScript } from '../src/client/features/download/compose.js';
+import { spawnSync } from 'node:child_process';
+
+test('Compose groups services by image and platform, supports YAML aliases', () => {
+  const result = composeImages('services:\n  web: &web\n    image: nginx:1.27\n  proxy: *web\n  arm:\n    image: nginx:1.27\n    platform: linux/arm64');
+  assert.equal(result.images.length, 2);
+  assert.deepEqual(result.images[0].services, ['web', 'proxy']);
+  assert.equal(result.images[1].platform, 'linux/arm64');
+});
+test('Compose reports unresolved, build-only and extended services without losing valid ones', () => {
+  const result = composeImages('services:\n  a:\n    image: redis:7\n  b:\n    image: ${IMAGE}\n  c:\n    build: .\n  d:\n    extends: other');
+  assert.equal(result.images.length, 1);
+  assert.equal(result.issues.length, 3);
+});
+test('Compose rejects malformed input, duplicate keys, include and invalid services', () => {
+  for (const value of ['services: [a]', 'services: hello', 'services: {}\ninclude: other.yml', 'services:\n  a: {}\n  a: {}', 'services: [', 'x'.repeat(1024 * 1024 + 1)]) assert.throws(() => composeImages(value));
+  assert.equal(composeImages('services:\n  a:\n    image: "nginx; touch bad"').issues.length, 1);
+});
+test('Compose preserves digest references and reports malformed platforms', () => {
+  const digest = 'sha256:' + 'a'.repeat(64);
+  assert.equal(composeImages(`services:\n  a:\n    image: redis@${digest}`).images[0].image, `redis@${digest}`);
+  assert.equal(composeImages('services:\n  a:\n    image: nginx\n    platform: 42').issues.length, 1);
+});
+test('batch script uses encoded API parameters, temporary scripts and fail-fast execution', () => {
+  const script = batchScript([{ image: 'nginx:1.27', platform: 'linux/amd64', source: 'auto' }, { image: 'redis@sha256:abc', platform: 'linux/arm64', source: 'mirror-gcr' }], 'https://example.com');
+  assert.match(script, /set -eu/);
+  assert.match(script, /mktemp -d/);
+  assert.match(script, /image=nginx%3A1.27/);
+  assert.match(script, /platform=linux%2Farm64/);
+  assert.match(script, /sh "\$tmp\/1.sh"/);
+  assert.equal(spawnSync('sh', ['-n'], { input: script }).status, 0);
+});

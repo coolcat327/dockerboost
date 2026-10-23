@@ -1,6 +1,6 @@
-import { buildVersion } from '../../common/download-cache-policy.js';
-import { createDownloadTask, clearDownloadCaches } from '../../common/browser-download-task.js';
-import { resolveImageExportWorker, runExport } from './image-export-client.js';
+import { initBatch } from './batch.js';
+import { exportArchive } from './export-archive.js';
+import { clearDownloadCaches } from '../../common/browser-download-task.js';
 import { formatImageMetadata } from '../../common/transfer-progress.js';
 import { createDownloadProgress } from '../../common/download-progress.js';
 import { archiveFilename } from '../../common/image-reference.js';
@@ -27,7 +27,6 @@ export const feature = {
     }
   },
   init({ panel, locale, messages, flash, selectionStore }) {
-  const browserExportWorker = document.querySelector('meta[name="image-export-worker"]')?.content;
   void clearDownloadCaches().catch(() => {});
   const lookupResult = panel.querySelector('#lookup-result');
   const lookupStatus = panel.querySelector('#lookup-status');
@@ -103,33 +102,19 @@ export const feature = {
     activeExport = exportTask;
     browserDownload.classList.add('is-stoppable');
     browserDownload.textContent = messages().stop;
-    let downloadTask;
     progress.start();
     try {
       const { platform, resolvedSource } = selection.current();
       const image = selection.resolve();
       const filename = archiveFilename(image.original, platform);
       progress.update({ phase: 'preparing', name: filename });
-      const version = buildVersion;
-      downloadTask = await createDownloadTask('image');
-      if (exportTask.controller.signal.aborted) throw new DOMException('Download stopped', 'AbortError');
-      const workerUrl = await resolveImageExportWorker(browserExportWorker || '/image-export-worker.js', { signal: exportTask.controller.signal });
-      exportTask.controller.signal.throwIfAborted();
-      const worker = new Worker(workerUrl);
-      exportTask.worker = worker;
-      const result = await runExport(worker, { repository: image.repository, reference: image.reference, repoTag: image.original, source: resolvedSource, platform, filename, version, sessionId: downloadTask.id }, (event) => {
-        progress.update(event);
-      }, { signal: exportTask.controller.signal });
-      exportTask.controller.signal.throwIfAborted();
-      progress.update({ phase: 'handoff' });
-      downloadTask.save(result.archive, result.filename);
+      const result = await exportArchive({ image, platform, source: resolvedSource, signal: exportTask.controller.signal, onProgress: event => progress.update(event) });
       progress.complete({ filename: result.filename, size: result.archive.size });
     } catch (error) {
       progress.fail(error, exportTask.controller.signal.aborted);
       if (!exportTask.controller.signal.aborted) flash(lookupStatus.textContent);
     } finally {
       exportTask.worker?.terminate();
-      await downloadTask?.finish().catch(() => {});
       activeExport = undefined;
       browserDownload.classList.remove('is-stoppable');
       browserDownload.textContent = messages().browser;
@@ -169,7 +154,9 @@ export const feature = {
       showInspection();
     } catch { /* wait for a valid name */ }
   });
+  const batch = initBatch({ panel, selectionStore, singleBusy: () => !!activeExport });
   return { setLanguage: (message) => {
+    batch.setLanguage(message === feature.messages.en);
     selection.setLanguage();
     browserDownload.textContent = activeExport ? message.stop : message.browser;
     shareButton.textContent = message.share;

@@ -175,6 +175,9 @@ importers:
       modern-tar:
         specifier: 0.8.6
         version: 0.8.6
+      yaml:
+        specifier: ^2.9.1
+        version: 2.9.1
     devDependencies:
       '@cloudflare/workers-types':
         specifier: ^5.20260918.1
@@ -1602,6 +1605,11 @@ packages:
     resolution: {integrity: sha512-YgvUTfwqyc7UXVMrB+SImsVYSmTS8X/tSrtdNZMImM+n7+QTriRXyXim0mBrTXNeqzVF0KWGgHPeiyViFFrNDw==}
     engines: {node: '>=18'}
 
+  yaml@2.9.1:
+    resolution: {integrity: sha512-3NxN8+78OdzbT7C/WjGsyfPAtJaN3FNDsWxv7Y7mcDsT/oOmgW8BpyQQFFBnvZE3j9Y2Sdz1ULFLezL7Eb2yFw==}
+    engines: {node: '>= 14.6'}
+    hasBin: true
+
   yauzl@2.10.0:
     resolution: {integrity: sha512-p4a9I6X6nu6IhoGmBqAcbJy1mlC4j27vEPZX9F4L4/vZT3Lyq1VkFHw/V/PUcB9Buo+DG3iHkT0x3Qya58zc3g==}
 
@@ -2854,6 +2862,8 @@ snapshots:
   ws@8.21.0: {}
 
   yallist@5.0.0: {}
+
+  yaml@2.9.1: {}
 
   yauzl@2.10.0:
     dependencies:

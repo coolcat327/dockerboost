@@ -15,7 +15,10 @@ export async function protectCacheJob(name, locks = navigator.locks) {
 export async function clearCacheDirectories(root, { matches = () => true, keep = new Set(), lockName = name => name, locks = navigator.locks } = {}) {
   for await (const [name] of root.entries()) {
     if (!matches(name) || keep.has(name) || activeJobs.has(lockName(name))) continue;
-    const remove = () => root.removeEntry(name, { recursive: true });
+    const remove = async () => {
+      try { await root.removeEntry(name, { recursive: true }); }
+      catch (error) { if (error.name !== 'NotFoundError') throw error; }
+    };
     if (locks) await locks.request(lockName(name), { ifAvailable: true }, async lock => { if (lock) await remove(); });
     else await remove();
   }

@@ -77,3 +77,18 @@ test('download tasks own both successful handoff and failed-job cleanup', async 
   await failure.finish(); await failure.finish();
   assert.deepEqual(removed,['install-test','image-test']);
 });
+
+test('concurrent cache sweeps tolerate an abandoned directory already removed by another sweep', async () => {
+  let removed = false;
+  const root = {
+    async *entries() { yield ['old', {}]; },
+    async removeEntry() {
+      if (removed) throw Object.assign(new Error('missing'), { name: 'NotFoundError' });
+      removed = true;
+    }
+  };
+  await Promise.all([clearCacheDirectories(root, { locks:null }), clearCacheDirectories(root, { locks:null })]);
+  assert.equal(removed, true);
+  root.removeEntry = async () => { throw new Error('permission denied'); };
+  await assert.rejects(clearCacheDirectories(root, { locks:null }), /permission denied/);
+});

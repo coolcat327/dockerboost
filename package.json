@@ -29,7 +29,8 @@
   "dependencies": {
     "@noble/hashes": "2.4.0",
     "hono": "4.13.13",
-    "modern-tar": "0.8.6"
+    "modern-tar": "0.8.6",
+    "yaml": "^2.9.1"
   },
   "packageManager": "pnpm@12.14.0",
   "engines": {

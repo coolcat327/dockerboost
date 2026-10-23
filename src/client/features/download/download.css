@@ -6,3 +6,44 @@
 [data-panel="download"] .lookup-result .command-block { margin-top:0 }
 
 [data-panel="download"] .browser-download[aria-disabled="true"] { pointer-events:none }
+
+[data-panel="download"] [hidden] { display:none !important }
+[data-panel="download"] .download-modes, [data-panel="download"] .batch-actions { display:flex; flex-wrap:wrap; gap:12px; margin:16px 0 }
+[data-panel="download"] .download-modes [aria-pressed="true"] { border-color:var(--blue); color:var(--ink); background:var(--surface-2) }
+[data-panel="download"] .compose-batch textarea { box-sizing:border-box; width:100%; resize:vertical; padding:14px; background:var(--inset); color:var(--ink); border:1px solid var(--control-line); border-radius:12px; font:14px monospace }
+[data-panel="download"] .batch-actions label { display:grid; gap:8px; flex:1; min-width:0 }
+[data-panel="download"] .batch-actions input { max-width:100% }
+[data-panel="download"] .batch-image { display:flex; gap:12px; align-items:center; flex-wrap:wrap; padding:14px 0; border-bottom:1px solid var(--line); overflow-wrap:anywhere }
+[data-panel="download"] .batch-image input { width:auto }
+[data-panel="download"] .batch-status { color:var(--muted) }
+[data-panel="download"] [data-errors] { white-space:pre-wrap; color:var(--danger) }
+[data-panel="download"] .compose-batch pre { overflow:auto; padding:16px; max-width:100%; box-sizing:border-box }
+[data-panel="download"] .download-modes button::before,
+[data-panel="download"] .compose-batch button::before { display:none }
+[data-panel="download"] .compose-batch select { width:100%; min-width:0; min-height:44px; padding:10px; border:1px solid var(--control-line); border-radius:10px; color:var(--ink); background:var(--inset); font:inherit }
+[data-panel="download"] .compose-batch [data-text="note"] { color:var(--muted); font-size:13px; line-height:1.7 }
+[data-panel="download"] .compose-batch input[type="file"] { color:var(--muted); font:inherit }
+[data-panel="download"] .compose-batch input::file-selector-button { padding:10px; border:1px solid var(--control-line); border-radius:10px; color:var(--ink); background:var(--surface-2); cursor:pointer }
+[data-panel="download"] .compose-batch pre:has(code:empty) { display:none }
+[data-panel="download"] .batch-image > span:first-of-type { flex:1; min-width:0 }
+@container (max-width:360px) { [data-panel="download"] .batch-actions label { flex-basis:100% } }
+/* Keep configuration and commands secondary to the selectable task list. */
+[data-panel="download"] .compose-batch details { border:1px solid var(--line); border-radius:12px; padding:14px; margin:12px 0; background:var(--surface) }
+[data-panel="download"] .compose-batch summary { cursor:pointer; color:var(--ink); font-weight:600; padding:4px 0 }
+[data-panel="download"] .compose-batch details[open] summary { margin-bottom:14px }
+[data-panel="download"] .batch-list-toolbar { display:flex; align-items:center; flex-wrap:wrap; gap:12px; padding:12px 0 }
+[data-panel="download"] .batch-list-toolbar label { display:flex; gap:8px; align-items:center }
+[data-panel="download"] .batch-list-toolbar input { width:auto }
+[data-panel="download"] [data-count] { flex:1; color:var(--muted); font-size:13px }
+[data-panel="download"] [data-list] { max-height:480px; overflow-y:auto; overscroll-behavior:contain; scrollbar-gutter:stable; border:1px solid var(--line); border-radius:12px; padding:0 12px }
+[data-panel="download"] [data-list]:empty { display:none }
+[data-panel="download"] .batch-image { display:grid; grid-template-columns:auto minmax(0,1fr) auto; gap:8px 12px; padding:16px 0 }
+[data-panel="download"] .batch-image:last-child { border-bottom:0 }
+[data-panel="download"] .batch-image .batch-status { grid-column:2 / -1; font-size:12px }
+[data-panel="download"] .batch-image .transfer-status { grid-column:1 / -1; margin:0; min-width:0 }
+[data-panel="download"] .batch-image button { padding:8px 12px; min-height:36px; font-size:13px }
+[data-panel="download"] .batch-script pre { max-height:260px; overflow:auto; margin:0 }
+@container (max-width:360px) {
+  [data-panel="download"] .batch-list-toolbar > button { width:100% }
+  [data-panel="download"] .batch-image { column-gap:8px }
+}
