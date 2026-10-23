@@ -93,3 +93,20 @@ test('chunk updates are throttled but phase, file and final byte updates render 
   f.view.update({ phase: 'download', completed: 100, total: 100 });
   assert.equal(f.track.attributes['aria-valuenow'], '100');
 });
+
+test('preparation and unknown size start with no fabricated fill, including retries', () => {
+  const f = fixture();
+  f.view.start('first.tar');
+  assert.equal(f.fill.style.width, '0%');
+  f.view.update({ phase: 'resolve' });
+  assert.equal(f.fill.style.width, '0%');
+  f.view.update({ phase: 'download', completed: 0 });
+  assert.equal(f.fill.style.width, '0%');
+  f.view.update({ phase: 'download', completed: 0, total: 4096 });
+  assert.equal(f.fill.style.width, '0%');
+  assert.equal(f.track.attributes['aria-valuenow'], '0');
+  f.view.complete({ filename: 'first.tar', size: 4096 });
+  f.view.start('second.tar');
+  assert.equal(f.fill.style.width, '0%');
+  assert.equal(f.track.attributes['aria-valuenow'], undefined);
+});

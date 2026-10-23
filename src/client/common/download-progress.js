@@ -56,7 +56,8 @@ export function createDownloadProgress({ row, status, detail, metrics, track, fi
     const value = phase === 'done' ? 100 : (percent ?? 0);
     if (indeterminate || track.hidden) track.removeAttribute('aria-valuenow');
     else track.setAttribute('aria-valuenow', String(value));
-    fill.style.width = `${indeterminate ? 35 : value}%`;
+    const packing = phase === 'export' || phase === 'handoff';
+    fill.style.width = `${indeterminate ? (packing ? 35 : 0) : value}%`;
     icon.style.left = `clamp(4px, calc(${value}% - 30px), calc(100% - 34px))`;
   }
 
