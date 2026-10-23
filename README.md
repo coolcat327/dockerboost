@@ -117,7 +117,7 @@ pnpm run validate  # 类型检查、测试与构建；CI 使用此命令
 | --- | --- |
 | 推送到 `main` | 自动运行类型检查、测试和构建，通过后部署 |
 | 创建或更新 Pull Request | 运行验证 |
-| 手动运行 | 点击 **Run workflow**，在 **Use workflow from** 下拉框选择要部署的分支，通过验证后部署 |
+| 手动运行 | 点击 **Run workflow**，在 **Use workflow from** 下拉框选择分支，在 **Deployment platform** 选择 cloudflare（默认）、edgeone 或 all，通过验证后部署 |
 | 推送到其他分支 | 不自动触发部署；可手动选择该分支运行 |
 
 手动选择分支使用 GitHub 原生入口，参见 [GitHub 手动运行工作流说明](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/manually-run-a-workflow)。默认分支设为 `main` 时，手动入口默认选择 `main`。所选分支需包含该工作流；验证和部署固定使用本次触发的同一个提交，运行名称会显示分支名。
@@ -160,7 +160,7 @@ pnpm run deploy:edgeone
 
 部署命令自动构建并部署完整项目，不要直接上传仅包含静态资源的 `dist/`。CLI 发布到已有项目时要求项目为直接上传类型。也可在 EdgeOne 导入 Git 仓库，使用 `edgeone.json` 中的安装、构建命令和 `dist` 输出目录，并在平台设置中选择全球不含中国大陆的加速区域；若使用平台 Git 自动发布，不要再为同一项目启用 Actions 发布。
 
-如需现有 GitHub Actions 同时部署 EdgeOne，在仓库 **Variables** 设置 `EDGEONE_PROJECT_NAME`，在 **Secrets** 设置 `EDGEONE_API_TOKEN`。未设置项目名时跳过 EdgeOne 部署；启用后与 Cloudflare 共用验证、分别发布。两者使用同一提交、独立并发组，手动发布其他分支同样会更新各自生产站点。
+如需现有 GitHub Actions 同时部署 EdgeOne，在仓库 **Variables** 设置 `EDGEONE_PROJECT_NAME`，在 **Secrets** 设置 `EDGEONE_API_TOKEN`。Cloudflare 项目名为 `dockerboost`（见 `wrangler.jsonc`）；EdgeOne 项目名由该仓库变量决定。手动运行仅发布所选平台，选择 all 时发布两个平台；推送 main 仍自动发布已启用的平台。未设置项目名时跳过 EdgeOne 部署；启用后与 Cloudflare 共用验证、分别发布。两者使用同一提交、独立并发组，手动发布其他分支同样会更新各自生产站点。
 
 在 EdgeOne 控制台配置运行时环境变量 `IMAGE_SOURCES`，值为 JSON 数组字符串；不配置时沿用默认源。生产、预览环境分别检查配置。账号、Token 与本地环境文件不提交 Git。
 
