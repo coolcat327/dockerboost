@@ -119,7 +119,7 @@ See the [Development reference](docs/architecture.md) for module integration and
 | --- | --- |
 | Push to `main` | Run type checks, tests, and build, then deploy if validation succeeds |
 | Open or update a pull request | Run validation |
-| Manual run | Click **Run workflow**, choose a branch under **Use workflow from**, then validate and deploy that branch |
+| Manual run | Click **Run workflow**, choose a branch under **Use workflow from** and select cloudflare (default), edgeone, or all under **Deployment platform**, then validate and deploy |
 | Push to another branch | No automatic deployment; select the branch manually to deploy it |
 
 Manual branch selection uses GitHub's built-in workflow interface; see [Manually running a workflow](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/manually-run-a-workflow). With `main` as the repository's default branch, the manual selector defaults to `main`. The selected branch must contain the workflow. Validation and deployment use the same commit captured for the run, and the run name includes the branch.
@@ -162,7 +162,7 @@ Both production and preview deployment scripts explicitly use `--area overseas` 
 
 Deployment builds and uploads the complete project. Do not upload the static-only `dist/` directory directly. CLI deployment to an existing project requires a direct-upload project. Alternatively, import the Git repository in EdgeOne and use the install/build commands and `dist` output configured in `edgeone.json`, selecting an acceleration region excluding mainland China in the platform settings. Avoid enabling both platform Git deployment and Actions deployment for the same project.
 
-To enable EdgeOne in the existing GitHub Actions workflow, set repository **Variable** `EDGEONE_PROJECT_NAME` and **Secret** `EDGEONE_API_TOKEN`. Without the project name, EdgeOne deployment is skipped. Both platforms share validation and deploy the same commit independently, with separate concurrency groups. Manual deployment of another branch also updates the respective production sites.
+To enable EdgeOne in the existing GitHub Actions workflow, set repository **Variable** `EDGEONE_PROJECT_NAME` and **Secret** `EDGEONE_API_TOKEN`. The Cloudflare project name is `dockerboost` (in `wrangler.jsonc`); the EdgeOne project name comes from that repository variable. Manual runs deploy only the selected platform, or both with all; pushes to main still deploy all enabled platforms. Without the project name, EdgeOne deployment is skipped. Both platforms share validation and deploy the same commit independently, with separate concurrency groups. Manual deployment of another branch also updates the respective production sites.
 
 Configure runtime variable `IMAGE_SOURCES` in EdgeOne as a JSON array string, or leave it unset to use the default sources. Check production and preview configuration separately. Never commit credentials, tokens, or local environment files.
 

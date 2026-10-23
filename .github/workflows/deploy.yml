@@ -7,6 +7,16 @@ on:
     branches: [main]
   # GitHub's "Run workflow" dialog provides the branch selector.
   workflow_dispatch:
+    inputs:
+      platform:
+        description: Deployment platform
+        type: choice
+        required: true
+        default: cloudflare
+        options:
+          - cloudflare
+          - edgeone
+          - all
 
 permissions:
   contents: read
@@ -32,7 +42,7 @@ jobs:
       - run: pnpm run validate
 
   deploy:
-    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
+    if: (github.event_name == 'workflow_dispatch' && (inputs.platform == 'cloudflare' || inputs.platform == 'all')) || (github.event_name == 'push' && github.ref == 'refs/heads/main')
     needs: validate
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -55,7 +65,7 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
   deploy-edgeone:
-    if: vars.EDGEONE_PROJECT_NAME != '' && (github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main'))
+    if: vars.EDGEONE_PROJECT_NAME != '' && ((github.event_name == 'workflow_dispatch' && (inputs.platform == 'edgeone' || inputs.platform == 'all')) || (github.event_name == 'push' && github.ref == 'refs/heads/main'))
     needs: validate
     runs-on: ubuntu-latest
     timeout-minutes: 15
