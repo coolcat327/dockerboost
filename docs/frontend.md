@@ -1,6 +1,6 @@
 # 前端开发
 
-本文维护页面源码、构建与标签接入。共用边界见 [开发参考](README.md)，服务端注册见 [后端开发](backend.md)，视觉约束见 [视觉规范](../design/visual-style.md)。
+本文维护页面源码、构建与标签接入。共用边界见 [开发参考](architecture.md)，服务端注册见 [后端开发](backend.md)，视觉约束见 [视觉规范](ui.md)。
 
 ## 页面与构建
 
@@ -8,7 +8,7 @@
 
 页面模板位于 `src/client/index.html`，构建时注入配置和版本化资源路径并输出到 `dist/index.html`；`public/` 保留静态资源和托管配置。修改源码或静态资源，不要编辑生成的 `dist/`。CSS 由 `styles/index.css` 构建为一个文件；基础、页面共用、标签专属样式依次导入。共用表单通过工具面板的 CSS 容器查询切换一列、两列及宽屏布局；断点依据面板可用宽度而非整个视口。调整规则时应检查各断点及中英文内容。
 
-Hero 入场由 `hero-intro.js` 管理，指针视差、工具区柔光及背景暂停由 `page-motion.js` 管理；均使用原生 JavaScript 与 CSS。具体动画参数以源码为准，视觉约束见 [视觉与交互规范](../design/visual-style.md)。
+Hero 入场由 `hero-intro.js` 管理，指针视差、工具区柔光及背景暂停由 `page-motion.js` 管理；均使用原生 JavaScript 与 CSS。具体动画参数以源码为准，视觉约束见 [视觉与交互规范](ui.md)。
 
 构建只复制选中的 Hero，并给 JS、CSS、图标与 Hero 添加统一发布标识后缀；发布标识与下载请求的隔离机制见 [下载任务与缓存](downloads.md#发布标识与请求隔离)。`public/_headers` 为版本化静态资源设置一年不可变缓存，更新产物名称时同步匹配规则。首页保留 `index.html`，使用 `no-cache`，由 Cloudflare Workers Assets 提供默认首页及原生 SPA 回退，不生成重写规则。
 
@@ -22,7 +22,7 @@ Hero 入场由 `hero-intro.js` 管理，指针视差、工具区柔光及背景�
 4. 按需要选择共享方式：不声明 `selectionGroup` 即独立；声明相同组名并将 `selectionStore` 作为 `store` 传给 `createImageSelection`，则共享镜像名和所选源；同一镜像与源的平台查询只发送一次。源列表请求的复用规则见下方 [数据加载](#数据加载)。架构、请求结果的应用状态及 `auto` 解析结果由各标签独立管理。目前拉取与下载使用同一个 `image` 组；输入停止 1 秒后查询平台。
 5. 新增专属 CSS 放在对应功能目录，并由 `src/client/styles/index.css` 导入；页面及共用规则留在 `styles/`。专属选择器应限定在自己的 `[data-panel="<名称>"]` 内。安装、配置与下载已有专属 CSS；拉取与下载共用的表单规则留在 `workspace.css`，拉取标签暂不需要独立 CSS。
 
-视觉与状态验收遵循 [视觉与交互规范](../design/visual-style.md)；设计变更的选型、计划和归档见 [设计与实现流程](../design/workflow.md)。新增下载能力参照 [下载任务与缓存](downloads.md)，需要服务端能力时同步 [接口参考](api.md)。按根目录 AGENTS.md 的改动范围执行验证。
+视觉与状态验收遵循 [视觉与交互规范](ui.md)；设计变更的选型、计划和归档见 [设计与实现流程](design-workflow.md)。新增下载能力参照 [下载任务与缓存](downloads.md)，需要服务端能力时同步 [接口参考](api.md)。按根目录 AGENTS.md 的改动范围执行验证。
 
 ## 数据加载
 
