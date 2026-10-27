@@ -31,7 +31,7 @@ test('installation switches all labels and command hints without losing versions
   assert.equal(panel.querySelector('#install-docker').value,'28.1.1');
   panel.querySelector('#install-docker').value = '27.0.0';
   panel.querySelector('#install-docker').listeners.change();
-  assert.match(panel.querySelector('#install-command').textContent, /docker=27.0.0/);
+  assert.match(panel.querySelector('#install-command').textContent, /'27\.0\.0'/);
   assert.doesNotMatch(panel.querySelector('#install-command').textContent, /expires=|24 小时/);
   assert.equal(labels[2].innerHTML, '下载');
   assert.equal(labels[3].innerHTML, '刷新');
@@ -141,7 +141,7 @@ test('catalog waits for architecture selection and refetches the same architectu
     assert.match(requests[attempt].url, /arch=x86_64/);
     assert.equal(requests[attempt].options.cache, 'no-store');
     assert.equal(panel.querySelector('#install-download').disabled, false);
-    assert.match(panel.querySelector('#install-command').textContent, /arch=x86_64/);
+    assert.match(panel.querySelector('#install-command').textContent, /'x86_64'/);
   }
 });
 

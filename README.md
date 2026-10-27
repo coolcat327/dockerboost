@@ -43,7 +43,7 @@
 docker load -i nginx_latest_linux_amd64.tar
 ```
 
-浏览器下载使用 OPFS 流式暂存镜像层并在本地组装 TAR；终端下载使用 curl、本机 tar 和常见 shell 工具，无需 Docker、jq 或 Skopeo。安装包与镜像下载均支持停止并清理暂存，具体规则见 [下载任务与缓存](docs/downloads.md)。
+浏览器下载使用 OPFS 流式暂存镜像层并在本地组装 TAR；终端下载使用 curl、jq、本机 tar 和常见 shell 工具，无需 Docker 或 Skopeo；终端命令从静态资源获取脚本。安装包与镜像下载均支持停止并清理暂存，具体规则见 [下载任务与缓存](docs/downloads.md)。
 
 ### 先了解这些使用边界
 

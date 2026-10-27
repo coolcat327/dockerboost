@@ -43,7 +43,7 @@ Choose an image and architecture on the page, download the archive, then import 
 docker load -i nginx_latest_linux_amd64.tar
 ```
 
-Browser downloads stream image layers into OPFS temporary storage and assemble the TAR locally. Terminal downloads use curl, local tar, and common shell tools, without Docker, jq, or Skopeo. Both installation bundles and image downloads support cancellation and temporary file cleanup. See [Download tasks and caching](docs/downloads.md) for details.
+Browser downloads stream image layers into OPFS temporary storage and assemble the TAR locally. Terminal downloads use curl, jq, local tar, and common shell tools, without Docker or Skopeo. Terminal commands fetch static scripts. Both installation bundles and image downloads support cancellation and temporary file cleanup. See [Download tasks and caching](docs/downloads.md) for details.
 
 ### Requirements and limitations
 

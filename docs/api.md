@@ -11,7 +11,7 @@
 | `/api/install/catalog` | `arch` | JSON `{ docker: string[], compose: string }`：Docker 版本列表和匹配架构的 Compose 最新正式版；缓存 5 分钟 |
 | `/api/install/plan` | `arch`、`docker`、`compose` | JSON `{ files: { 文件名: 内容 } }`：包内 README、配置、服务及成对的安装/卸载脚本；不包含二进制 |
 | `/api/install/asset` | `arch`、`docker`、`compose`、`kind` | 流式返回官方二进制；`kind` 为 `docker` 或 `compose`；缓存 1 天 |
-| `/api/install/script` | `arch`、`docker`、`compose` | Shell 脚本：联网下载所需文件并在本机打包；TAR 内包含与包名同名的顶层目录；不设置过期时间 |
+| `/api/install/script` | `arch`、`docker`、`compose` | 兼容旧命令的 Shell 脚本：联网下载所需文件并在本机打包；TAR 内包含与包名同名的顶层目录；不设置过期时间 |
 
 `arch` 默认 `x86_64`，支持 `x86_64`、`aarch64`、`armhf`、`ppc64le`、`s390x`。除 catalog 外，`docker` 和 `compose` 必填，格式为 `主版本.次版本.补丁版本`。plan 和 script 返回 `Cache-Control: no-store`。
 
@@ -40,10 +40,11 @@ Registry 只读请求返回成功的 sha256 blob（200 或 206）时，浏览器
 | 路径 | 参数 | 返回与用途 |
 | --- | --- | --- |
 | `/api/inspect` | `image`、`source`、`platform` | JSON：`image`、`layers`、`sizeBytes`、`platform`、`source`；大小为配置与压缩镜像层总字节数，未知时为 null |
-| `/api/download-script` | `image`、`source`、`platform` | 生成镜像终端下载脚本，返回纯文本；不缓存 |
+| `/api/download-plan` | `image`、`source`、`platform` | JSON `{ image, repository, source, config, layers }`：镜像显示名、实际仓库和镜像源，以及配置与各层的 blob 描述信息；不缓存 |
+| `/api/download-script` | `image`、`source`、`platform` | 兼容旧命令的镜像终端下载脚本，返回纯文本；不缓存 |
 | `/api/save` | 无 | 已停用，返回 410；使用浏览器或终端下载 |
 
-inspect 和 download-script 的 `image`、`source` 规则同拉取接口；`platform` 默认 `linux/amd64`，也可指定 `linux/arm64/v8` 等平台。
+inspect、download-plan 和 download-script 的 `image`、`source` 规则同拉取接口；`platform` 默认 `linux/amd64`，也可指定 `linux/arm64/v8` 等平台。
 
 ### 通用
 

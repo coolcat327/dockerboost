@@ -46,9 +46,9 @@ export const feature = {
       track: progressTrack, fill: progressTrack.querySelector('span'), icon: progressTrack.querySelector('img')
     });
     let controller;
-    let generation = 0, busy = false, text = translations['zh-CN'], state = 'chooseArch', commandUrl = '';
+    let generation = 0, busy = false, text = translations['zh-CN'], state = 'chooseArch', downloadCommand = '';
     const setStatus = (key) => { state = key; progress.info(text[key]); };
-    const renderCommand = () => { command.textContent = commandUrl ? `curl -fsSL -o .download-docker.sh '${commandUrl}' && sh .download-docker.sh` : text.waiting; };
+    const renderCommand = () => { command.textContent = downloadCommand || text.waiting; };
     const bundleName = () => `docker-offline-${selectedArch}-docker-${docker.value}-compose-${composeVersion}`;
     const renderPackage = () => {
       panel.querySelector('#install-package-name').textContent = docker.value ? `${bundleName()}.tar` : text.package;
@@ -58,10 +58,10 @@ export const feature = {
     const json = async (url, signal, cache) => { const r = await fetch(downloadRequestUrl(url, version), { signal, ...(cache ? { cache } : {}) }); const data = await r.json(); if (!r.ok) throw new Error(data.error || `HTTP ${r.status}`); return data; };
     const ready = () => { panel.querySelector('#install-reload').disabled = busy || !selectedArch; docker.disabled = busy || !docker.value; download.disabled = !busy && (!docker.value || !composeVersion); download.textContent = busy ? text.stop : text.download; download.classList.toggle('is-stoppable', busy); };
     const invalidate = () => {
-      commandUrl = '';
+      downloadCommand = '';
       if (docker.value && composeVersion) {
-        const q = query();
-        commandUrl = `${window.location.origin}/api/install/script?${q}`;
+        const quote = value => "'" + String(value).replaceAll("'", "'\"'\"'") + "'";
+        downloadCommand = `curl -fsSL -o .download-docker.sh ${quote(`${window.location.origin}/download-docker.sh`)} && sh .download-docker.sh ${[window.location.origin, selectedArch, docker.value, composeVersion, version].map(quote).join(' ')}`;
       }
       renderCommand(); renderPackage();
     };

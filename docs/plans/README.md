@@ -25,10 +25,11 @@
 
 | 待实现计划 | 范围 |
 | --- | --- |
-| [固定脚本与参数统一](fixed-parameter-scripts.md) | 单个、批量镜像及安装相关终端脚本逐步统一为固定脚本加参数；当前实现暂不调整 |
+| 暂无 | — |
 
 | 已实现记录 | 范围 |
 | --- | --- |
+| [固定脚本与参数统一](../archive/plans/fixed-parameter-scripts.md) | 单个、批量镜像和离线安装包的终端下载改为静态脚本加参数 |
 | [统一下载信息与进度](../archive/plans/unified-download-progress.md) | 两类下载共用展示、真实进度与状态重置 |
 | [工具区视觉与响应式控件](../archive/plans/responsive-controls.md) | 按钮层级、表单容器查询与交互反馈 |
 | [炭灰视觉与工具区反馈](../archive/plans/visual-refinement.md) | 主题、动效与状态反馈 |

@@ -13,6 +13,13 @@ export async function downloadScriptResponse(request: Request, env: Env) {
   });
 }
 
+export async function downloadPlanResponse(request: Request, env: Env) {
+  const url = new URL(request.url);
+  const { source, image } = requestedImage(url, env);
+  const { manifest, source: resolvedSource, repository } = await resolveImage(env, image, url.searchParams.get('platform') || 'linux/amd64', source);
+  return jsonResponse({ image: image.display, repository, source: resolvedSource, config: manifest.config, layers: manifest.layers }, { headers: { 'Cache-Control': 'no-store' } });
+}
+
 export function retiredSaveResponse() {
   return jsonResponse({ error: 'Use the browser exporter or generated curl download script. This Worker does not build image archives.' }, { status: 410 });
 }

@@ -1,3 +1,4 @@
+import { batchCommands } from './compose.js';
 import { initBatch } from './batch.js';
 import { exportArchive } from './export-archive.js';
 import { clearDownloadCaches } from '../../common/browser-download-task.js';
@@ -55,8 +56,7 @@ export const feature = {
     if (!platform) { loadCommand.textContent = locale().loadingPlatforms; return; }
     const image = selection.resolve();
     browserDownload.removeAttribute('aria-disabled');
-    const scriptUrl = `${window.location.origin}/api/download-script?image=${encodeURIComponent(image.upstream)}&platform=${encodeURIComponent(platform)}&source=${encodeURIComponent(resolvedSource)}`;
-    loadCommand.textContent = `curl -fsSL -o .download-image.sh "${scriptUrl}" && sh .download-image.sh`;
+    loadCommand.textContent = batchCommands([{ image: image.upstream, platform, source: resolvedSource }], window.location.origin);
   };
   const cancelInspection = () => {
     inspectionController?.abort();
