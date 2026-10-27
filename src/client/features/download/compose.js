@@ -22,6 +22,23 @@ export function composeImages(text) {
   return { images: [...images.values()], issues };
 }
 
+export function imageList(text) {
+  if (text.length > 1024 * 1024) throw new Error('Input exceeds 1 MiB');
+  const images = new Map(), issues = [];
+  text.split(/\r?\n/).forEach((line, index) => {
+    const image = line.trim();
+    if (!image) return;
+    if (!/^[a-zA-Z0-9._/@:-]+$/.test(image)) { issues.push(`Line ${index + 1}: invalid image`); return; }
+    if (!images.has(image)) images.set(image, { image, platform: '' });
+  });
+  return { images: [...images.values()], issues };
+}
+
+export function parseBatchImages(text) {
+  try { return composeImages(text); }
+  catch { return imageList(text); }
+}
+
 const shellQuote = value => "'" + String(value).replaceAll("'", "'\"'\"'") + "'";
 
 export function batchCommands(entries, origin) {

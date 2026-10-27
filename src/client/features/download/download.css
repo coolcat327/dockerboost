@@ -87,7 +87,7 @@
   [data-panel="download"] .compose-batch { grid-template-columns:repeat(2,minmax(0,1fr)); align-items:stretch }
   [data-panel="download"] .batch-queue-section { grid-column:1 / -1 }
   [data-panel="download"] .batch-section:not(.batch-queue-section) { display:grid; grid-template-rows:subgrid; grid-row:span 3; row-gap:16px }
-  [data-panel="download"] .batch-section:not(.batch-queue-section) > :is(.batch-section-heading,.batch-input-toolbar,.batch-selection-hint) { margin:0 }
+  [data-panel="download"] .batch-section:not(.batch-queue-section) > :is(.batch-section-heading,.batch-input-toolbar,.batch-selection-toolbar) { margin:0 }
   [data-panel="download"] :is(.batch-input-label,.batch-selection-hint) { align-self:end }
 }
 
@@ -104,14 +104,14 @@
 [data-panel="download"] .batch-notices:not(:has(p:not(:empty))) { display:none }
 [data-panel="download"] .batch-notices [data-errors]:not(:empty) { margin:0; padding:12px 16px; border-top:1px solid var(--line); border-left:2px solid var(--danger); background:color-mix(in srgb,var(--danger) 4%,var(--inset)); color:color-mix(in srgb,var(--danger) 65%,var(--ink)); font-size:13px; line-height:1.8 }
 
-[data-panel="download"] .batch-input-toolbar { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:10px }
+[data-panel="download"] :is(.batch-input-toolbar,.batch-selection-toolbar) { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:10px }
 [data-panel="download"] .batch-input-toolbar .batch-input-label { margin:0; flex:1; min-width:140px }
 [data-panel="download"] .batch-upload { position:relative; display:inline-flex; align-items:center; min-height:36px; padding:6px 12px; box-sizing:border-box; flex-shrink:0; border:1px solid var(--control-line); border-radius:8px; background:var(--surface-2); color:var(--ink); font-size:13px; cursor:pointer; overflow:hidden }
 [data-panel="download"] .batch-upload input[type=file] { position:absolute; inset:0; opacity:0; width:100%; height:100%; cursor:pointer }
 [data-panel="download"] .batch-upload:focus-within { outline:2px solid var(--cyan); outline-offset:3px }
 [data-panel="download"] .compose-batch textarea.is-dragging { border-color:var(--cyan); box-shadow:0 0 0 3px var(--accent-soft); background:var(--surface-2) }
 @container workspace (min-width:760px) {
-  [data-panel="download"] .batch-input-toolbar { align-self:end }
+  [data-panel="download"] :is(.batch-input-toolbar,.batch-selection-toolbar) { align-self:end }
 }
 
 /* One surface, one control size, and shared columns for the whole queue. */
@@ -219,3 +219,8 @@
   [data-panel="download"] .transfer-compact[data-phase="done"] .transfer-detail { grid-row:2 }
   [data-panel="download"] .transfer-compact[data-phase="done"] .transfer-track { display:none }
 }
+
+[data-panel="download"] .batch-selection-toolbar { padding-right:4px; overflow-y:auto; scrollbar-gutter:stable }
+[data-panel="download"] .batch-selection-toolbar .batch-selection-hint { margin:0; flex:1; min-width:140px }
+[data-panel="download"] .batch-selection-toolbar [data-action="add-all"] { min-height:36px; margin-left:auto; padding:7px 12px; flex-shrink:0 }
+[data-panel="download"] .batch-selection-toolbar [data-action="add-all"][hidden] { display:none }

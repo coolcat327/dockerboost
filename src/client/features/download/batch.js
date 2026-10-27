@@ -1,6 +1,6 @@
 import { createBatchQueue } from './batch-queue.js';
 import { createDownloadProgress } from '../../common/download-progress.js';
-import { composeImages, batchCommands } from './compose.js';
+import { parseBatchImages, batchCommands } from './compose.js';
 import { createImageSelection } from '../../common/image-selection.js';
 import { createSelectionStore } from '../../common/selection-store.js';
 import { bindComposeInput } from './compose-input.js';
@@ -25,11 +25,11 @@ export function initBatch({ panel, locale, messages, flash, singleBusy, selectio
   <section class="batch-section" aria-labelledby="compose-title">
     <div class="batch-section-heading"><h4 id="compose-title"><span class="batch-step">01</span><span data-text="input"></span></h4></div>
     <div class="batch-input-toolbar"><label class="batch-input-label" for="compose-input" data-text="inputHint"></label><label class="batch-upload"><span data-text="upload"></span><input type="file" accept=".yaml,.yml,.txt" aria-label="Compose YAML"></label></div>
-    <textarea id="compose-input" rows="6" wrap="off" spellcheck="false" placeholder="services:\n  web:\n    image: nginx:latest"></textarea>
+    <textarea id="compose-input" rows="6" wrap="off" spellcheck="false" placeholder="支持 Compose 配置或每行一个镜像的列表"></textarea>
   </section>
   <section class="batch-section" aria-labelledby="batch-selection-title">
     <div class="batch-section-heading"><h4 id="batch-selection-title"><span class="batch-step">02</span><span data-text="selection"></span></h4></div>
-    <p class="batch-selection-hint" data-text="selectionHint"></p>
+    <div class="batch-selection-toolbar"><p class="batch-selection-hint" data-text="selectionHint"></p><button type="button" class="generate-button button-secondary" data-action="add-all" data-text="addAll" hidden disabled></button></div>
     <div class="batch-selection-content"><p class="batch-empty" data-selection-empty data-text="selectionEmpty"></p>
     <div data-list role="group" aria-labelledby="batch-selection-title" tabindex="0"></div></div>
 
@@ -60,16 +60,16 @@ export function initBatch({ panel, locale, messages, flash, singleBusy, selectio
   const $ = selector => batch.querySelector(selector);
 
   let rows = [], jobs = [], english = false, issues = [], sharing = false;
-  const issueText = text => english ? text : text.replace("missing image (build is not executed)", "未配置 image，无法下载；不执行 build").replace("unresolved variable or invalid platform", "变量未展开或平台格式无效").replace("invalid image or platform", "镜像或平台格式无效").replace("extends requires docker compose config", "extends 请先用 docker compose config 展开").replace("invalid service", "服务格式无效").replace("Please choose one Compose YAML file", "请一次选择一个 Compose YAML 文件").replace("Choose a .yaml, .yml or .txt file", "请选择 .yaml、.yml 或 .txt 文件").replace("Compose exceeds 1 MiB", "Compose 文件不能超过 1 MiB");
+  const issueText = text => english ? text : text.replace(/Line (\d+): invalid image/g, '第 $1 行：镜像格式无效').replace('Input exceeds 1 MiB', '输入不能超过 1 MiB').replace("missing image (build is not executed)", "未配置 image，无法下载；不执行 build").replace("unresolved variable or invalid platform", "变量未展开或平台格式无效").replace("invalid image or platform", "镜像或平台格式无效").replace("extends requires docker compose config", "extends 请先用 docker compose config 展开").replace("invalid service", "服务格式无效").replace("Please choose one Compose YAML file", "请一次选择一个 Compose YAML 文件").replace("Choose a .yaml, .yml or .txt file", "请选择 .yaml、.yml 或 .txt 文件").replace("Compose exceeds 1 MiB", "Compose 文件不能超过 1 MiB");
   const words = {
     share: ['分享镜像', 'Share images'], shareInvalid: ['分享链接无效，无法恢复队列', 'Invalid queue share link'], shareLarge: ['分享队列或链接过大，请减少镜像数量后重试', 'Queue or link is too large; share fewer images'], shareUnsupported: ['当前浏览器不支持解压分享链接，请使用新版浏览器', 'This browser cannot decompress the link; use an updated browser'],
     resolving: ['正在解析镜像…', 'Resolving image…'], resolveFailed: ['解析失败，请重试', 'Resolution failed; retry'], unsupported: ['该镜像不支持所选架构', 'Selected platform is not supported'], resolveAgain: ['重新解析', 'Retry'], reparse: ['重新解析', 'Reparse all'],
-    inputHint: ['粘贴配置，或拖入 YAML 文件', 'Paste YAML or drop a file'], limitations: ['支持范围与使用提示', 'Supported configuration & tips'],
-    selectionHint: ['将需要的镜像逐项加入下载队列', 'Add the images you need to the download queue'],
-    selection: ['选择镜像', 'Select images'], selectionEmpty: ['解析 Compose 配置后，镜像会显示在这里。', 'Parse your Compose YAML to see images here.'],
+    inputHint: ['粘贴或拖入镜像信息', 'Paste or drop image information'], inputPlaceholder: ['支持 Compose 配置或每行一个镜像的列表', 'Supports Compose configuration or one image per line'], limitations: ['支持范围与使用提示', 'Supported configuration & tips'],
+    selectionHint: ['将需要的镜像加入下载队列', 'Add the images you need to the download queue'], addAll: ['全部加入', 'Add all'],
+    selection: ['选择镜像', 'Select images'], selectionEmpty: ['解析后，镜像会显示在这里。', 'Parsed images appear here.'],
     add: ['加入下载队列', 'Add to queue'], queue: ['下载队列', 'Download queue'], queueHint: ['独立 TAR · 最多同时下载 5 项', 'One TAR each · Up to 5 active'], queueEmpty: ['从上方选择镜像并加入队列，再开始下载。', 'Add images from above, then start your downloads.'],
     removeFromQueue: ['移除下载队列', 'Remove from queue'], removed: ['已从下载队列移除', 'Removed from queue'], stop: ['停止全部', 'Stop all'], terminal: ['终端下载', 'Terminal download'],
-    input: ['Compose 配置', 'Compose YAML'], upload: ['上传文件', 'Upload file'], imageName: ['镜像名', 'Image name'], platform: ['选择架构', 'Architecture'], progress: ['下载进度', 'Progress'],
+    input: ['批量输入', 'Batch input'], upload: ['上传文件', 'Upload file'], imageName: ['镜像名', 'Image name'], platform: ['选择架构', 'Architecture'], progress: ['下载进度', 'Progress'],
     note: ['仅支持公开镜像；每个镜像保存为独立 TAR。变量与多文件配置请先使用 docker compose config 展开；不会执行 build。浏览器可能需要允许多文件下载。', 'Public images only. One TAR per image. Expand variables and multiple files with docker compose config first; build is not executed. Your browser may require permission for multiple downloads.'],
     download: ['开始下载', 'Start all'], copy: ['复制全部', 'Copy all'], commandEmpty: ['将镜像加入队列后显示下载命令', 'Add images to the queue to show download commands']
   };
@@ -95,6 +95,8 @@ export function initBatch({ panel, locale, messages, flash, singleBusy, selectio
     downloadButton.textContent = words[queue.busy ? 'stop' : 'download'][english ? 1 : 0];
     downloadButton.classList.toggle('is-stoppable', queue.busy);
     downloadButton.disabled = !queue.busy && !jobs.some(job => job.ready && (!job.state || job.state === 'stopped'));
+    $('[data-action=add-all]').hidden = !rows.length;
+    $('[data-action=add-all]').disabled = !rows.some(row => !jobs.some(job => job.candidateKey === candidateKey(row)));
     $('[data-selection-empty]').hidden = rows.length > 0;
     $('[data-queue-empty]').hidden = jobs.length > 0;
     $('[data-queue-count]').textContent = jobs.length;
@@ -134,6 +136,8 @@ export function initBatch({ panel, locale, messages, flash, singleBusy, selectio
     modes.children[0].textContent = en ? 'Single' : '单个';
     modes.children[1].textContent = en ? 'Batch' : '批量';
     batch.querySelectorAll('[data-text]').forEach(node => node.textContent = words[node.dataset.text][en ? 1 : 0]);
+    $('#compose-input').placeholder = words.inputPlaceholder[en ? 1 : 0];
+    $('input[type=file]').setAttribute('aria-label', en ? 'Upload input file' : '上传输入文件');
     $('[data-platform]').setAttribute('aria-label', words.platform[en ? 1 : 0]);
     $('[data-action=share]').title = words.share[en ? 1 : 0];
     $('[data-action=share]').setAttribute('aria-label', words.share[en ? 1 : 0]);
@@ -149,7 +153,7 @@ export function initBatch({ panel, locale, messages, flash, singleBusy, selectio
     clear();
     if (!$('#compose-input').value.trim()) return;
     try {
-      const parsed = composeImages($('#compose-input').value);
+      const parsed = parseBatchImages($('#compose-input').value);
       issues = parsed.issues;
       $('[data-errors]').textContent = issues.map(issueText).join('\n');
       for (const entry of parsed.images) {
@@ -171,12 +175,13 @@ export function initBatch({ panel, locale, messages, flash, singleBusy, selectio
       }
       update();
 
-    } catch (error) { $('[data-errors]').textContent = error.message; }
+    } catch (error) { $('[data-errors]').textContent = issueText(error.message); }
   }
   bindComposeInput({ input: $('#compose-input'), upload: $('input[type=file]'),
     onChange: clear, onParse: parseInput,
     onError: error => { clear(); $('[data-errors]').textContent = issueText(error.message); }
   });
+  $('[data-action=add-all]').addEventListener('click', () => addSelected(rows));
   $('[data-platform]').addEventListener('change', () => {
     for (const job of jobs.filter(job => !['running', 'queued'].includes(job.state))) {
       job.preferredPlatform = $('[data-platform]').value || job.declaredPlatform;

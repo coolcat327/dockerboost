@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { composeImages, batchCommands } from '../src/client/features/download/compose.js';
+import { composeImages, imageList, parseBatchImages, batchCommands } from '../src/client/features/download/compose.js';
 import { spawnSync } from 'node:child_process';
 
 test('Compose groups services by image and platform, supports YAML aliases', () => {
@@ -33,4 +33,13 @@ test('batch terminal command fetches one helper and lists deduplicated image par
   assert.equal((command.match(/'nginx:latest'/g) || []).length, 1);
   assert.equal(spawnSync('sh', ['-n'], { input: command }).status, 0);
   assert.equal(batchCommands([], 'https://example.com'), '');
+});
+
+
+test('batch input accepts Compose and deduplicated image lists', () => {
+  assert.equal(parseBatchImages('services:\n  web:\n    image: nginx:latest').images[0].image, 'nginx:latest');
+  const result = parseBatchImages(' nginx:latest \r\nredis:7\n\nnginx:latest\nbad image');
+  assert.deepEqual(result.images.map(item => item.image), ['nginx:latest', 'redis:7']);
+  assert.deepEqual(result.issues, ['Line 5: invalid image']);
+  assert.throws(() => imageList('x'.repeat(1024 * 1024 + 1)));
 });
