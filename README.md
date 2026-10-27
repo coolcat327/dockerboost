@@ -1,6 +1,6 @@
 <div align="center">
 
-<a href="https://docker.coolcat.win/"><img src="docs/assets/github-title-icon.svg" width="280" alt="DockerBoost 鲸鱼乘风破浪" /></a>
+<a href="https://docker.coolcat.win/"><img src="docs/assets/github-ocean-banner.svg" width="520" alt="DockerBoost 鲸鱼乘风破浪" /></a>
 
 # DockerBoost
 
