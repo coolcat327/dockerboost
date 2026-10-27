@@ -24,6 +24,7 @@
     }
   </style>
   <defs>
+    <clipPath id="rounded-banner"><rect width="720" height="240" rx="20"/></clipPath>
     <linearGradient id="ocean-blue" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#0b8cb6"/><stop offset=".5" stop-color="#0a648b"/><stop offset="1" stop-color="#06314e"/></linearGradient>
     <linearGradient id="wave-foam" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#4bbcd8" stop-opacity=".1"/><stop offset=".45" stop-color="#c5f8ff"/><stop offset="1" stop-color="#7ddbe9" stop-opacity=".62"/></linearGradient>
     <linearGradient id="surfboard-color" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#f2fdff"/><stop offset=".6" stop-color="#a9eaf8"/><stop offset="1" stop-color="#52bcd9"/></linearGradient>
@@ -32,7 +33,8 @@
     <linearGradient id="sky" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#075577"/><stop offset=".52" stop-color="#0d7390"/><stop offset="1" stop-color="#063d63"/></linearGradient>
     <radialGradient id="horizon"><stop stop-color="#9cecf6" stop-opacity=".22"/><stop offset="1" stop-color="#45d6ef" stop-opacity="0"/></radialGradient>
   </defs>
-  <rect width="720" height="240" rx="20" fill="url(#sky)"/>
+  <g clip-path="url(#rounded-banner)">
+  <rect width="720" height="240" fill="url(#sky)"/>
   <ellipse cx="365" cy="136" rx="280" ry="120" fill="url(#horizon)"/>
   <path d="M0 171C120 152 176 176 260 171S440 151 533 166 668 178 720 164V240H0Z" fill="#0a4b63" opacity=".32"/>
   <path d="M0 201C110 183 183 211 284 201S445 183 544 200 658 207 720 196V240H0Z" fill="#03263d" opacity=".65"/>
@@ -64,6 +66,7 @@
   <g class="sea-spray" fill="#d6f9ff">
     <circle cx="174" cy="184" r="2"/><circle cx="163" cy="177" r="1.3"/><circle cx="153" cy="189" r="1"/>
     <circle cx="346" cy="181" r="1.5"/><circle cx="356" cy="172" r="1"/>
+  </g>
   </g>
   </g>
 </svg>
