@@ -1,6 +1,6 @@
-<svg viewBox="0 65 560 235" role="img" aria-labelledby="boost-title boost-desc" xmlns="http://www.w3.org/2000/svg">
+<svg viewBox="0 0 720 240" role="img" aria-labelledby="boost-title boost-desc" xmlns="http://www.w3.org/2000/svg">
   <title id="boost-title">DockerBoost racing across ocean waves</title>
-  <desc id="boost-desc">The Docker whale rides a surfboard across a flowing ocean wave.</desc>
+  <desc id="boost-desc">The Docker whale rides a surfboard across an ocean wave beneath a blue twilight sky.</desc>
   <style>
     .wave-static { display: none; }
     .ocean-glow { animation: ocean-breathe 3.3s ease-in-out infinite; }
@@ -29,7 +29,18 @@
     <linearGradient id="surfboard-color" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#f2fdff"/><stop offset=".6" stop-color="#a9eaf8"/><stop offset="1" stop-color="#52bcd9"/></linearGradient>
     <linearGradient id="whale-blue" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#8de9ff"/><stop offset=".48" stop-color="#3ecbfa"/><stop offset="1" stop-color="#0796df"/></linearGradient>
     <radialGradient id="ocean-glow"><stop stop-color="#1cc3eb" stop-opacity=".25"/><stop offset="1" stop-color="#1cc3eb" stop-opacity="0"/></radialGradient>
+    <linearGradient id="sky" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#071d31"/><stop offset=".52" stop-color="#0a3852"/><stop offset="1" stop-color="#052237"/></linearGradient>
+    <radialGradient id="horizon"><stop stop-color="#45d6ef" stop-opacity=".25"/><stop offset="1" stop-color="#45d6ef" stop-opacity="0"/></radialGradient>
   </defs>
+  <rect width="720" height="240" rx="20" fill="url(#sky)"/>
+  <ellipse cx="365" cy="136" rx="280" ry="120" fill="url(#horizon)"/>
+  <path d="M0 171C120 152 176 176 260 171S440 151 533 166 668 178 720 164V240H0Z" fill="#0a4b63" opacity=".32"/>
+  <path d="M0 201C110 183 183 211 284 201S445 183 544 200 658 207 720 196V240H0Z" fill="#03263d" opacity=".65"/>
+  <g fill="none" stroke="#a9edfa" stroke-linecap="round" opacity=".24">
+    <path d="M60 137h42m-15 8h28M583 137h55m-35 9h29M82 189h47m459-7h54"/>
+  </g>
+  <g fill="#b6f1ff" opacity=".65"><circle cx="104" cy="60" r="1.3"/><circle cx="171" cy="91" r="1"/><circle cx="565" cy="63" r="1.5"/><circle cx="624" cy="100" r="1"/><circle cx="515" cy="39" r=".9"/></g>
+  <g transform="translate(170 5) scale(.68)">
   <ellipse class="ocean-glow" cx="280" cy="249" rx="220" ry="67" fill="url(#ocean-glow)"/>
   <g class="sea-scene">
     <path class="sea-body wave-animated" d="M22 248C84 244 130 232 166 211C206 187 214 166 257 166C298 165 317 192 350 201C407 217 470 177 538 184C513 211 478 238 427 250C364 268 315 253 255 261C167 277 86 273 22 248Z" fill="url(#ocean-blue)"><animate attributeName="d" values="M22 248C84 244 130 232 166 211C206 187 214 166 257 166C298 165 317 192 350 201C407 217 470 177 538 184C513 211 478 238 427 250C364 268 315 253 255 261C167 277 86 273 22 248Z;M22 251C82 239 132 238 172 213C209 187 226 174 264 171C301 169 321 190 354 197C410 208 464 185 538 178C510 211 480 231 427 249C366 267 313 258 253 265C164 276 86 277 22 251Z;M22 248C84 244 130 232 166 211C206 187 214 166 257 166C298 165 317 192 350 201C407 217 470 177 538 184C513 211 478 238 427 250C364 268 315 253 255 261C167 277 86 273 22 248Z" dur="5.2s" repeatCount="indefinite" calcMode="spline" keyTimes="0;.5;1" keySplines=".45 0 .55 1;.45 0 .55 1"/></path>
@@ -53,5 +64,6 @@
   <g class="sea-spray" fill="#d6f9ff">
     <circle cx="174" cy="184" r="2"/><circle cx="163" cy="177" r="1.3"/><circle cx="153" cy="189" r="1"/>
     <circle cx="346" cy="181" r="1.5"/><circle cx="356" cy="172" r="1"/>
+  </g>
   </g>
 </svg>
