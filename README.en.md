@@ -1,8 +1,7 @@
 <div align="center">
 
-<a href="https://docker.coolcat.win/"><img src="docs/assets/github-ocean-banner.svg" width="520" alt="The DockerBoost whale surfing across ocean waves" /></a>
+<a href="https://docker.coolcat.win/"><img src="docs/assets/github-ocean-header.svg" width="100%" alt="The DockerBoost whale surfing across ocean waves" /></a>
 
-# DockerBoost
 
 [简体中文](README.md) · **English**
 
