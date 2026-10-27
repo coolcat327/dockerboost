@@ -7,14 +7,11 @@
 
 **从安装 Docker 到带走镜像，一个页面搞定。**
 
-支持 Cloudflare Workers 和 EdgeOne Pages 的轻量 Docker 工具站。
-在线安装、镜像加速、拉取命令、离线打包，让不同网络环境下的 Docker 使用更顺手。
-
 [在线体验](https://docker.coolcat.win/) · [快速开始](#本地开发) · [部署自己的站点](#部署) · [使用场景](#你可以用它做什么) · [详细文档](docs/README.md)
 
 </div>
 
-下载页支持「单个 / 批量」模式：粘贴或选择 Compose YAML，自动解析配置后将公开镜像逐项加入下方下载队列，再以默认 5 个并发下载独立 TAR，支持队列内逐项下载、停止、重试和移除，也可复制批量终端下载命令。变量与多文件配置请先用 `docker compose config` 展开；不执行镜像构建。
+支持 Cloudflare Workers 和 EdgeOne Pages 的轻量 Docker 工具站。在线安装、镜像加速、拉取命令、离线打包，让不同网络环境下的 Docker 使用更顺手。下载页支持「单个 / 批量」模式：粘贴或选择 Compose YAML，自动解析配置后将公开镜像逐项加入下方下载队列，再以默认 5 个并发下载独立 TAR，支持队列内逐项下载、停止、重试和移除，也可复制批量终端下载命令。变量与多文件配置请先用 `docker compose config` 展开；不执行镜像构建。
 
 ## 为什么选择 DockerBoost
 

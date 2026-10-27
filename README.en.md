@@ -7,14 +7,11 @@
 
 **Install Docker. Pull images. Take them offline. All in one place.**
 
-A lightweight Docker toolkit for Cloudflare Workers and EdgeOne Pages.
-Install Docker, configure registry mirrors, generate pull commands, and download offline archives from a single page.
-
 [Live demo](https://docker.coolcat.win/) · [Quick start](#local-development) · [Deploy your own](#deployment) · [Use cases](#what-you-can-do) · [Documentation](docs/README.md)
 
 </div>
 
-The Download tab offers Single and Batch modes: paste or select Compose YAML, automatically parse the configuration and add public images individually to the download queue below, then download individual TAR archives with five concurrent image tasks, per-image download/stop/retry/remove controls, or copy batch terminal commands. Expand variables and multiple files with `docker compose config` first; image builds are not executed.
+A lightweight Docker toolkit for Cloudflare Workers and EdgeOne Pages. Install Docker, configure registry mirrors, generate pull commands, and download offline archives from a single page. The Download tab offers Single and Batch modes: paste or select Compose YAML, automatically parse the configuration and add public images individually to the download queue below, then download individual TAR archives with five concurrent image tasks, per-image download/stop/retry/remove controls, or copy batch terminal commands. Expand variables and multiple files with `docker compose config` first; image builds are not executed.
 
 ## Why DockerBoost
 
