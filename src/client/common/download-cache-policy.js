@@ -6,3 +6,7 @@ export function downloadRequestUrl(path, version = buildVersion) {
   url.searchParams.set('version', version);
   return `${url.pathname}${url.search}${url.hash}`;
 }
+
+export function staticAssetUrl(path, version = buildVersion) {
+  return `/assets/${version}/${path.replace(/^\/+/, '')}`;
+}

@@ -10,7 +10,7 @@
 
 Hero 入场由 `hero-intro.js` 管理，指针视差、工具区柔光及背景暂停由 `page-motion.js` 管理；均使用原生 JavaScript 与 CSS。具体动画参数以源码为准，视觉约束见 [视觉与交互规范](ui.md)。
 
-构建只复制选中的 Hero，并给 JS、CSS、图标与 Hero 添加统一发布标识后缀；发布标识与下载请求的隔离机制见 [下载任务与缓存](downloads.md#发布标识与请求隔离)。`public/_headers` 为版本化静态资源设置一年不可变缓存，更新产物名称时同步匹配规则。首页保留 `index.html`，使用 `no-cache`，由 Cloudflare Workers Assets 提供默认首页及原生 SPA 回退，不生成重写规则。
+构建只复制选中的 Hero，将 public 中非控制文件、非 HTML 资源复制到 `/assets/<发布标识>/`，并在该目录生成 JS 和 CSS；页面中的现有资源引用及下载命令使用版本路径。新增普通资源的文件和目录名不得以 `_` 开头，并需使用对应版本路径引用；HTML 和平台要求的 `_` 开头控制文件保留固定路径。发布标识与下载请求的隔离机制见 [下载任务与缓存](downloads.md#发布标识与请求隔离)。`public/_headers` 和 `edgeone.json` 为版本资源目录统一设置一年不可变缓存。首页保留 `index.html`，使用 `no-cache`，由 Cloudflare Workers Assets 提供默认首页及原生 SPA 回退，不生成重写规则。
 
 ## 新增标签
 

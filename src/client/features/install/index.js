@@ -1,5 +1,5 @@
 import { retryDownload } from '../../common/download-retry.js';
-import { buildVersion, downloadRequestUrl } from '../../common/download-cache-policy.js';
+import { buildVersion, downloadRequestUrl, staticAssetUrl } from '../../common/download-cache-policy.js';
 import { writeOpfsFile, writeOpfsStream } from '../../common/opfs-file-writer.js';
 import { clearDownloadCaches, createDownloadTask } from '../../common/browser-download-task.js';
 import { createDownloadProgress } from '../../common/download-progress.js';
@@ -61,7 +61,7 @@ export const feature = {
       downloadCommand = '';
       if (docker.value && composeVersion) {
         const quote = value => "'" + String(value).replaceAll("'", "'\"'\"'") + "'";
-        downloadCommand = `curl -fsSL -o .download-docker.sh ${quote(`${window.location.origin}/download-docker.sh`)} && sh .download-docker.sh ${[window.location.origin, selectedArch, docker.value, composeVersion, version].map(quote).join(' ')}`;
+        downloadCommand = `curl -fsSL -o .download-docker.sh ${quote(`${window.location.origin}${staticAssetUrl('download-docker.sh')}`)} && sh .download-docker.sh ${[window.location.origin, selectedArch, docker.value, composeVersion, version].map(quote).join(' ')}`;
       }
       renderCommand(); renderPackage();
     };

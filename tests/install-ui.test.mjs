@@ -24,6 +24,7 @@ test('installation switches all labels and command hints without losing versions
   assert.equal(panel.querySelector('#install-package-name').textContent, 'docker-offline-x86_64-docker-28.1.1-compose-2.35.1.tar');
   assert.match(labels[4].innerHTML, /Download on an online Linux host/);
   assert.match(panel.querySelector('#install-command').textContent, /^curl /);
+  assert.match(panel.querySelector('#install-command').textContent, /\/assets\/development\/download-docker\.sh/);
   assert.match(panel.querySelector('#install-command').textContent, /&& sh \.download-docker\.sh/);
   instance.setLanguage(feature.messages['zh-CN']);
   assert.match(labels[4].innerHTML, /在联网 Linux 机器下载/);

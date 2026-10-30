@@ -1,8 +1,8 @@
 import { config } from '../config.js';
 import { build } from 'esbuild';
 import { createHash } from 'node:crypto';
-import { cp, mkdir, readFile, readdir, rename, rm, writeFile } from 'node:fs/promises';
-import { basename, dirname, resolve } from 'node:path';
+import { cp, mkdir, readFile, readdir, rm, stat, writeFile } from 'node:fs/promises';
+import { basename, dirname, resolve, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 // Resolve paths from the project, even when invoked from another directory.
@@ -18,7 +18,7 @@ await rm(dist, { recursive: true, force: true });
 await mkdir(dist, { recursive: true });
 await cp(new URL('../public/', import.meta.url), dist, {
   recursive: true,
-  filter: (source) => dirname(source) !== publicDir || !/^hero-[a-z0-9-]+\.svg$/.test(basename(source)) || `/${basename(source)}` === heroSource,
+  filter: async (source) => (await stat(source)).isDirectory() || basename(source).startsWith('_') || /\.html?$/i.test(basename(source)),
 });
 
 // Include server templates as well as browser code in the download cache version.
@@ -34,7 +34,20 @@ for (const path of ['src', 'public', 'scripts', 'edge-functions']) await hashTre
 for (const path of ['config.js', 'package.json', 'pnpm-lock.yaml', 'wrangler.jsonc', 'edgeone.json']) {
   versionHash.update(path); versionHash.update(await readFile(resolve(root, path)));
 }
-const version = versionHash.digest().subarray(0, 6).toString('base64url');
+const version = Array.from(versionHash.digest().subarray(0, 8), byte => String.fromCharCode(97 + byte % 26)).join('');
+
+// Publish static resources under the versioned namespace.
+const assetDir = resolve(root, 'dist/assets', version);
+await mkdir(assetDir, { recursive: true });
+await cp(publicDir, assetDir, {
+  recursive: true,
+  filter: (source) => {
+    const path = relative(publicDir, source);
+    const name = basename(source);
+    return !path || (!name.startsWith('_') && !/\.html?$/i.test(name) &&
+      (dirname(source) !== publicDir || !/^hero-[a-z0-9-]+\.svg$/.test(name) || `/${name}` === heroSource));
+  },
+});
 
 const result = await build({
   absWorkingDir: root,
@@ -43,13 +56,13 @@ const result = await build({
     'image-export-worker': 'src/client/features/download/image-export-worker.js',
     app: 'src/client/styles/index.css',
   },
-  outdir: 'dist',
+  outdir: assetDir,
   bundle: true,
   minify: true,
   define: { __DOCKERBOOST_VERSION__: JSON.stringify(version) },
   format: 'iife',
   target: 'es2020',
-  entryNames: `[name]-${version}`,
+  entryNames: '[name]',
   metafile: true,
   logLevel: 'info',
 });
@@ -60,16 +73,9 @@ const outputFor = (entryPoint) => {
   return `/${output.replace(/^dist\//, '')}`;
 };
 
-const icon = new URL('../dist/docker-icon.svg', import.meta.url);
-const iconPath = `/docker-icon-${version}.svg`;
-await rename(icon, new URL(`../dist${iconPath}`, import.meta.url));
-
-const githubIconPath = `/github-icon-${version}.svg`;
-await rename(new URL('../dist/github-icon.svg', import.meta.url), new URL(`../dist${githubIconPath}`, import.meta.url));
-
-const hero = new URL(`../dist${heroSource}`, import.meta.url);
-const heroPath = heroSource.replace(/\.svg$/, `-${version}.svg`);
-await rename(hero, new URL(`../dist${heroPath}`, import.meta.url));
+const iconPath = `/assets/${version}/docker-icon.svg`;
+const githubIconPath = `/assets/${version}/github-icon.svg`;
+const heroPath = `/assets/${version}${heroSource}`;
 
 const index = new URL('../dist/index.html', import.meta.url);
 const pageConfig = { author: config.site.author };

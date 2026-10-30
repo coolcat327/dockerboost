@@ -1,4 +1,5 @@
 import { parseDocument } from 'yaml';
+import { staticAssetUrl } from '../../common/download-cache-policy.js';
 
 export function composeImages(text) {
   if (text.length > 1024 * 1024) throw new Error('Compose exceeds 1 MiB');
@@ -46,5 +47,5 @@ export function batchCommands(entries, origin) {
   if (!unique.length) return '';
   const base = new URL(origin).origin;
   const rows = unique.map(({ image, platform, source }) => `  ${[image, platform, source].map(shellQuote).join(' ')}`);
-  return `curl -fsSL -o .download-images.sh ${shellQuote(`${base}/download-images.sh`)} && sh .download-images.sh ${shellQuote(base)} \\\n${rows.join(' \\\n')}`;
+  return `curl -fsSL -o .download-images.sh ${shellQuote(`${base}${staticAssetUrl('download-images.sh')}`)} && sh .download-images.sh ${shellQuote(base)} \\\n${rows.join(' \\\n')}`;
 }

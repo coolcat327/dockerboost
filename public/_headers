@@ -1,19 +1,4 @@
-/app-*.css
-  Cache-Control: public, max-age=31536000, immutable
-
-/app.bundle-*.js
-  Cache-Control: public, max-age=31536000, immutable
-
-/image-export-worker-*.js
-  Cache-Control: public, max-age=31536000, immutable
-
-/docker-icon-*.svg
-  Cache-Control: public, max-age=31536000, immutable
-
-/github-icon-*.svg
-  Cache-Control: public, max-age=31536000, immutable
-
-/hero-*.svg
+/assets/*
   Cache-Control: public, max-age=31536000, immutable
 
 /

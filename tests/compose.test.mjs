@@ -27,7 +27,7 @@ test('batch terminal command fetches one helper and lists deduplicated image par
   const entry = { image: 'nginx:latest', platform: 'linux/amd64' };
   const command = batchCommands([entry, { ...entry, source: 'auto' }, { ...entry, image: 'redis:7', platform: 'linux/arm64/v8' }], 'https://example.com');
   assert.equal((command.match(/curl -fsSL/g) || []).length, 1);
-  assert.match(command, /https:\/\/example.com\/download-images\.sh/);
+  assert.match(command, /https:\/\/example.com\/assets\/development\/download-images\.sh/);
   assert.match(command, /'nginx:latest' 'linux\/amd64' 'auto'/);
   assert.match(command, /'redis:7' 'linux\/arm64\/v8' 'auto'/);
   assert.equal((command.match(/'nginx:latest'/g) || []).length, 1);
