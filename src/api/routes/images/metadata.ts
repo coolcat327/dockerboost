@@ -14,14 +14,10 @@ export async function inspectImageResponse(request: Request, env: Env) {
   return jsonResponse({ image: image.display, layers: manifest.layers?.length || 0, platform, source: resolvedSource, sizeBytes });
 }
 
-async function platformManifest(request: Request, env: Env) {
+export async function platformResponse(request: Request, env: Env) {
   const url = new URL(request.url);
   const { source, image } = requestedImage(url, env);
-  return registryPublicFetch(env, (candidate) => `/v2/${imageForSource(env, image, candidate.id).repo}/manifests/${image.reference}`, { headers: { accept: OCI_ACCEPT } }, source);
-}
-
-export async function platformResponse(request: Request, env: Env) {
-  const response = await platformManifest(request, env);
+  const response = await registryPublicFetch(env, (candidate) => `/v2/${imageForSource(env, image, candidate.id).repo}/manifests/${image.reference}`, { headers: { accept: OCI_ACCEPT } }, source);
   if (!response.ok) {
     const error = upstreamError(response.status, `镜像仓库返回 ${response.status}`);
     return jsonResponse({ error: error.message }, { status: error.status });
@@ -29,8 +25,6 @@ export async function platformResponse(request: Request, env: Env) {
   const manifest = await response.clone().json<Manifest>().catch(() => undefined);
   if (!manifest?.config || Array.isArray(manifest.manifests)) return response;
 
-  const url = new URL(request.url);
-  const { source, image } = requestedImage(url, env);
   const resolvedSource = response.headers.get('x-dockerboost-source') || source;
   const repository = imageForSource(env, image, resolvedSource).repo;
   const configResponse = await registryPublicFetch(env, `/v2/${repository}/blobs/${manifest.config.digest}`, {}, resolvedSource);

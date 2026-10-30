@@ -1,3 +1,4 @@
+import { batchInputIssue } from '../../common/batch-input-issue.js';
 import { parseBatchImages } from '../../common/batch-images.js';
 import { bindComposeInput } from '../../common/compose-input.js';
 import { matchBatchPlatform } from '../../common/batch-platform.js';
@@ -47,9 +48,10 @@ export function initBatchPull({ panel, locale, messages, selectionStore }) {
     commandStep: ['拉取命令', 'Pull commands'], command: ['拉取 + 标签', 'Pull + tag'], copy: ['复制全部', 'Copy all'], empty: ['将镜像加入队列后显示拉取命令', 'Add images to the queue to show pull commands'], loading: ['正在解析镜像…', 'Resolving image…'], unsupported: ['该镜像不支持所选架构', 'Selected architecture is not supported'], error: ['解析失败', 'Resolution failed']
   };
   const text = key => words[key][english ? 1 : 0];
-  const issueText = value => english ? value : value.replace(/Line (\d+): invalid image/g, '第 $1 行：镜像格式无效').replace('Input exceeds 1 MiB', '输入不能超过 1 MiB').replace('missing image (build is not executed)', '未配置 image；不执行 build').replace('unresolved variable or invalid platform', '变量未展开或平台格式无效').replace('invalid image or platform', '镜像或平台格式无效').replace('extends requires docker compose config', 'extends 请先用 docker compose config 展开').replace('invalid service', '服务格式无效').replace('Please choose one Compose YAML file', '请一次选择一个 Compose YAML 文件').replace('Choose a .yaml, .yml or .txt file', '请选择 .yaml、.yml 或 .txt 文件').replace('Compose exceeds 1 MiB', 'Compose 文件不能超过 1 MiB');
+  const issueText = value => batchInputIssue(value, english);
   const key = entry => JSON.stringify([entry.image, entry.platform || '']);
   function update() {
+    const queuedKeys = new Set(jobs.map(job => job.key));
     const ready = jobs.filter(job => job.ready);
     const commands = ready.map(job => {
       const image = job.selection.resolve();
@@ -58,13 +60,13 @@ export function initBatchPull({ panel, locale, messages, selectionStore }) {
     $('#pull-batch-command').textContent = commands.join('\n\n') || text('empty');
     $('[data-copy]').disabled = !commands.length;
     $('[data-action=add-all]').hidden = !rows.length;
-    $('[data-action=add-all]').disabled = rows.every(row => jobs.some(job => job.key === row.key));
+    $('[data-action=add-all]').disabled = rows.every(row => queuedKeys.has(row.key));
     $('[data-selection-empty]').hidden = !!rows.length;
     $('[data-queue-empty]').hidden = !!jobs.length;
     $('[data-count]').textContent = jobs.length;
     $('[data-action=reparse]').disabled = !jobs.length || jobs.some(job => job.resolving);
     for (const row of rows) {
-      const added = jobs.some(job => job.key === row.key); const action = text(added ? 'remove' : 'add');
+      const added = queuedKeys.has(row.key); const action = text(added ? 'remove' : 'add');
       row.buttonLabel.textContent = action; row.button.title = action; row.button.setAttribute('aria-label', `${action} ${row.image}`); row.button.setAttribute('aria-pressed', String(added)); row.card.classList.toggle('is-added', added);
     }
     for (const job of jobs) {
@@ -98,7 +100,7 @@ export function initBatchPull({ panel, locale, messages, selectionStore }) {
     const retry = document.createElement('button'); retry.type = 'button'; retry.className = 'generate-button button-secondary';
     const removeButton = document.createElement('button'); removeButton.type = 'button'; removeButton.className = 'generate-button button-secondary'; actions.append(retry, removeButton);
     card.append(name, controls, actions); $('[data-queue-list]').append(card);
-    const job = { key: row.key, image: row.image, declaredPlatform: row.declaredPlatform, preferredPlatform: $('[data-platform]').value || row.declaredPlatform, card, controls, platform, errorMessage, retry, remove: removeButton, ready: false, resolving: true, error: '', selection: null }; jobs.push(job);
+    const job = { key: row.key, image: row.image, preferredPlatform: $('[data-platform]').value || row.declaredPlatform, card, platform, errorMessage, retry, remove: removeButton, ready: false, resolving: true, error: '', selection: null }; jobs.push(job);
     const store = createSelectionStore(); store.update({ image: job.image, source: 'auto' }); store.lookupSources = () => selectionStore.lookupSources();
     const reset = () => { job.ready = false; job.resolving = true; job.error = ''; job.platforms = []; update(); };
     job.selection = createImageSelection({ panel: controls, locale, messages, store, flash: error => { job.ready = false; job.resolving = false; job.error = error; update(); }, onLoading: reset, onReset: reset,
@@ -114,7 +116,7 @@ export function initBatchPull({ panel, locale, messages, selectionStore }) {
     clear(); if (!$('#pull-batch-input').value.trim()) return;
     try {
       const result = parseBatchImages($('#pull-batch-input').value); issues = result.issues; $('[data-errors]').textContent = issues.map(issueText).join('\n');
-      result.images.forEach((entry, index) => {
+      result.images.forEach(entry => {
         const card = document.createElement('div'); card.className = 'batch-candidate';
         const badge = document.createElement('span'); badge.className = 'batch-enqueued-mark'; badge.setAttribute('aria-hidden', 'true');
         const name = document.createElement('span'); name.className = 'batch-image-name';

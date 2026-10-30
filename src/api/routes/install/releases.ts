@@ -1,6 +1,11 @@
 import { HttpError } from '../../common/errors';
 
 const composeArch: Record<string, string> = { x86_64: 'x86_64', aarch64: 'aarch64', armhf: 'armv7', ppc64le: 'ppc64le', s390x: 's390x' };
+export const architectures = Object.keys(composeArch);
+
+export function composeAssetPath(arch: string, version: string) {
+  return `/docker/compose/releases/download/v${version}/docker-compose-linux-${composeArch[arch]}`;
+}
 
 export async function upstream(url: string) {
   const host = new URL(url).hostname;
@@ -35,7 +40,7 @@ export async function latestComposeVersion(arch: string): Promise<string> {
   await release.body?.cancel();
   if (!version) throw new HttpError('GitHub Compose 最新发布版本无法识别，请稍后刷新', 502);
   const assets = await (await upstream(`https://github.com/docker/compose/releases/expanded_assets/v${version}`)).text();
-  const path = `/docker/compose/releases/download/v${version}/docker-compose-linux-${composeArch[arch]}`;
+  const path = composeAssetPath(arch, version);
   if (!assets.includes(`href="${path}"`)) throw new HttpError(`Compose 最新版本 ${version} 没有 ${arch} 架构文件`, 400);
   return version;
 }

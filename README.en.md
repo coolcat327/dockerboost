@@ -2,174 +2,97 @@
 
 <a href="https://docker.coolcat.win/"><img src="docs/assets/github-ocean-header.svg" width="100%" alt="The DockerBoost whale surfing across ocean waves" /></a>
 
-
 [简体中文](README.md) · **English**
 
 **Install Docker. Pull images. Take them offline. All in one place.**
 
-[Live demo](https://docker.coolcat.win/) · [Quick start](#local-development) · [Deploy your own](#deployment) · [Use cases](#what-you-can-do) · [Documentation](docs/README.md)
+[Live demo](https://docker.coolcat.win/) · [Quick start](#local-development) · [Deploy your own](#deployment) · [Documentation](docs/README.md)
 
 </div>
 
-A lightweight Docker toolkit for Cloudflare Workers and EdgeOne Pages. Install Docker, configure registry mirrors, generate pull commands, and download offline archives from a single page. The Pull tab also accepts Compose or image lists and resolves queued images with automatic source selection and configurable architectures, then generates pull commands. The Download tab offers Single and Batch modes: paste or select Compose YAML, automatically parse the configuration and add public images individually to the download queue below, then download individual TAR archives with five concurrent image tasks, per-image download/stop/retry/remove controls, or copy batch terminal commands. Expand variables and multiple files with `docker compose config` first; image builds are not executed.
-
-## Why DockerBoost
-
-- **One place for everyday tasks**: install, configure, pull, and download, with shared image selection to reduce repeated input.
-- **Prepare for offline environments**: download Docker, Compose, or image archives on a connected machine and transfer them to the destination.
-- **Download images without installing Docker**: export a TAR directly in your browser, or use curl and your local tar utility in a terminal.
-- **Deploy a lightweight edge service**: built with Hono for Cloudflare Workers and EdgeOne Edge Functions. The server streams files while the client assembles archives.
-- **Choose your image source**: use automatic source selection or specify a source and architecture. Share links restore page selections.
+DockerBoost is a lightweight Docker toolkit for Cloudflare Workers and EdgeOne Pages. Generate installation commands, configure registry mirrors, build pull commands, and prepare offline archives. The server streams files while the browser or terminal assembles TAR archives locally. Downloading images requires no Docker installation.
 
 ## What you can do
 
-| Your goal | How DockerBoost helps |
+| Feature | Usage |
 | --- | --- |
-| Install Docker on a new machine | Generate online installation commands or download an offline bundle with Docker, Compose, configuration, and an installer |
-| Configure a registry mirror | Generate configuration commands, back up existing settings, and get recovery commands |
-| Pull an image for a specific architecture | Enter an image name or paste a `docker pull` command to generate pull and tagging commands |
-| Prepare images for an offline machine | Download a TAR in your browser or terminal, transfer it, and import it with `docker load` |
-| Share image selections with a teammate | Share a single image selection or a complete download queue; queue links automatically add and resolve the images when opened |
+| Install Docker | Generate online installation commands or download an offline bundle containing Docker, Compose, configuration, and install/uninstall scripts |
+| Configure registry mirrors | Generate configuration, backup, and recovery commands |
+| Pull images | Enter an image name, paste a `docker pull` command, or import Compose / image lists to generate pull and tagging commands for a selected architecture |
+| Download images | Export individual TAR archives in the browser or copy terminal download commands; batch mode supports per-image selection, cancellation, retry, and removal, with up to 5 concurrent image downloads by default |
+| Share selections | Share one image selection or a complete download queue; recipients automatically resolve queued images without starting downloads |
 
-### Take an image offline in a single archive
+Pull and Download share single-image selections. Choose an image source automatically or manually; batch queues select sources automatically and allow bulk or per-image architecture choices. Expand Compose variables and multiple files with `docker compose config` first; `build` is not executed.
 
-Choose an image and architecture on the page, download the archive, then import it on the destination machine:
+Select an image and architecture on a connected machine, download the archive, then transfer and import it on the destination machine:
 
 ```sh
 docker load -i nginx_latest_linux_amd64.tar
 ```
 
-Browser downloads stream image layers into OPFS temporary storage and assemble the TAR locally. Terminal downloads use curl, jq, local tar, and common shell tools, without Docker or Skopeo. Terminal commands fetch static scripts. Both installation bundles and image downloads support cancellation and temporary file cleanup. See [Download tasks and caching](docs/downloads.md) for details.
+## Requirements and limitations
 
-### Requirements and limitations
-
-- Automatic source selection queries configured sources concurrently in batches ordered by latency and uses the first successful response. Uncached images may be unavailable. DockerBoost does not bypass upstream authentication or rate limits, and access to every image is not guaranteed.
-- Browser downloads require OPFS support and sufficient disk space. Network conditions, upstream rate limits, and platform resource limits still apply.
-- Online installation uses LinuxMirrors scripts. Offline installation bundles support **fresh Docker installations on Linux with systemd** and require system dependencies such as iptables/ip6tables. Choose a Linux architecture and Docker version; the bundle pairs them with the latest stable Compose release. Extracts into one top-level folder and includes idempotent install/uninstall scripts. Records, configuration backups, and locks stay beside the scripts. Uninstall removes recorded programs and services and saves the current configuration for reuse on reinstall. It does not adopt older or manual installations. Read the included `readme.md` for instructions.
-- Preserve other fields in `daemon.json` when applying registry mirror settings, then restart Docker. For Docker Desktop, apply the settings and restart through its settings interface.
+- **Public images**: automatic selection queries configured sources concurrently in batches and uses the first successful response. Uncached images may be unavailable; upstream authentication, rate limits, and network restrictions still apply.
+- **Browser downloads**: require OPFS support and sufficient disk space. Archives are assembled locally after downloading; the browser may ask you to allow multiple file downloads.
+- **Terminal downloads**: require sh, curl, jq, tar, and common shell tools; offline installation bundles also require sha256sum. Docker and Skopeo are unnecessary. Scripts clean up temporary files on normal exit, failure, or catchable interruption.
+- **Offline installation**: supports fresh installations on Linux with systemd and dependencies such as iptables/ip6tables. Select an architecture and Docker version, paired with the latest stable Compose release. Installation records, backups, and locks stay beside the scripts; uninstall handles recorded installations and does not adopt existing or manual installations. Follow the bundled `readme.md`. Online installation uses LinuxMirrors scripts.
+- **Configuration and releases**: restart Docker after applying mirror settings; use the settings interface for Docker Desktop. After a site update, older pages or copied versioned download commands may stop working; refresh and copy them again.
 
 ## Local development
 
-Use **Node.js 22 or newer** and **pnpm 12.14.0**, pinned in the `packageManager` field of `package.json`. If needed, follow the [pnpm installation instructions](https://pnpm.io/installation) to install that version.
+Use **Node.js 22 or newer** and **pnpm 12.14.0**. From the project root, run:
 
 ```sh
 pnpm install --frozen-lockfile
 pnpm run dev
 ```
 
-Open the local URL printed in your terminal. Wrangler builds and watches frontend code, static assets, and build scripts, and handles server source changes.
+Open the URL printed in your terminal. Wrangler builds and watches changes automatically. Run the complete checks with:
 
 ```sh
-pnpm run check     # TypeScript and API dependency boundary checks
-pnpm test          # Regression tests; requires sh, bash, tar, sha256sum, etc.
-pnpm run build     # Generate dist
-pnpm run validate  # Type checks, tests, and build; also used in CI
+pnpm run validate
 ```
 
-Edit source files rather than generated files in `dist/`. Before contributing, read [AGENTS.md](AGENTS.md). See the [Development reference](docs/architecture.md) for module integration and dependency boundaries.
+See [Local development and tools](docs/development.md) for prerequisites, debugging entry points, and individual checks. Read [AGENTS.md](AGENTS.md) before contributing.
 
 ## Project structure
 
 | Location | Purpose |
 | --- | --- |
-| `src/client/index.html` | Page template; the build injects settings and versioned asset paths |
-| `src/client/app.js` | Vanilla JavaScript entry point for initialization, language selection, and tabs |
-| `src/client/features/` | Page features: install, setup, pull, and download |
-| `src/client/common/` | Shared frontend capabilities, including image selection, localization, download tasks, and file writing |
-| `src/client/styles/` | Page and shared styles imported by index.css; feature styles live alongside their features |
-| `src/api/app.ts` | Shared Hono application, route registration, and error handling |
-| `src/api/platforms/` | Cloudflare and EdgeOne adapters |
-| `edge-functions/` | EdgeOne file routes for `/api` and `/v2` |
-| `src/api/routes/` | install, images, download, registry, share, and status routes, registered by each directory's index.ts |
-| `src/api/common/` | Shared source configuration and selection, Registry requests, image parsing, and HTTP adapters |
-| `public/` | Static assets and hosting configuration |
-| `scripts/` | Build tooling, release identifiers, and architecture checks |
-| `tests/` | Regression tests for APIs, installation scripts, archives, and browser downloads |
-| `docs/` | Documentation index; topic guides are organized by responsibility |
-| `docs/` | Current architecture, development, API, download, and UI topics |
-| `docs/decisions/` | Decision rationale |
-| `docs/archive/` | Completed plans and historical validation |
-| `docs/plans/` | Pending work in pending; delivery records in implemented |
-| `config.js` | Public page settings and default image sources |
-| `wrangler.jsonc`, `edgeone.json` | Platform build and deployment configuration |
-| `.github/workflows/` | Continuous validation and deployment |
+| `src/client/` | Vanilla JavaScript page, four feature tabs, shared capabilities, and styles |
+| `src/api/` | Hono APIs, streaming Registry proxy, and platform adapters |
+| `edge-functions/` | Thin EdgeOne file route entries |
+| `public/`, `scripts/` | Static resources, build tooling, and architecture checks |
+| `tests/` | API, script, archive, and frontend logic regression tests |
+| `docs/` | Development guides, API and mechanism specifications, decisions, and historical records |
 
-See the [Development reference](docs/architecture.md) for module integration and dependency boundaries, or browse the [Documentation index](docs/README.md).
+See [System architecture](docs/architecture.md) for detailed directory responsibilities and dependency directions. Public page settings and default image sources live in `config.js`; deployment settings live in `wrangler.jsonc` and `edgeone.json`.
 
 ## Deployment
 
-### Deploy with GitHub Actions
+### Cloudflare Workers
 
-1. Push the project to your GitHub repository. Set `main` as the default branch for the default manual selection described below.
-2. Set the Worker name in `wrangler.jsonc`. Configure page links, author, and default image sources in the root `config.js`. Override the source list with the JSON variable `IMAGE_SOURCES` if needed. See [Image source configuration](docs/api.md#镜像源配置) for fields and path rules.
-3. Add these repository secrets under **Settings → Secrets and variables → Actions**:
-
-   | Secret | Purpose |
-   | --- | --- |
-   | `CLOUDFLARE_API_TOKEN` | API token with permission to deploy Workers to the target account |
-   | `CLOUDFLARE_ACCOUNT_ID` | Target Cloudflare account ID |
-
-4. Push the workflow to the default branch, then open **Actions → Validate and deploy DockerBoost** to view runs.
-
-| Trigger | Behavior |
-| --- | --- |
-| Push to `main` | Run type checks, tests, and build, then deploy if validation succeeds |
-| Open or update a pull request | Run validation |
-| Manual run | Click **Run workflow**, choose a branch under **Use workflow from** and select cloudflare (default), edgeone, or all under **Deployment platform**, then validate and deploy |
-| Push to another branch | No automatic deployment; select the branch manually to deploy it |
-
-Manual branch selection uses GitHub's built-in workflow interface; see [Manually running a workflow](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/manually-run-a-workflow). With `main` as the repository's default branch, the manual selector defaults to `main`. The selected branch must contain the workflow. Validation and deployment use the same commit captured for the run, and the run name includes the branch.
-
-**Manually deploying another branch updates the same live Worker.** It does not create a separate preview site. Deployment jobs share a concurrency group so only one deployment runs at a time. GitHub may replace pending runs, so every trigger is not guaranteed to produce a deployment.
-
-### Deploy locally
-
-Install dependencies and configure `wrangler.jsonc`, then log in to Cloudflare:
+Set the Worker name in `wrangler.jsonc` and page settings in `config.js`. After installing dependencies, run:
 
 ```sh
-pnpm install --frozen-lockfile
 pnpm exec wrangler login
 pnpm run deploy
 ```
 
-Deployment builds the project automatically. Open the site URL printed by Wrangler when deployment completes.
-
 ### EdgeOne development and deployment
 
-Use the project-pinned CLI. The current CLI uses `makers`; the older `pages` command is deprecated. Existing Cloudflare `dev` and `deploy` commands remain supported, alongside explicit `dev:cloudflare` and `deploy:cloudflare` commands.
-
-Sign in and link the project once:
+After installing dependencies, sign in, link the project, and deploy:
 
 ```sh
 pnpm exec edgeone login
 pnpm exec edgeone makers link
-pnpm run dev:edgeone
-```
-
-Choose China or Global according to your account; the account site and acceleration region are separate settings. Do not run init again. The default development URL is `http://localhost:8088`; the CLI combines functions and the frontend server on port 5173. Frontend edits rebuild automatically; refresh the page to see changes. The CLI watches function code. Keep `edgeone.json` devCommand pointing to the frontend server, never to `dev:edgeone` or Wrangler.
-
-```sh
-pnpm run validate
-pnpm run deploy:edgeone:preview
 pnpm run deploy:edgeone
 ```
 
-Both production and preview deployment scripts explicitly use `--area overseas` (global coverage excluding mainland China). GitHub Actions invokes the same script and uses the same region. When invoking the CLI directly, always include this option, for example `pnpm exec edgeone makers deploy --area overseas`; otherwise, the CLI defaults to `global`, and overseas Registry requests may still be affected by mainland China network restrictions. Choosing China or Global during login does not configure the deployment region.
+Deployment commands build the complete project automatically. EdgeOne scripts explicitly use `--area overseas`; do not upload only the static `dist/` directory. GitHub Actions is also supported: pull requests run validation, pushes to main validate and deploy, and manual runs select a branch and platform to update the corresponding production site.
 
-Deployment builds and uploads the complete project. Do not upload the static-only `dist/` directory directly. CLI deployment to an existing project requires a direct-upload project. Alternatively, import the Git repository in EdgeOne and use the install/build commands and `dist` output configured in `edgeone.json`, selecting an acceleration region excluding mainland China in the platform settings. Avoid enabling both platform Git deployment and Actions deployment for the same project.
-
-To enable EdgeOne in the existing GitHub Actions workflow, set repository **Variable** `EDGEONE_PROJECT_NAME` and **Secret** `EDGEONE_API_TOKEN`. The Cloudflare project name is `dockerboost` (in `wrangler.jsonc`); the EdgeOne project name comes from that repository variable. Manual runs deploy only the selected platform, or both with all; pushes to main still deploy all enabled platforms. Without the project name, EdgeOne deployment is skipped. Both platforms share validation and deploy the same commit independently, with separate concurrency groups. Manual deployment of another branch also updates the respective production sites.
-
-Configure runtime variable `IMAGE_SOURCES` in EdgeOne as a JSON array string, or leave it unset to use the default sources. Check production and preview configuration separately. Never commit credentials, tokens, or local environment files.
-
-Pages serves frontend assets directly; only `/api` and `/v2` invoke Edge Functions. No Node.js Cloud Functions or server-side archive assembly are used. Before switching production, test overseas Registry access, authentication, Range/HEAD, large image layers, long transfers, and cancellation on an overseas preview deployment. Local tests cannot establish platform transfer quotas or network performance. See [EdgeOne CLI](https://edgeone.cloud.tencent.com/pages/document/162936923278893056) and [Edge Functions](https://pages.edgeone.ai/document/edge-functions).
+See [Platform development and deployment](docs/deployment.md) for authentication, Actions credentials, preview deployments, EdgeOne local development, and runtime variables.
 
 ## Documentation
 
-The detailed documentation is currently in Chinese.
-
-- [Documentation index](docs/README.md): find documentation by task.
-- [Development reference](docs/architecture.md): module structure, API integration, and dependency boundaries.
-- [API reference](docs/api.md): API contracts, Registry behavior, and image source configuration.
-- [Download tasks and caching](docs/downloads.md): browser and terminal downloads, temporary storage, and cleanup.
-- [Visual guidelines](docs/ui.md): page styling and interaction requirements.
+Use the [Documentation index](docs/README.md) to find the right topic. Development and deployment guides own procedures; architecture, API, download, and visual specifications each own their respective rules. Pending plans, decisions, and historical records are kept separately. Detailed guides are currently in Chinese.

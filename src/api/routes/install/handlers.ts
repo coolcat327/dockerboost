@@ -1,15 +1,13 @@
 import { jsonResponse } from '../../common/http';
-import { upstream, latestComposeVersion } from './releases';
+import { upstream, latestComposeVersion, architectures, composeAssetPath } from './releases';
 import { installFiles } from './bundle';
 import { bundleDownloadScript } from './offline-bundle-script';
 import { HttpError } from '../../common/errors';
 
-const architectures = ['x86_64', 'aarch64', 'armhf', 'ppc64le', 's390x'] as const;
-const composeArch: Record<string, string> = { x86_64: 'x86_64', aarch64: 'aarch64', armhf: 'armv7', ppc64le: 'ppc64le', s390x: 's390x' };
 const versionPattern = /^\d+\.\d+\.\d+$/;
 function architecture(url: URL) {
   const arch = url.searchParams.get('arch') || 'x86_64';
-  if (!architectures.includes(arch as typeof architectures[number])) throw new HttpError('架构无效', 400);
+  if (!architectures.includes(arch)) throw new HttpError('架构无效', 400);
   return arch;
 }
 function options(url: URL) {
@@ -34,7 +32,7 @@ export async function assetResponse(request: Request) {
   const kind = url.searchParams.get('kind');
   if (kind !== 'docker' && kind !== 'compose') throw new HttpError('文件类型无效', 400);
   const dockerUrl = `https://download.docker.com/linux/static/stable/${selected.arch}/docker-${selected.docker}.tgz`;
-  const composeUrl = `https://github.com/docker/compose/releases/download/v${selected.compose}/docker-compose-linux-${composeArch[selected.arch]}`;
+  const composeUrl = `https://github.com${composeAssetPath(selected.arch, selected.compose)}`;
   const response = await upstream(kind === 'docker' ? dockerUrl : composeUrl);
   return new Response(response.body, { headers: { 'Content-Type': 'application/octet-stream', 'Cache-Control': 'public, max-age=86400', ...(response.headers.has('content-length') ? { 'Content-Length': response.headers.get('content-length')! } : {}) } });
 }
