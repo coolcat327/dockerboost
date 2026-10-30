@@ -112,10 +112,11 @@ if (url.endsWith('/api/download-plan')) {
     assert.ok(maxImages > 1 && maxImages <= 4, `concurrent images: ${maxImages}`);
     assert.ok(maxBlobs > 1 && maxBlobs <= 3, `concurrent blobs per image: ${maxBlobs}`);
     assert.equal(peakImages.size, 7);
-    assert.ok(result.stdout.includes(`Succeeded (${fail ? 6 : 7}):`));
-    assert.ok(result.stdout.includes(`Failed (${fail ? 1 : 0}):`));
+    assert.match(result.stdout, new RegExp(`Succeeded \\(${fail ? 6 : 7}\\)  Failed \\(${fail ? 1 : 0}\\)  Size [\\d.]+ MiB  Time (?:<1s|\\d+s)  Speed (?:-|[\\d.]+ M/s)\\n`));
+    assert.match(result.stdout, /\| Size\s+\| Time\s+\| Speed\s+\|/);
+    assert.match(result.stdout, /\| image1:latest\s+\| success\s+\| linux\/amd64\s+\|\s+[\d.]+ MiB\s+\|\s+(?:<1s|\d+s)\s+\|\s+(?:-|[\d.]+ M\/s)\s+\|/);
     if (fail) {
-      assert.match(result.stdout, /image0:latest \(linux\/amd64, source: auto\)/);
+      assert.match(result.stdout, /\| image0:latest\s+\| failed\s+\| linux\/amd64\s+\|\s+[\d.]+ MiB\s+\|/);
       assert.match(result.stdout, /Unable to download or verify image blobs after retries/);
       assert.match(result.stdout, /sha256:0{64}/);
     }
@@ -171,8 +172,7 @@ fs.writeFileSync(out, JSON.stringify({image:'nginx:latest',repository:'library/n
 `, {mode:0o755});
       const result = spawnSync('sh', [helper, 'https://example.com', 'nginx:latest', 'linux/amd64', 'auto'], {cwd:dir, encoding:'utf8', env:{...process.env, PATH:`${join(dir,'bin')}:${process.env.PATH}`, MODE:mode}});
       assert.equal(result.status, 1);
-      assert.match(result.stdout, /Succeeded \(0\):/);
-      assert.match(result.stdout, /Failed \(1\):/);
+      assert.match(result.stdout, /Succeeded \(0\)  Failed \(1\)  Size -  Time -  Speed -\n/);
       assert.match(result.stdout, mode === 'metadata' ? /Could not retrieve image metadata[\s\S]*HTTP 404/ : /Output already exists:/);
       if (mode === 'exists') assert.equal(await readFile(join(dir,'nginx_latest_linux_amd64.tar'),'utf8'), 'original');
     } finally { await rm(dir,{recursive:true,force:true}); }
