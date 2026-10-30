@@ -11,7 +11,7 @@
 
 </div>
 
-A lightweight Docker toolkit for Cloudflare Workers and EdgeOne Pages. Install Docker, configure registry mirrors, generate pull commands, and download offline archives from a single page. The Download tab offers Single and Batch modes: paste or select Compose YAML, automatically parse the configuration and add public images individually to the download queue below, then download individual TAR archives with five concurrent image tasks, per-image download/stop/retry/remove controls, or copy batch terminal commands. Expand variables and multiple files with `docker compose config` first; image builds are not executed.
+A lightweight Docker toolkit for Cloudflare Workers and EdgeOne Pages. Install Docker, configure registry mirrors, generate pull commands, and download offline archives from a single page. The Pull tab also accepts Compose or image lists and resolves queued images with automatic source selection and configurable architectures, then generates pull commands. The Download tab offers Single and Batch modes: paste or select Compose YAML, automatically parse the configuration and add public images individually to the download queue below, then download individual TAR archives with five concurrent image tasks, per-image download/stop/retry/remove controls, or copy batch terminal commands. Expand variables and multiple files with `docker compose config` first; image builds are not executed.
 
 ## Why DockerBoost
 

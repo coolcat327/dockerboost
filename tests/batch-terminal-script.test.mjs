@@ -4,7 +4,7 @@ import { mkdtemp, mkdir, writeFile, readFile, readdir, rm } from 'node:fs/promis
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
-import { batchCommands } from '../src/client/features/download/compose.js';
+import { batchCommands } from '../src/client/features/download/terminal-commands.js';
 
 test('static image helper downloads plans and blobs without requesting dynamic scripts', async () => {
   const dir = await mkdtemp(join(tmpdir(), 'dockerboost-batch-'));

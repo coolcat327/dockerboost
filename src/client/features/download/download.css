@@ -1,211 +1,225 @@
 /* Download styles. */
 
-[data-panel="download"] .command-note { margin: 12px 0 0; color: var(--muted); font-size: 14px; line-height: 1.8; }
-[data-panel="download"] .command-note code { color: var(--code); font-family: 'DM Mono', monospace; }
-[data-panel="download"] .lookup-result { margin-top:17px }
-[data-panel="download"] .lookup-result .command-block { margin-top:0 }
+:is([data-panel="download"],[data-panel="pull"]) .command-note { margin: 12px 0 0; color: var(--muted); font-size: 14px; line-height: 1.8; }
+:is([data-panel="download"],[data-panel="pull"]) .command-note code { color: var(--code); font-family: 'DM Mono', monospace; }
+:is([data-panel="download"],[data-panel="pull"]) .lookup-result { margin-top:17px }
+:is([data-panel="download"],[data-panel="pull"]) .lookup-result .command-block { margin-top:0 }
 
-[data-panel="download"] .browser-download[aria-disabled="true"] { pointer-events:none }
+:is([data-panel="download"],[data-panel="pull"]) .browser-download[aria-disabled="true"] { pointer-events:none }
 
-[data-panel="download"] [hidden] { display:none !important }
-[data-panel="download"] .download-header { display:flex; align-items:flex-start; justify-content:space-between; gap:24px; margin-bottom:28px }
-[data-panel="download"] .download-header .panel-copy { min-width:0 }
-[data-panel="download"] .download-header .panel-copy h3 { margin-top:0 }
-[data-panel="download"] .download-modes { display:flex; flex-shrink:0; gap:4px; padding:4px; border:1px solid var(--control-line); border-radius:12px; background:var(--inset) }
-[data-panel="download"] .download-modes button { min-height:38px; padding:8px 18px; border-color:transparent; background:transparent; color:var(--muted); box-shadow:none; font-size:14px }
-[data-panel="download"] .download-modes [aria-pressed="true"] { border-color:var(--control-line); color:var(--ink); background:var(--surface-2); box-shadow:inset 0 1px #ffffff0a }
-[data-panel="download"] .download-modes button::before,
-[data-panel="download"] .compose-batch .generate-button::before { display:none }
-[data-panel="download"] .compose-batch { --compose-content-height:300px; display:grid; gap:20px; min-width:0 }
-[data-panel="download"] .batch-section { min-width:0; padding:24px; border:1px solid var(--line); border-radius:14px; background:var(--surface) }
-[data-panel="download"] .batch-section-heading { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:20px }
-[data-panel="download"] .batch-section h4 { display:flex; align-items:center; gap:10px; margin:0; font-size:17px; line-height:1.5 }
-[data-panel="download"] .batch-queue-section > .batch-section-heading { margin-bottom:8px; flex-wrap:nowrap; gap:8px }
-[data-panel="download"] .batch-queue-hint { margin:0 0 16px; color:var(--muted); font-size:12px; line-height:1.7 }
-[data-panel="download"] .batch-queue-section .batch-share-button { width:auto; flex:0 0 auto; margin-left:auto; min-height:36px; padding:7px 12px; font-size:12px; white-space:nowrap }
-[data-panel="download"] .compose-batch .batch-share-button::before { display:block }
+:is([data-panel="download"],[data-panel="pull"]) [hidden] { display:none !important }
+:is([data-panel="download"],[data-panel="pull"]) .download-header { display:flex; align-items:flex-start; justify-content:space-between; gap:24px; margin-bottom:28px }
+:is([data-panel="download"],[data-panel="pull"]) .download-header .panel-copy { min-width:0 }
+:is([data-panel="download"],[data-panel="pull"]) .download-header .panel-copy h3 { margin-top:0 }
+:is([data-panel="download"],[data-panel="pull"]) .download-modes { display:flex; flex-shrink:0; gap:4px; padding:4px; border:1px solid var(--control-line); border-radius:12px; background:var(--inset) }
+:is([data-panel="download"],[data-panel="pull"]) .download-modes button { min-height:38px; padding:8px 18px; border-color:transparent; background:transparent; color:var(--muted); box-shadow:none; font-size:14px }
+:is([data-panel="download"],[data-panel="pull"]) .download-modes [aria-pressed="true"] { border-color:var(--control-line); color:var(--ink); background:var(--surface-2); box-shadow:inset 0 1px #ffffff0a }
+:is([data-panel="download"],[data-panel="pull"]) .download-modes button::before,
+:is([data-panel="download"],[data-panel="pull"]) .compose-batch .generate-button::before { display:none }
+:is([data-panel="download"],[data-panel="pull"]) .compose-batch { --compose-content-height:300px; display:grid; gap:20px; min-width:0 }
+:is([data-panel="download"],[data-panel="pull"]) .batch-section { min-width:0; padding:24px; border:1px solid var(--line); border-radius:14px; background:var(--surface) }
+:is([data-panel="download"],[data-panel="pull"]) .batch-section-heading { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:20px }
+:is([data-panel="download"],[data-panel="pull"]) .batch-section h4 { display:flex; align-items:center; gap:10px; margin:0; font-size:17px; line-height:1.5 }
+:is([data-panel="download"],[data-panel="pull"]) .batch-queue-section > .batch-section-heading { margin-bottom:8px; flex-wrap:nowrap; gap:8px }
+:is([data-panel="download"],[data-panel="pull"]) .batch-queue-hint { margin:0 0 16px; color:var(--muted); font-size:12px; line-height:1.7 }
+:is([data-panel="download"],[data-panel="pull"]) .batch-queue-section .batch-share-button { width:auto; flex:0 0 auto; margin-left:auto; min-height:36px; padding:7px 12px; font-size:12px; white-space:nowrap }
+:is([data-panel="download"],[data-panel="pull"]) .compose-batch .batch-share-button::before { display:block }
 @container workspace (max-width:480px) {
-  [data-panel="download"] .batch-queue-section h4 { min-width:0; font-size:15px; gap:6px }
-  [data-panel="download"] .batch-queue-section h4 [data-text="queue"] { overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
-  [data-panel="download"] .compose-batch .batch-share-button { width:36px; padding:0; flex-shrink:0; justify-content:center }
-  [data-panel="download"] .batch-share-button > span { display:none }
+  :is([data-panel="download"],[data-panel="pull"]) .batch-queue-section h4 { min-width:0; font-size:15px; gap:6px }
+  :is([data-panel="download"],[data-panel="pull"]) .batch-queue-section h4 [data-text="queue"] { overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
+  :is([data-panel="download"],[data-panel="pull"]) .compose-batch .batch-share-button { width:36px; padding:0; flex-shrink:0; justify-content:center }
+  :is([data-panel="download"],[data-panel="pull"]) .batch-share-button > span { display:none }
 }
-[data-panel="download"] .batch-step { font:12px 'DM Mono',monospace; color:var(--cyan) }
-[data-panel="download"] .batch-hint,
-[data-panel="download"] .batch-image-name small { color:var(--muted); font-size:12px; line-height:1.7 }
-[data-panel="download"] .batch-input-label { display:block; margin-bottom:10px; color:var(--muted); font-size:14px }
-[data-panel="download"] .compose-batch textarea { box-sizing:border-box; display:block; width:100%; height:var(--compose-content-height); min-height:0; resize:none; overflow:auto; overscroll-behavior:contain; scrollbar-gutter:stable; white-space:pre; overflow-wrap:normal; tab-size:2; padding:16px; background:var(--inset); color:var(--ink); border:1px solid var(--control-line); border-radius:10px; font:13px/1.65 'DM Mono',monospace }
-[data-panel="download"] .compose-batch input[type="file"] { min-width:0; max-width:100%; color:var(--muted); font:13px Manrope,sans-serif; flex:1 1 200px }
-[data-panel="download"] .compose-batch .generate-button { min-height:42px; padding:10px 16px; font-size:13px; white-space:normal }
-[data-panel="download"] .compose-batch textarea:focus-visible { outline:2px solid var(--cyan); outline-offset:3px }
-[data-panel="download"] .batch-empty { margin:0; padding:28px 16px; border:1px dashed var(--control-line); border-radius:10px; color:var(--muted); font-size:14px; line-height:1.8; text-align:center }
-[data-panel="download"] [data-list]:empty { display:none }
-[data-panel="download"] [data-list] { height:100%; min-height:0; overflow:auto; overscroll-behavior:contain; scrollbar-gutter:stable }
-[data-panel="download"] [data-list]:focus-visible { outline:2px solid var(--cyan); outline-offset:3px; border-radius:8px }
-[data-panel="download"] .batch-candidate { display:grid; grid-template-columns:16px minmax(0,1fr) auto; align-items:center; gap:10px; padding:12px 4px; border-bottom:1px solid var(--line) }
-[data-panel="download"] .batch-candidate .batch-image-name { display:flex; align-items:baseline; gap:8px; overflow:hidden }
-[data-panel="download"] .batch-candidate .batch-image-name strong { flex:1; min-width:0 }
-[data-panel="download"] .batch-candidate .batch-image-name small { flex:0 1 auto; min-width:0; max-width:40%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
-[data-panel="download"] .batch-candidate .batch-image-name small:empty { display:none }
-[data-panel="download"] .batch-image-name { display:grid; gap:4px; flex:1; min-width:0; overflow-wrap:anywhere }
-[data-panel="download"] .batch-image-name strong { font:500 14px/1.6 'DM Mono',monospace }
-[data-panel="download"] .batch-queue-count { display:inline-flex; align-items:center; justify-content:center; min-width:24px; padding:2px 6px; border-radius:6px; background:var(--accent-soft); color:var(--cyan); font:12px/1.5 'DM Mono',monospace }
-[data-panel="download"] .batch-image .transfer-status { margin:0; min-width:0 }
-[data-panel="download"] .compose-batch summary { cursor:pointer; color:var(--muted); font-size:13px; line-height:1.7 }
-[data-panel="download"] .batch-help { margin:0 }
-[data-panel="download"] .batch-notices { grid-column:1 / -1; min-width:0; border:1px solid var(--line); border-radius:12px; background:var(--inset); overflow:hidden }
-[data-panel="download"] .batch-selection-content { display:grid; grid-template-rows:minmax(0,1fr); height:var(--compose-content-height); min-width:0; min-height:0 }
-[data-panel="download"] [data-selection-empty] { display:grid; place-items:center; height:100% }
-[data-panel="download"] .compose-batch [data-text="note"] { color:var(--muted); font-size:13px; line-height:1.8; margin:0; padding:0 16px 14px }
-[data-panel="download"] .compose-batch :is([data-errors],[data-summary]):empty,
-[data-panel="download"] .compose-batch pre:has(code:empty) { display:none }
-[data-panel="download"] [data-errors] { white-space:pre-wrap; overflow-wrap:anywhere; color:var(--danger); font-size:13px }
+:is([data-panel="download"],[data-panel="pull"]) .batch-step { font:12px 'DM Mono',monospace; color:var(--cyan) }
+:is([data-panel="download"],[data-panel="pull"]) .batch-hint,
+:is([data-panel="download"],[data-panel="pull"]) .batch-image-name small { color:var(--muted); font-size:12px; line-height:1.7 }
+:is([data-panel="download"],[data-panel="pull"]) .batch-input-label { display:block; margin-bottom:10px; color:var(--muted); font-size:14px }
+:is([data-panel="download"],[data-panel="pull"]) .compose-batch textarea { box-sizing:border-box; display:block; width:100%; height:var(--compose-content-height); min-height:0; resize:none; overflow:auto; overscroll-behavior:contain; scrollbar-gutter:stable; white-space:pre; overflow-wrap:normal; tab-size:2; padding:16px; background:var(--inset); color:var(--ink); border:1px solid var(--control-line); border-radius:10px; font:13px/1.65 'DM Mono',monospace }
+:is([data-panel="download"],[data-panel="pull"]) .compose-batch input[type="file"] { min-width:0; max-width:100%; color:var(--muted); font:13px Manrope,sans-serif; flex:1 1 200px }
+:is([data-panel="download"],[data-panel="pull"]) .compose-batch .generate-button { min-height:42px; padding:10px 16px; font-size:13px; white-space:normal }
+:is([data-panel="download"],[data-panel="pull"]) .compose-batch textarea:focus-visible { outline:2px solid var(--cyan); outline-offset:3px }
+:is([data-panel="download"],[data-panel="pull"]) .batch-empty { margin:0; padding:28px 16px; border:1px dashed var(--control-line); border-radius:10px; color:var(--muted); font-size:14px; line-height:1.8; text-align:center }
+:is([data-panel="download"],[data-panel="pull"]) [data-list]:empty { display:none }
+:is([data-panel="download"],[data-panel="pull"]) [data-list] { height:100%; min-height:0; overflow:auto; overscroll-behavior:contain; scrollbar-gutter:stable }
+:is([data-panel="download"],[data-panel="pull"]) [data-list]:focus-visible { outline:2px solid var(--cyan); outline-offset:3px; border-radius:8px }
+:is([data-panel="download"],[data-panel="pull"]) .batch-candidate { display:grid; grid-template-columns:16px minmax(0,1fr) auto; align-items:center; gap:10px; padding:12px 4px; border-bottom:1px solid var(--line) }
+:is([data-panel="download"],[data-panel="pull"]) .batch-candidate .batch-image-name { display:flex; align-items:baseline; gap:8px; overflow:hidden }
+:is([data-panel="download"],[data-panel="pull"]) .batch-candidate .batch-image-name strong { flex:1; min-width:0 }
+:is([data-panel="download"],[data-panel="pull"]) .batch-candidate .batch-image-name small { flex:0 1 auto; min-width:0; max-width:40%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
+:is([data-panel="download"],[data-panel="pull"]) .batch-candidate .batch-image-name small:empty { display:none }
+:is([data-panel="download"],[data-panel="pull"]) .batch-image-name { display:grid; gap:4px; flex:1; min-width:0; overflow-wrap:anywhere }
+:is([data-panel="download"],[data-panel="pull"]) .batch-image-name strong { font:500 14px/1.6 'DM Mono',monospace }
+:is([data-panel="download"],[data-panel="pull"]) .batch-queue-count { display:inline-flex; align-items:center; justify-content:center; min-width:24px; padding:2px 6px; border-radius:6px; background:var(--accent-soft); color:var(--cyan); font:12px/1.5 'DM Mono',monospace }
+:is([data-panel="download"],[data-panel="pull"]) .batch-image .transfer-status { margin:0; min-width:0 }
+:is([data-panel="download"],[data-panel="pull"]) .compose-batch summary { cursor:pointer; color:var(--muted); font-size:13px; line-height:1.7 }
+:is([data-panel="download"],[data-panel="pull"]) .batch-help { margin:0 }
+:is([data-panel="download"],[data-panel="pull"]) .batch-notices { grid-column:1 / -1; min-width:0; border:1px solid var(--line); border-radius:12px; background:var(--inset); overflow:hidden }
+:is([data-panel="download"],[data-panel="pull"]) .batch-selection-content { display:grid; grid-template-rows:minmax(0,1fr); height:var(--compose-content-height); min-width:0; min-height:0 }
+:is([data-panel="download"],[data-panel="pull"]) [data-selection-empty] { display:grid; place-items:center; height:100% }
+:is([data-panel="download"],[data-panel="pull"]) .compose-batch [data-text="note"] { color:var(--muted); font-size:13px; line-height:1.8; margin:0; padding:0 16px 14px }
+:is([data-panel="download"],[data-panel="pull"]) .compose-batch :is([data-errors],[data-summary]):empty,
+:is([data-panel="download"],[data-panel="pull"]) .compose-batch pre:has(code:empty) { display:none }
+:is([data-panel="download"],[data-panel="pull"]) [data-errors] { white-space:pre-wrap; overflow-wrap:anywhere; color:var(--danger); font-size:13px }
 @keyframes batch-queue-enter { from { opacity:.6; transform:translateY(-18px) } to { opacity:1; transform:translateY(0) } }
 @media (prefers-reduced-motion:no-preference) {
-  [data-panel="download"] .batch-image { animation:batch-queue-enter var(--motion-normal) var(--ease-out) both }
+  :is([data-panel="download"],[data-panel="pull"]) .batch-image { animation:batch-queue-enter var(--motion-normal) var(--ease-out) both }
 }
 @container workspace (max-width:640px) {
-  [data-panel="download"] .download-header { flex-direction:column; gap:18px }
-  [data-panel="download"] .batch-section { padding:16px }
+  :is([data-panel="download"],[data-panel="pull"]) .download-header { flex-direction:column; gap:18px }
+  :is([data-panel="download"],[data-panel="pull"]) .batch-section { padding:16px }
 }
 
-[data-panel="download"] .batch-candidate .generate-button { grid-column:3; grid-row:1; justify-self:end; min-height:36px; padding:7px 12px; font-size:12px; white-space:nowrap }
-[data-panel="download"] .batch-enqueued-mark { width:14px; height:14px; color:var(--cyan); opacity:0 }
-[data-panel="download"] .batch-enqueued-mark::before { content:""; display:block; width:8px; height:4px; margin:3px 1px; border-left:2px solid currentColor; border-bottom:2px solid currentColor; transform:rotate(-45deg) }
-[data-panel="download"] .batch-candidate.is-added .batch-enqueued-mark { opacity:1 }
-[data-panel="download"] .batch-candidate.is-added .generate-button { color:var(--muted) }
+:is([data-panel="download"],[data-panel="pull"]) .batch-candidate .generate-button { grid-column:3; grid-row:1; justify-self:end; min-height:36px; padding:7px 12px; font-size:12px; white-space:nowrap }
+:is([data-panel="download"],[data-panel="pull"]) .batch-enqueued-mark { width:14px; height:14px; color:var(--cyan); opacity:0 }
+:is([data-panel="download"],[data-panel="pull"]) .batch-enqueued-mark::before { content:""; display:block; width:8px; height:4px; margin:3px 1px; border-left:2px solid currentColor; border-bottom:2px solid currentColor; transform:rotate(-45deg) }
+:is([data-panel="download"],[data-panel="pull"]) .batch-candidate.is-added .batch-enqueued-mark { opacity:1 }
+:is([data-panel="download"],[data-panel="pull"]) .batch-candidate.is-added .generate-button { color:var(--muted) }
 @container workspace (max-width:1039px) {
-  [data-panel="download"] .batch-candidate .batch-queue-toggle { width:36px; height:36px; padding:0; justify-content:center }
-  [data-panel="download"] .batch-toggle-label { display:none }
-  [data-panel="download"] .batch-candidate .batch-queue-toggle::before { display:block; width:14px; height:14px; flex:0 0 14px; mask:none; background:linear-gradient(currentColor,currentColor) center / 12px 1.5px no-repeat,linear-gradient(currentColor,currentColor) center / 1.5px 12px no-repeat }
-  [data-panel="download"] .batch-candidate .batch-queue-toggle[aria-pressed="true"]::before { background-size:12px 1.5px,0 0 }
+  :is([data-panel="download"],[data-panel="pull"]) .batch-candidate .batch-queue-toggle { width:36px; height:36px; padding:0; justify-content:center }
+  :is([data-panel="download"],[data-panel="pull"]) .batch-toggle-label { display:none }
+  :is([data-panel="download"],[data-panel="pull"]) .batch-candidate .batch-queue-toggle::before { display:block; width:14px; height:14px; flex:0 0 14px; mask:none; background:linear-gradient(currentColor,currentColor) center / 12px 1.5px no-repeat,linear-gradient(currentColor,currentColor) center / 1.5px 12px no-repeat }
+  :is([data-panel="download"],[data-panel="pull"]) .batch-candidate .batch-queue-toggle[aria-pressed="true"]::before { background-size:12px 1.5px,0 0 }
 }
-[data-panel="download"] .batch-terminal code { max-height:300px; overflow:auto }
-[data-panel="download"] .batch-selection-hint { margin:0 0 10px; color:var(--muted); font-size:14px }
+:is([data-panel="download"],[data-panel="pull"]) .batch-terminal code { max-height:300px; overflow:auto }
+:is([data-panel="download"],[data-panel="pull"]) .batch-selection-hint { margin:0 0 10px; color:var(--muted); font-size:14px }
 /* Two columns once the workspace has room for two usable cards. */
 @container workspace (min-width:760px) {
-  [data-panel="download"] .compose-batch { grid-template-columns:repeat(2,minmax(0,1fr)); align-items:stretch }
-  [data-panel="download"] .batch-queue-section { grid-column:1 / -1 }
-  [data-panel="download"] .batch-section:not(.batch-queue-section) { display:grid; grid-template-rows:subgrid; grid-row:span 3; row-gap:16px }
-  [data-panel="download"] .batch-section:not(.batch-queue-section) > :is(.batch-section-heading,.batch-input-toolbar,.batch-selection-toolbar) { margin:0 }
-  [data-panel="download"] :is(.batch-input-label,.batch-selection-hint) { align-self:end }
+  :is([data-panel="download"],[data-panel="pull"]) .compose-batch { grid-template-columns:repeat(2,minmax(0,1fr)); align-items:stretch }
+  :is([data-panel="download"],[data-panel="pull"]) .batch-queue-section { grid-column:1 / -1 }
+  :is([data-panel="download"],[data-panel="pull"]) .batch-section:not(.batch-queue-section) { display:grid; grid-template-rows:subgrid; grid-row:span 3; row-gap:16px }
+  :is([data-panel="download"],[data-panel="pull"]) .batch-section:not(.batch-queue-section) > :is(.batch-section-heading,.batch-input-toolbar,.batch-selection-toolbar) { margin:0 }
+  :is([data-panel="download"],[data-panel="pull"]) :is(.batch-input-label,.batch-selection-hint) { align-self:end }
 }
 
 @container workspace (min-width:760px) and (max-width:959px) {
-  [data-panel="download"] .compose-batch { gap:16px }
-  [data-panel="download"] .batch-section { padding:18px }
-  [data-panel="download"] .compose-batch select { text-overflow:ellipsis }
+  :is([data-panel="download"],[data-panel="pull"]) .compose-batch { gap:16px }
+  :is([data-panel="download"],[data-panel="pull"]) .batch-section { padding:18px }
+  :is([data-panel="download"],[data-panel="pull"]) .compose-batch select { text-overflow:ellipsis }
 }
 
-[data-panel="download"] .batch-help summary { padding:12px 16px; color:var(--muted); font-size:13px; font-weight:600 }
-[data-panel="download"] .batch-help summary::marker { color:var(--cyan); font-size:11px }
-[data-panel="download"] .batch-help summary:focus-visible { outline:2px solid var(--cyan); outline-offset:4px }
-[data-panel="download"] .batch-help[open] summary { color:var(--ink) }
-[data-panel="download"] .batch-notices:not(:has(p:not(:empty))) { display:none }
-[data-panel="download"] .batch-notices [data-errors]:not(:empty) { margin:0; padding:12px 16px; border-top:1px solid var(--line); border-left:2px solid var(--danger); background:color-mix(in srgb,var(--danger) 4%,var(--inset)); color:color-mix(in srgb,var(--danger) 65%,var(--ink)); font-size:13px; line-height:1.8 }
+:is([data-panel="download"],[data-panel="pull"]) .batch-help summary { padding:12px 16px; color:var(--muted); font-size:13px; font-weight:600 }
+:is([data-panel="download"],[data-panel="pull"]) .batch-help summary::marker { color:var(--cyan); font-size:11px }
+:is([data-panel="download"],[data-panel="pull"]) .batch-help summary:focus-visible { outline:2px solid var(--cyan); outline-offset:4px }
+:is([data-panel="download"],[data-panel="pull"]) .batch-help[open] summary { color:var(--ink) }
+:is([data-panel="download"],[data-panel="pull"]) .batch-notices:not(:has(p:not(:empty))) { display:none }
+:is([data-panel="download"],[data-panel="pull"]) .batch-notices [data-errors]:not(:empty) { margin:0; padding:12px 16px; border-top:1px solid var(--line); border-left:2px solid var(--danger); background:color-mix(in srgb,var(--danger) 4%,var(--inset)); color:color-mix(in srgb,var(--danger) 65%,var(--ink)); font-size:13px; line-height:1.8 }
 
-[data-panel="download"] :is(.batch-input-toolbar,.batch-selection-toolbar) { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:10px }
-[data-panel="download"] .batch-input-toolbar .batch-input-label { margin:0; flex:1; min-width:140px }
-[data-panel="download"] .batch-upload { position:relative; display:inline-flex; align-items:center; min-height:36px; padding:6px 12px; box-sizing:border-box; flex-shrink:0; border:1px solid var(--control-line); border-radius:8px; background:var(--surface-2); color:var(--ink); font-size:13px; cursor:pointer; overflow:hidden }
-[data-panel="download"] .batch-upload input[type=file] { position:absolute; inset:0; opacity:0; width:100%; height:100%; cursor:pointer }
-[data-panel="download"] .batch-upload:focus-within { outline:2px solid var(--cyan); outline-offset:3px }
-[data-panel="download"] .compose-batch textarea.is-dragging { border-color:var(--cyan); box-shadow:0 0 0 3px var(--accent-soft); background:var(--surface-2) }
+:is([data-panel="download"],[data-panel="pull"]) :is(.batch-input-toolbar,.batch-selection-toolbar) { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:10px }
+:is([data-panel="download"],[data-panel="pull"]) .batch-input-toolbar .batch-input-label { margin:0; flex:1; min-width:140px }
+:is([data-panel="download"],[data-panel="pull"]) .batch-upload { position:relative; display:inline-flex; align-items:center; min-height:36px; padding:6px 12px; box-sizing:border-box; flex-shrink:0; border:1px solid var(--control-line); border-radius:8px; background:var(--surface-2); color:var(--ink); font-size:13px; cursor:pointer; overflow:hidden }
+:is([data-panel="download"],[data-panel="pull"]) .batch-upload input[type=file] { position:absolute; inset:0; opacity:0; width:100%; height:100%; cursor:pointer }
+:is([data-panel="download"],[data-panel="pull"]) .batch-upload:focus-within { outline:2px solid var(--cyan); outline-offset:3px }
+:is([data-panel="download"],[data-panel="pull"]) .compose-batch textarea.is-dragging { border-color:var(--cyan); box-shadow:0 0 0 3px var(--accent-soft); background:var(--surface-2) }
 @container workspace (min-width:760px) {
-  [data-panel="download"] :is(.batch-input-toolbar,.batch-selection-toolbar) { align-self:end }
+  :is([data-panel="download"],[data-panel="pull"]) :is(.batch-input-toolbar,.batch-selection-toolbar) { align-self:end }
 }
 
 /* One surface, one control size, and shared columns for the whole queue. */
-[data-panel="download"] .batch-queue-table { --queue-control-size:36px; min-width:0; border:1px solid var(--line); border-radius:12px; background:var(--inset) }
-[data-panel="download"] .batch-table-heading,
-[data-panel="download"] .batch-image { display:grid; grid-template-columns:minmax(0,1fr) 132px; gap:12px; align-items:center; padding:14px 16px; min-width:0 }
-[data-panel="download"] .batch-table-heading { text-align:center; background:var(--surface-2); border-radius:11px 11px 0 0; border-bottom:1px solid var(--line); color:var(--ink); font-size:15px; font-weight:700 }
-[data-panel="download"] [data-queue-list] { display:grid; gap:0 }
-[data-panel="download"] .batch-image { min-height:64px; box-sizing:border-box; border:0; border-bottom:1px solid var(--line); border-radius:0; background:transparent; overflow-wrap:anywhere }
-[data-panel="download"] .batch-image:last-child { border-bottom:0 }
-[data-panel="download"] .batch-image-name strong { display:block; min-width:0; max-width:42ch; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; overflow-wrap:normal }
-[data-panel="download"] .batch-task-selection { display:contents }
-[data-panel="download"] .batch-task-selection .architecture-fields { min-width:0 }
-[data-panel="download"] .batch-task-selection .architecture-fields > label { display:none }
-[data-panel="download"] .batch-table-heading .batch-actions,
-[data-panel="download"] .batch-item-actions { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); align-items:center; gap:4px; margin:0; grid-column:1 / -1; width:200px; max-width:100%; justify-self:center }
-[data-panel="download"] .batch-table-heading > [data-text="progress"] { display:none }
-[data-panel="download"] .batch-progress-cell { display:grid; gap:8px; min-width:0; grid-column:1 / -1 }
-[data-panel="download"] .batch-status { display:block; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--muted); font-size:13px; line-height:1.6; text-align:center }
-[data-panel="download"] .batch-status::before { content:''; display:inline-block; width:5px; height:5px; margin-right:7px; border-radius:50%; vertical-align:middle; background:var(--subtle) }
-[data-panel="download"] .batch-status[data-state="failed"] { color:var(--danger) }
-[data-panel="download"] .batch-status[data-state="done"] { color:var(--success) }
-[data-panel="download"] .batch-status:is([data-state="failed"],[data-state="done"])::before { background:currentColor }
-[data-panel="download"] .batch-queue-table .generate-button { box-sizing:border-box; height:var(--queue-control-size); min-height:var(--queue-control-size); border-radius:8px; padding:6px 10px; font-size:12px; line-height:1.3; white-space:nowrap }
-[data-panel="download"] .batch-queue-table select { box-sizing:border-box; height:var(--queue-control-size); min-height:var(--queue-control-size); border-radius:8px; font-size:13px; padding-left:11px; background-position:calc(100% - 19px) 15px,calc(100% - 14px) 15px }
-[data-panel="download"] .batch-platform-notice { margin:0; padding:10px 0; font-size:13px; line-height:1.7; color:var(--danger) }
-[data-panel="download"] .batch-platform-notice:empty { display:none }
-[data-panel="download"] .batch-candidate .batch-image-name strong { display:block; max-width:42ch; overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
-[data-panel="download"] .batch-queue-table + .batch-platform-notice + .batch-empty { margin-top:12px }
+:is([data-panel="download"],[data-panel="pull"]) .batch-queue-table { --queue-control-size:36px; min-width:0; border:1px solid var(--line); border-radius:12px; background:var(--inset) }
+:is([data-panel="download"],[data-panel="pull"]) .batch-table-heading,
+:is([data-panel="download"],[data-panel="pull"]) .batch-image { display:grid; grid-template-columns:minmax(0,1fr) 132px; gap:12px; align-items:center; padding:14px 16px; min-width:0 }
+:is([data-panel="download"],[data-panel="pull"]) .batch-table-heading { text-align:center; background:var(--surface-2); border-radius:11px 11px 0 0; border-bottom:1px solid var(--line); color:var(--ink); font-size:15px; font-weight:700 }
+:is([data-panel="download"],[data-panel="pull"]) [data-queue-list] { display:grid; gap:0 }
+:is([data-panel="download"],[data-panel="pull"]) .batch-image { min-height:64px; box-sizing:border-box; border:0; border-bottom:1px solid var(--line); border-radius:0; background:transparent; overflow-wrap:anywhere }
+:is([data-panel="download"],[data-panel="pull"]) .batch-image:last-child { border-bottom:0 }
+:is([data-panel="download"],[data-panel="pull"]) .batch-image-name strong { display:block; min-width:0; max-width:42ch; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; overflow-wrap:normal }
+:is([data-panel="download"],[data-panel="pull"]) .batch-task-selection { display:contents }
+:is([data-panel="download"],[data-panel="pull"]) .batch-task-selection .architecture-fields { min-width:0 }
+:is([data-panel="download"],[data-panel="pull"]) .batch-task-selection .architecture-fields > label { display:none }
+:is([data-panel="download"],[data-panel="pull"]) .batch-table-heading .batch-actions,
+:is([data-panel="download"],[data-panel="pull"]) .batch-item-actions { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); align-items:center; gap:4px; margin:0; grid-column:1 / -1; width:200px; max-width:100%; justify-self:center }
+:is([data-panel="download"],[data-panel="pull"]) .batch-table-heading > [data-text="progress"] { display:none }
+:is([data-panel="download"],[data-panel="pull"]) .batch-progress-cell { display:grid; gap:8px; min-width:0; grid-column:1 / -1 }
+:is([data-panel="download"],[data-panel="pull"]) .batch-status { display:block; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--muted); font-size:13px; line-height:1.6; text-align:center }
+:is([data-panel="download"],[data-panel="pull"]) .batch-status::before { content:''; display:inline-block; width:5px; height:5px; margin-right:7px; border-radius:50%; vertical-align:middle; background:var(--subtle) }
+:is([data-panel="download"],[data-panel="pull"]) .batch-status[data-state="failed"] { color:var(--danger) }
+:is([data-panel="download"],[data-panel="pull"]) .batch-status[data-state="done"] { color:var(--success) }
+:is([data-panel="download"],[data-panel="pull"]) .batch-status:is([data-state="failed"],[data-state="done"])::before { background:currentColor }
+:is([data-panel="download"],[data-panel="pull"]) .batch-queue-table .generate-button { box-sizing:border-box; height:var(--queue-control-size); min-height:var(--queue-control-size); border-radius:8px; padding:6px 10px; font-size:12px; line-height:1.3; white-space:nowrap }
+:is([data-panel="download"],[data-panel="pull"]) .batch-queue-table select { box-sizing:border-box; height:var(--queue-control-size); min-height:var(--queue-control-size); border-radius:8px; font-size:13px; padding-left:11px; background-position:calc(100% - 19px) 15px,calc(100% - 14px) 15px }
+:is([data-panel="download"],[data-panel="pull"]) .batch-platform-notice { margin:0; padding:10px 0; font-size:13px; line-height:1.7; color:var(--danger) }
+:is([data-panel="download"],[data-panel="pull"]) .batch-platform-notice:empty { display:none }
+:is([data-panel="download"],[data-panel="pull"]) .batch-candidate .batch-image-name strong { display:block; max-width:42ch; overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
+:is([data-panel="download"],[data-panel="pull"]) .batch-queue-table + .batch-platform-notice + .batch-empty { margin-top:12px }
 @container workspace (min-width:800px) {
-  [data-panel="download"] .batch-table-heading,
-  [data-panel="download"] .batch-image { grid-template-columns:minmax(140px,.85fr) 132px minmax(140px,1.15fr) 200px; column-gap:24px; row-gap:16px }
-  [data-panel="download"] .batch-table-heading .batch-actions,
-  [data-panel="download"] .batch-item-actions,
-  [data-panel="download"] .batch-progress-cell { grid-column:auto }
-  [data-panel="download"] .batch-table-heading > [data-text="progress"] { display:block }
+  :is([data-panel="download"],[data-panel="pull"]) .batch-table-heading,
+  :is([data-panel="download"],[data-panel="pull"]) .batch-image { grid-template-columns:minmax(140px,.85fr) 132px minmax(140px,1.15fr) 200px; column-gap:24px; row-gap:16px }
+  :is([data-panel="download"],[data-panel="pull"]) .batch-table-heading .batch-actions,
+  :is([data-panel="download"],[data-panel="pull"]) .batch-item-actions,
+  :is([data-panel="download"],[data-panel="pull"]) .batch-progress-cell { grid-column:auto }
+  :is([data-panel="download"],[data-panel="pull"]) .batch-table-heading > [data-text="progress"] { display:block }
 }
-[data-panel="download"] .batch-table-heading select { font-size:14px; font-weight:600 }
+:is([data-panel="download"],[data-panel="pull"]) .batch-table-heading select { font-size:14px; font-weight:600 }
 @container workspace (min-width:800px) {
-  [data-panel="download"] .batch-progress-cell { padding-inline:16px }
+  :is([data-panel="download"],[data-panel="pull"]) .batch-progress-cell { padding-inline:16px }
 }
 /* Retain every task control on smaller screens instead of squeezing four columns. */
 @container workspace (max-width:799px) {
-  [data-panel="download"] .batch-queue-table { --queue-control-size:40px }
-  [data-panel="download"] .batch-image { grid-template-columns:minmax(0,1fr) 200px; row-gap:14px }
-  [data-panel="download"] .batch-image > .batch-image-name { grid-column:1 / -1; grid-row:1 }
-  [data-panel="download"] .batch-task-selection .architecture-fields { grid-column:1; grid-row:2 }
-  [data-panel="download"] .batch-item-actions { grid-column:2; grid-row:2 }
-  [data-panel="download"] .batch-progress-cell { grid-column:1 / -1; grid-row:3 }
-  [data-panel="download"] .batch-queue-table select { background-position:calc(100% - 19px) 17px,calc(100% - 14px) 17px }
+  :is([data-panel="download"],[data-panel="pull"]) .batch-queue-table { --queue-control-size:40px }
+  :is([data-panel="download"],[data-panel="pull"]) .batch-table-heading { grid-template-columns:minmax(0,1fr) 200px }
+  :is([data-panel="download"],[data-panel="pull"]) .batch-table-heading > [data-text="imageName"] { grid-column:1 / -1; grid-row:1 }
+  :is([data-panel="download"],[data-panel="pull"]) .batch-table-heading > .architecture-fields { grid-column:1; grid-row:2; width:100% }
+  :is([data-panel="download"],[data-panel="pull"]) .batch-table-heading .batch-actions { grid-column:2; grid-row:2 }
+
+  :is([data-panel="download"],[data-panel="pull"]) .batch-image { grid-template-columns:minmax(0,1fr) 200px; row-gap:14px }
+  :is([data-panel="download"],[data-panel="pull"]) .batch-image > .batch-image-name { grid-column:1 / -1; grid-row:1 }
+  :is([data-panel="download"],[data-panel="pull"]) .batch-task-selection .architecture-fields { grid-column:1; grid-row:2 }
+  :is([data-panel="download"],[data-panel="pull"]) .batch-item-actions { grid-column:2; grid-row:2 }
+  :is([data-panel="download"],[data-panel="pull"]) .batch-progress-cell { grid-column:1 / -1; grid-row:3 }
+  :is([data-panel="download"],[data-panel="pull"]) .batch-queue-table select { background-position:calc(100% - 19px) 17px,calc(100% - 14px) 17px }
+}
+@container workspace (min-width:481px) and (max-width:799px) {
+  :is([data-panel="download"],[data-panel="pull"]) .batch-table-heading,
+  :is([data-panel="download"],[data-panel="pull"]) .batch-image { grid-template-columns:minmax(0,1fr) 132px 200px }
+  :is([data-panel="download"],[data-panel="pull"]) .batch-table-heading > [data-text="imageName"] { grid-column:1; grid-row:1 }
+  :is([data-panel="download"],[data-panel="pull"]) .batch-table-heading > .architecture-fields { grid-column:2; grid-row:1 }
+  :is([data-panel="download"],[data-panel="pull"]) .batch-table-heading .batch-actions { grid-column:3; grid-row:1 }
+  :is([data-panel="download"],[data-panel="pull"]) .batch-task-selection .architecture-fields { grid-column:2 }
+  :is([data-panel="download"],[data-panel="pull"]) .batch-item-actions { grid-column:3 }
 }
 @container workspace (max-width:480px) {
-  [data-panel="download"] .batch-table-heading,
-  [data-panel="download"] .batch-image { grid-template-columns:minmax(0,1fr); gap:12px; padding:14px 12px }
-  [data-panel="download"] .batch-table-heading > [data-text="imageName"],
-  [data-panel="download"] .batch-table-heading > .architecture-fields,
-  [data-panel="download"] .batch-table-heading .batch-actions { grid-column:1; grid-row:auto }
-  [data-panel="download"] .batch-task-selection .architecture-fields { grid-column:1; grid-row:2 }
-  [data-panel="download"] .batch-task-selection .architecture-fields > label { display:block; color:var(--muted); font-size:12px }
-  [data-panel="download"] .batch-item-actions { grid-column:1; grid-row:4 }
-  [data-panel="download"] .batch-table-heading .batch-actions,
-  [data-panel="download"] .batch-item-actions { width:100%; max-width:none }
+  :is([data-panel="download"],[data-panel="pull"]) .batch-table-heading,
+  :is([data-panel="download"],[data-panel="pull"]) .batch-image { grid-template-columns:minmax(0,1fr); gap:12px; padding:14px 12px }
+  :is([data-panel="download"],[data-panel="pull"]) .batch-table-heading > [data-text="imageName"],
+  :is([data-panel="download"],[data-panel="pull"]) .batch-table-heading > .architecture-fields,
+  :is([data-panel="download"],[data-panel="pull"]) .batch-table-heading .batch-actions { grid-column:1; grid-row:auto }
+  :is([data-panel="download"],[data-panel="pull"]) .batch-task-selection .architecture-fields { grid-column:1; grid-row:2 }
+  :is([data-panel="download"],[data-panel="pull"]) .batch-task-selection .architecture-fields > label { display:block; color:var(--muted); font-size:12px }
+  :is([data-panel="download"],[data-panel="pull"]) .batch-item-actions { grid-column:1; grid-row:4 }
+  :is([data-panel="download"],[data-panel="pull"]) .batch-table-heading .batch-actions,
+  :is([data-panel="download"],[data-panel="pull"]) .batch-item-actions { width:100%; max-width:none }
 }
 
-[data-panel="download"] .batch-table-heading > .architecture-fields { justify-self:center; width:132px; max-width:100% }
+:is([data-panel="download"],[data-panel="pull"]) .batch-table-heading > .architecture-fields { justify-self:center; width:132px; max-width:100% }
 @container workspace (max-width:480px) {
-  [data-panel="download"] .batch-table-heading > .architecture-fields { width:100% }
+  :is([data-panel="download"],[data-panel="pull"]) .batch-table-heading > .architecture-fields { width:100% }
 }
 
-[data-panel="download"] .batch-table-heading > [data-text="imageName"] { text-align:left }
-[data-panel="download"] .batch-progress-cell { text-align:center; height:54px; grid-template-rows:minmax(0,1fr); align-items:center; overflow:hidden }
+:is([data-panel="download"],[data-panel="pull"]) .batch-table-heading > [data-text="imageName"] { text-align:left }
+:is([data-panel="download"],[data-panel="pull"]) .batch-progress-cell { text-align:center; height:54px; grid-template-rows:minmax(0,1fr); align-items:center; overflow:hidden }
 /* Queue updates precede progress.start(); follow actual progress visibility, not a state snapshot. */
-[data-panel="download"] .batch-progress-cell:has(> .transfer-compact:not([hidden])) > .batch-status { display:none }
-[data-panel="download"] .batch-progress-cell .transfer-status { grid-template-columns:minmax(0,1fr); width:100%; box-sizing:border-box; text-align:center }
-[data-panel="download"] .batch-progress-cell .transfer-status > * { grid-column:1; grid-row:auto }
-[data-panel="download"] .batch-progress-cell :is(.transfer-detail,.transfer-metrics) { justify-self:center; text-align:center; max-width:100% }
-[data-panel="download"] .batch-progress-cell .transfer-track { width:100%; box-sizing:border-box; justify-self:center }
+:is([data-panel="download"],[data-panel="pull"]) .batch-progress-cell:has(> .transfer-compact:not([hidden])) > .batch-status { display:none }
+:is([data-panel="download"],[data-panel="pull"]) .batch-progress-cell .transfer-status { grid-template-columns:minmax(0,1fr); width:100%; box-sizing:border-box; text-align:center }
+:is([data-panel="download"],[data-panel="pull"]) .batch-progress-cell .transfer-status > * { grid-column:1; grid-row:auto }
+:is([data-panel="download"],[data-panel="pull"]) .batch-progress-cell :is(.transfer-detail,.transfer-metrics) { justify-self:center; text-align:center; max-width:100% }
+:is([data-panel="download"],[data-panel="pull"]) .batch-progress-cell .transfer-track { width:100%; box-sizing:border-box; justify-self:center }
 
 /* Batch rows share the table surface and reserve one line for completion messages. */
-[data-panel="download"] .batch-progress-cell .transfer-compact { padding:0; border:0; border-radius:0; background:transparent; gap:6px; height:54px; grid-template-rows:24px 24px; align-content:start }
-[data-panel="download"] .transfer-compact > [role="status"] { line-height:24px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
-[data-panel="download"] .transfer-compact :is(.transfer-detail,.transfer-metrics) { width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; line-height:24px }
-[data-panel="download"] .transfer-compact .transfer-track { height:20px; border-radius:10px }
-[data-panel="download"] .transfer-compact .transfer-track > img { top:0; width:25px; height:18px }
-[data-panel="download"] .transfer-compact[data-phase="done"] :is(.transfer-detail,.transfer-metrics) { grid-column:1; grid-row:1 }
-[data-panel="download"] .transfer-compact[data-phase="done"] .transfer-detail { color:var(--success) }
-[data-panel="download"] .transfer-compact[data-phase="done"] .transfer-track { grid-row:2 }
-[data-panel="download"] .transfer-compact:is([data-phase="error"],[data-phase="retry"]) .transfer-detail { grid-row:1; color:var(--danger) }
-[data-panel="download"] .transfer-compact:is([data-phase="error"],[data-phase="retry"]) .transfer-track { grid-row:2 }
-[data-panel="download"] .transfer-compact[data-phase="retry"] .transfer-detail { color:var(--muted) }
-[data-panel="download"] .transfer-compact[data-phase="error"] .transfer-track > span { background:var(--danger) }
+:is([data-panel="download"],[data-panel="pull"]) .batch-progress-cell .transfer-compact { padding:0; border:0; border-radius:0; background:transparent; gap:6px; height:54px; grid-template-rows:24px 24px; align-content:start }
+:is([data-panel="download"],[data-panel="pull"]) .transfer-compact > [role="status"] { line-height:24px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
+:is([data-panel="download"],[data-panel="pull"]) .transfer-compact :is(.transfer-detail,.transfer-metrics) { width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; line-height:24px }
+:is([data-panel="download"],[data-panel="pull"]) .transfer-compact .transfer-track { height:20px; border-radius:10px }
+:is([data-panel="download"],[data-panel="pull"]) .transfer-compact .transfer-track > img { top:0; width:25px; height:18px }
+:is([data-panel="download"],[data-panel="pull"]) .transfer-compact[data-phase="done"] :is(.transfer-detail,.transfer-metrics) { grid-column:1; grid-row:1 }
+:is([data-panel="download"],[data-panel="pull"]) .transfer-compact[data-phase="done"] .transfer-detail { color:var(--success) }
+:is([data-panel="download"],[data-panel="pull"]) .transfer-compact[data-phase="done"] .transfer-track { grid-row:2 }
+:is([data-panel="download"],[data-panel="pull"]) .transfer-compact:is([data-phase="error"],[data-phase="retry"]) .transfer-detail { grid-row:1; color:var(--danger) }
+:is([data-panel="download"],[data-panel="pull"]) .transfer-compact:is([data-phase="error"],[data-phase="retry"]) .transfer-track { grid-row:2 }
+:is([data-panel="download"],[data-panel="pull"]) .transfer-compact[data-phase="retry"] .transfer-detail { color:var(--muted) }
+:is([data-panel="download"],[data-panel="pull"]) .transfer-compact[data-phase="error"] .transfer-track > span { background:var(--danger) }
 @media (prefers-reduced-motion:no-preference) {
-  [data-panel="download"] .transfer-compact[data-phase="done"] .transfer-metrics { animation:batch-complete-metrics 8s ease-in-out infinite }
-  [data-panel="download"] .transfer-compact[data-phase="done"] .transfer-detail { animation:batch-complete-detail 8s ease-in-out infinite }
+  :is([data-panel="download"],[data-panel="pull"]) .transfer-compact[data-phase="done"] .transfer-metrics { animation:batch-complete-metrics 8s ease-in-out infinite }
+  :is([data-panel="download"],[data-panel="pull"]) .transfer-compact[data-phase="done"] .transfer-detail { animation:batch-complete-detail 8s ease-in-out infinite }
   @keyframes batch-complete-metrics {
     0%,42%,100% { opacity:1; transform:translateY(0) }
     48%,94% { opacity:0; transform:translateY(-4px) }
@@ -216,11 +230,11 @@
   }
 }
 @media (prefers-reduced-motion:reduce) {
-  [data-panel="download"] .transfer-compact[data-phase="done"] .transfer-detail { grid-row:2 }
-  [data-panel="download"] .transfer-compact[data-phase="done"] .transfer-track { display:none }
+  :is([data-panel="download"],[data-panel="pull"]) .transfer-compact[data-phase="done"] .transfer-detail { grid-row:2 }
+  :is([data-panel="download"],[data-panel="pull"]) .transfer-compact[data-phase="done"] .transfer-track { display:none }
 }
 
-[data-panel="download"] .batch-selection-toolbar { padding-right:4px; overflow-y:auto; scrollbar-gutter:stable }
-[data-panel="download"] .batch-selection-toolbar .batch-selection-hint { margin:0; flex:1; min-width:140px }
-[data-panel="download"] .batch-selection-toolbar [data-action="add-all"] { min-height:36px; margin-left:auto; padding:7px 12px; flex-shrink:0 }
-[data-panel="download"] .batch-selection-toolbar [data-action="add-all"][hidden] { display:none }
+:is([data-panel="download"],[data-panel="pull"]) .batch-selection-toolbar { padding-right:4px; overflow-y:auto; scrollbar-gutter:stable }
+:is([data-panel="download"],[data-panel="pull"]) .batch-selection-toolbar .batch-selection-hint { margin:0; flex:1; min-width:140px }
+:is([data-panel="download"],[data-panel="pull"]) .batch-selection-toolbar [data-action="add-all"] { min-height:36px; margin-left:auto; padding:7px 12px; flex-shrink:0 }
+:is([data-panel="download"],[data-panel="pull"]) .batch-selection-toolbar [data-action="add-all"][hidden] { display:none }

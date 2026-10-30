@@ -1,4 +1,4 @@
-// Owns local input timing and file reads; parsing and the download queue stay separate.
+// Owns local input timing and file reads; parsing and task handling stay separate.
 export function bindComposeInput({ input, upload, onChange, onParse, onError, delay = 250 }) {
   let revision = 0, timer, composing = false;
   const invalidate = () => { clearTimeout(timer); revision++; onChange(); };

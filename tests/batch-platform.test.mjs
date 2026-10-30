@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { matchBatchPlatform } from '../src/client/features/download/batch-platform.js';
+import { matchBatchPlatform } from '../src/client/common/batch-platform.js';
 
 test('bulk architecture resolves to the actual platform including its variant', () => {
   const platforms = ['linux/amd64', 'linux/arm/v7', 'linux/arm64/v8', 'linux/s390x'];

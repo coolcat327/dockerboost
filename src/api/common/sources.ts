@@ -43,8 +43,8 @@ export function usesDockerHubNaming(env: Env, source: string) {
 
 /** Only the reserved namespace carries an explicit source; ordinary namespaces remain intact. */
 export function sourceProxyTarget(env: Env, pathname: string) {
-  if (!pathname.startsWith('/v2/dkbst/')) return { source: undefined, path: pathname };
-  const match = pathname.match(/^\/v2\/dkbst\/([a-z0-9-]+)(\/.*)$/);
+  if (!pathname.startsWith('/v2/r/')) return { source: undefined, path: pathname };
+  const match = pathname.match(/^\/v2\/r\/([a-z0-9-]+)(\/.*)$/);
   if (!match) throw new HttpError('无效的镜像源路径', 400);
   return { source: registrySource(env, match[1]).id, path: `/v2${match[2]}` };
 }

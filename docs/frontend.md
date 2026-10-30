@@ -20,7 +20,7 @@ Hero 入场由 `hero-intro.js` 管理，指针视差、工具区柔光及背景�
 2. 在 `src/client/features/<名称>/index.js` 导出 `feature`，包含与 HTML 一致的 `id`、`zh-CN` 和 `en` 文案，以及 `init({ panel, locale, messages, flash, selectionStore })`。需要更新模块私有文案时，从 `init` 返回 `setLanguage(message)`。通用语言渲染和标签切换由页面入口处理，无需在 `app.js` 或语言模块添加该标签的分支。
 3. 在 `src/client/features/index.js` 导入并注册 `feature`。需要镜像输入、源和架构时，在标签内部创建自己的 `createImageSelection` 实例；通过 `current()`、`resolve()` 和 `onPlatformChange()` 使用选择结果，不直接操作其内部控件。
 4. 按需要选择共享方式：不声明 `selectionGroup` 即独立；声明相同组名并将 `selectionStore` 作为 `store` 传给 `createImageSelection`，则共享镜像名和所选源；同一镜像与源的平台查询只发送一次。源列表请求的复用规则见下方 [数据加载](#数据加载)。架构、请求结果的应用状态及 `auto` 解析结果由各标签独立管理。目前拉取与下载使用同一个 `image` 组；输入停止 1 秒后查询平台。
-5. 新增专属 CSS 放在对应功能目录，并由 `src/client/styles/index.css` 导入；页面及共用规则留在 `styles/`。专属选择器应限定在自己的 `[data-panel="<名称>"]` 内。安装、配置与下载已有专属 CSS；拉取与下载共用的表单规则留在 `workspace.css`，拉取标签暂不需要独立 CSS。
+5. 新增专属 CSS 放在对应功能目录，并由 `src/client/styles/index.css` 导入；页面及共用规则留在 `styles/`。专属选择器应限定在自己的 `[data-panel="<名称>"]` 内。安装、配置、拉取与下载各有专属 CSS；拉取与下载共用的表单规则留在 `workspace.css`。
 
 视觉与状态验收遵循 [视觉与交互规范](ui.md)；设计变更的选型、计划和归档见 [设计与实现流程](design-workflow.md)。新增下载能力参照 [下载任务与缓存](downloads.md)，需要服务端能力时同步 [接口参考](api.md)。按根目录 AGENTS.md 的改动范围执行验证。
 
@@ -35,3 +35,5 @@ Hero 入场由 `hero-intro.js` 管理，指针视差、工具区柔光及背景�
 批量队列不单独加载或展示镜像源列表；每项通过共享 store 复用源目录，并使用 createImageSelection 自动选源与查询实际架构。表头统一架构提供 amd64、arm64；单项保留解析出的全部平台（含变体），可独立选择。统一架构优先精确匹配，否则匹配同一 OS / 架构的实际变体，并以完整平台参数下载；指定变体必须精确匹配，不支持时禁止下载。Compose 解析问题使用独立提示区。表头支持开始下载 / 停止全部切换及全部重新解析；任务通过 reloadSources() 强制刷新架构查询，保留共享源目录缓存，移除时调用 dispose() 取消查询与监听。
 
 队列分享使用下载功能内的 `queue-share.js` 编解码与校验，通过页面入口传递的 `sharedBatchHash` 恢复。单镜像分享仍使用现有 `/api/share`；两类分享复用 `share-link.js` 的复制和手动回退。链接格式与限制见 [队列分享](downloads.md#队列分享)。
+
+批量拉取与下载共用批量输入和候选镜像的样式；用户逐项或全部加入解析队列后自动选源并查询架构，编辑输入不会清空队列。队列支持统一或逐项选择架构、重新解析和移除；Compose 指定的平台必须匹配可用平台。仅成功解析的队列项进入可复制命令，解析失败或架构不受支持时在对应镜像下显示错误。

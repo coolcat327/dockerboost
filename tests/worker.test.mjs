@@ -182,14 +182,16 @@ test('reserved source paths select the upstream without stealing ordinary namesp
     paths.push(String(url));
     return new Response('manifest');
   });
-  const response = await worker.fetch(new Request('https://example.com/v2/dkbst/hub/library/nginx/manifests/latest'), sourceEnv);
+  const response = await worker.fetch(new Request('https://example.com/v2/r/hub/library/nginx/manifests/latest'), sourceEnv);
   assert.equal(await response.text(), 'manifest');
   await worker.fetch(new Request('https://example.com/v2/hub/team/app/manifests/latest?source=hub'), sourceEnv);
+  await worker.fetch(new Request('https://example.com/v2/dkbst/hub/team/app/manifests/latest?source=hub'), sourceEnv);
   assert.deepEqual(paths, [
     'https://upstream.example/v2/library/nginx/manifests/latest',
-    'https://upstream.example/v2/hub/team/app/manifests/latest'
+    'https://upstream.example/v2/hub/team/app/manifests/latest',
+    'https://upstream.example/v2/dkbst/hub/team/app/manifests/latest'
   ]);
-  assert.equal((await worker.fetch(new Request('https://example.com/v2/dkbst/hub/team/app/manifests/latest?source=other'), sourceEnv)).status, 400);
+  assert.equal((await worker.fetch(new Request('https://example.com/v2/r/hub/team/app/manifests/latest?source=other'), sourceEnv)).status, 400);
 });
 
 test('auto source uses the same native repository for platforms, inspection, and script blobs', async (t) => {

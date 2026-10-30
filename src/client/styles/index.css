@@ -8,3 +8,5 @@
 @import '../features/install/install.css';
 @import '../features/setup/setup.css';
 @import '../features/download/download.css';
+
+@import '../features/pull/pull.css';

@@ -1,4 +1,4 @@
-import { batchCommands } from './compose.js';
+import { batchCommands } from './terminal-commands.js';
 import { initBatch } from './batch.js';
 import { exportArchive } from './export-archive.js';
 import { clearDownloadCaches } from '../../common/browser-download-task.js';

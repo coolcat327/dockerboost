@@ -39,7 +39,7 @@ export function imageReference(value, { source, acceleratedSource, mirrorHost, s
     : repositoryName;
   const original = raw.includes('@') ? raw : raw.lastIndexOf(':') > raw.lastIndexOf('/') ? raw : `${raw}:latest`;
   const acceleratedReference = digestIndex >= 0 ? `${repository}@${reference}` : `${repository}:${reference}`;
-  return { original, repository, reference, source: effectiveSource, upstream: acceleratedReference, accelerated: `${mirrorHost}/dkbst/${acceleratedSource}/${acceleratedReference}` };
+  return { original, repository, reference, source: effectiveSource, upstream: acceleratedReference, accelerated: `${mirrorHost}/r/${acceleratedSource}/${acceleratedReference}` };
 }
 
 export function archiveFilename(image, platform) {

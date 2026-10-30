@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { bindComposeInput } from '../src/client/features/download/compose-input.js';
+import { bindComposeInput } from '../src/client/common/compose-input.js';
 
 function setup() {
   const control = () => ({ value: '', files: [], events: {}, classList: { add() {}, remove() {} }, addEventListener(name, fn) { this.events[name] = fn; } });

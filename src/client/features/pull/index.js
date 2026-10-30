@@ -1,4 +1,5 @@
 import { createImageSelection } from '../../common/image-selection.js';
+import { initBatchPull } from './batch.js';
 import { shareSelection } from '../../common/share-link.js';
 
 export const feature = {
@@ -47,6 +48,7 @@ export const feature = {
     selection.onPlatformChange(() => {
       try { buildPull(); } catch { /* wait for a valid name */ }
     });
-    return { setLanguage: () => selection.setLanguage() };
+    const batch = initBatchPull({ panel, locale, messages, selectionStore });
+    return { setLanguage: (message) => { selection.setLanguage(); batch.setLanguage(message === feature.messages.en); } };
   }
 };

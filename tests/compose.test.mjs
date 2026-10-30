@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { composeImages, imageList, parseBatchImages, batchCommands } from '../src/client/features/download/compose.js';
+import { composeImages, imageList, parseBatchImages } from '../src/client/common/batch-images.js';
+import { batchCommands } from '../src/client/features/download/terminal-commands.js';
 import { spawnSync } from 'node:child_process';
 
 test('Compose groups services by image and platform, supports YAML aliases', () => {

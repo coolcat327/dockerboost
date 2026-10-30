@@ -27,7 +27,7 @@
 | --- | --- | --- |
 | `/api/platforms` | `image`、`source` | 返回 Registry manifest/index；单架构镜像尽可能附加 `platforms` 字段 |
 | `/api/share` | `tab`、`image`、`source`、`platform` | JSON `{ url }`：本站分享链接；`tab` 为 `pull` 或 `download`，参数均必填，`platform` 可为空 |
-| `/v2/*` | 可选 `source` | Registry 请求与 blob 流式透传，保留上游状态与响应；普通路径保留完整仓库名，`/v2/dkbst/<source-id>/*` 明确指定源 |
+| `/v2/*` | 可选 `source` | Registry 请求与 blob 流式透传，保留上游状态与响应；普通路径保留完整仓库名，`/v2/r/<source-id>/*` 明确指定源。旧的 `/v2/dkbst/` 前缀不再指定源 |
 
 `image` 必填，可用 `nginx:latest`、`owner/image:tag` 或已配置源的域名引用（如 `ghcr.io/owner/image:tag`）。带域名的引用固定对应源，不可与其他 `source` 混用；`docker.io/...` 固定 `mirror-gcr`。元数据接口的 `source` 默认 `auto`，并发选择首个成功源；Docker Hub 简写补全 `library/`，其他源保留原生路径。路径中的源与查询参数必须一致。
 

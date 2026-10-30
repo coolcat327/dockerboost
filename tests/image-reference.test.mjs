@@ -13,7 +13,7 @@ test('normalizes Docker Hub shorthand and preserves tags', () => {
   assert.match(image.accelerated, /^docker\.example\/[a-z0-9]/, 'Docker repository path must start with an alphanumeric character');
   assert.deepEqual(image, {
     original: 'redis:7-alpine', repository: 'library/redis', reference: '7-alpine', source: 'auto',
-    upstream: 'library/redis:7-alpine', accelerated: 'docker.example/dkbst/mirror-gcr/library/redis:7-alpine'
+    upstream: 'library/redis:7-alpine', accelerated: 'docker.example/r/mirror-gcr/library/redis:7-alpine'
   });
 });
 
@@ -21,14 +21,14 @@ test('matches a pasted registry.k8s.io reference to the k8s source', () => {
   const image = imageReference('registry.k8s.io/kube-proxy:v1.28.4', { ...context, source: 'auto', acceleratedSource: 'k8s' });
   assert.deepEqual(image, {
     original: 'registry.k8s.io/kube-proxy:v1.28.4', repository: 'kube-proxy', reference: 'v1.28.4', source: 'k8s',
-    upstream: 'kube-proxy:v1.28.4', accelerated: 'docker.example/dkbst/k8s/kube-proxy:v1.28.4'
+    upstream: 'kube-proxy:v1.28.4', accelerated: 'docker.example/r/k8s/kube-proxy:v1.28.4'
   });
 });
 
 test('keeps native registry repository paths and rejects missing namespaces', () => {
   const image = imageReference('owner/image@sha256:abc', { ...context, source: 'ghcr', acceleratedSource: 'ghcr' });
   assert.equal(image.repository, 'owner/image');
-  assert.equal(image.accelerated, 'docker.example/dkbst/ghcr/owner/image@sha256:abc');
+  assert.equal(image.accelerated, 'docker.example/r/ghcr/owner/image@sha256:abc');
   assert.throws(() => imageReference('redis', { ...context, source: 'ghcr' }), /ghcr\.io/);
 });
 
@@ -36,7 +36,7 @@ test('uses configured repository rules for a newly added source', () => {
   const sources = [...context.sources, { id: 'custom', label: 'custom.example', host: 'custom.example', naming: 'docker-hub', requiresNamespace: false }];
   const image = imageReference('alpine:3', { ...context, sources, source: 'custom', acceleratedSource: 'custom' });
   assert.equal(image.repository, 'library/alpine');
-  assert.equal(image.accelerated, 'docker.example/dkbst/custom/library/alpine:3');
+  assert.equal(image.accelerated, 'docker.example/r/custom/library/alpine:3');
 });
 
 test('qualified registry hosts select their source and reject conflicting selectors', () => {

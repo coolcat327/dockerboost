@@ -1,11 +1,12 @@
 import { createBatchQueue } from './batch-queue.js';
 import { createDownloadProgress } from '../../common/download-progress.js';
-import { parseBatchImages, batchCommands } from './compose.js';
+import { parseBatchImages } from '../../common/batch-images.js';
+import { batchCommands } from './terminal-commands.js';
 import { createImageSelection } from '../../common/image-selection.js';
 import { createSelectionStore } from '../../common/selection-store.js';
-import { bindComposeInput } from './compose-input.js';
+import { bindComposeInput } from '../../common/compose-input.js';
 import { exportArchive } from './export-archive.js';
-import { matchBatchPlatform } from './batch-platform.js';
+import { matchBatchPlatform } from '../../common/batch-platform.js';
 import { retryDownload } from '../../common/download-retry.js';
 import { copyLink } from '../../common/share-link.js';
 import { encodeQueueShare, restoreQueueShare } from './queue-share.js';
