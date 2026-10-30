@@ -1,24 +1,25 @@
 #!/bin/sh
 set -eu
-if [ "$#" -lt 4 ] || [ "$((($# - 1) % 3))" -ne 0 ]; then
-  echo 'Usage: sh download-images.sh ORIGIN IMAGE PLATFORM SOURCE [IMAGE PLATFORM SOURCE ...]' >&2; exit 1
-fi
-origin=${1%/}; shift
-case "$origin" in https://*|http://*) ;; *) echo 'Invalid origin' >&2; exit 1;; esac
 script_path=$0
 case "$script_path" in /*) ;; *) script_path="$PWD/$script_path";; esac
-for cmd in curl jq tar; do command -v "$cmd" >/dev/null || { echo "Missing dependency: $cmd" >&2; exit 1; }; done
-queue=$(mktemp -d "${TMPDIR:-/tmp}/dockerboost-queue.XXXXXX")
-pids=''
+queue='' pids=''
 cleanup() {
   for pid in $pids; do kill "$pid" 2>/dev/null || :; done
   for pid in $pids; do wait "$pid" 2>/dev/null || :; done
-  rm -rf -- "$queue"
+  [ -z "$queue" ] || rm -rf -- "$queue"
   rm -f -- "$script_path"
 }
 trap cleanup 0
 trap 'exit 130' INT
 trap 'exit 143' HUP TERM
+if [ "$#" -lt 4 ] || [ "$((($# - 1) % 3))" -ne 0 ]; then
+  echo 'Usage: sh download-images.sh ORIGIN IMAGE PLATFORM SOURCE [IMAGE PLATFORM SOURCE ...]' >&2; exit 1
+fi
+origin=${1%/}; shift
+case "$origin" in https://*|http://*) ;; *) echo 'Invalid origin' >&2; exit 1;; esac
+for cmd in curl jq tar; do command -v "$cmd" >/dev/null || { echo "Missing dependency: $cmd" >&2; exit 1; }; done
+script_dir=$(dirname -- "$script_path")
+queue=$(mktemp -d "$script_dir/.dockerboost-queue.XXXXXX")
 jobs=0
 while [ "$#" -gt 0 ]; do
   jobs=$((jobs + 1))
@@ -47,7 +48,7 @@ download_image() (
   trap 'exit 1' HUP INT TERM
   printf 'Starting: %s (%s)\n' "$image" "$platform"
   printf '%s\n' 'Could not retrieve image metadata; check the image, platform, source and network.' > "$job_dir/reason"
-  work=$(mktemp -d "$PWD/.dockerboost-download.XXXXXX")
+  work=$(mktemp -d "$script_dir/.dockerboost-download.XXXXXX")
   curl -fsSL --get --data-urlencode "image=$image" --data-urlencode "platform=$platform" --data-urlencode "source=$source" -o "$work/plan.json" "$origin/api/download-plan" 2> "$job_dir/metadata-error" &
   pids="$!"
   if ! wait_batch; then

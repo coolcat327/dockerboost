@@ -1,10 +1,5 @@
 #!/bin/sh
 set -eu
-[ "$#" -eq 5 ] || { echo 'Usage: sh download-docker.sh ORIGIN ARCH DOCKER COMPOSE VERSION' >&2; exit 1; }
-origin=${1%/} arch=$2 docker=$3 compose=$4 version=$5
-case "$origin" in https://*|http://*) ;; *) echo 'Invalid origin' >&2; exit 1;; esac
-case "$arch" in x86_64|aarch64|armhf|ppc64le|s390x) ;; *) echo 'Invalid architecture' >&2; exit 1;; esac
-for value in "$docker" "$compose"; do printf '%s\n' "$value" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$' || { echo 'Invalid version' >&2; exit 1; }; done
 script_path=$0
 case "$script_path" in /*) ;; *) script_path="$PWD/$script_path";; esac
 work='' child=''
@@ -16,11 +11,17 @@ cleanup() {
 trap cleanup 0
 trap 'exit 130' INT
 trap 'exit 143' HUP TERM
+[ "$#" -eq 5 ] || { echo 'Usage: sh download-docker.sh ORIGIN ARCH DOCKER COMPOSE VERSION' >&2; exit 1; }
+origin=${1%/} arch=$2 docker=$3 compose=$4 version=$5
+case "$origin" in https://*|http://*) ;; *) echo 'Invalid origin' >&2; exit 1;; esac
+case "$arch" in x86_64|aarch64|armhf|ppc64le|s390x) ;; *) echo 'Invalid architecture' >&2; exit 1;; esac
+for value in "$docker" "$compose"; do printf '%s\n' "$value" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$' || { echo 'Invalid version' >&2; exit 1; }; done
 for cmd in curl jq tar sha256sum; do command -v "$cmd" >/dev/null || { echo "Missing dependency: $cmd" >&2; exit 1; }; done
 name="docker-offline-$arch-docker-$docker-compose-$compose"
 output="$PWD/$name.tar"
 [ ! -e "$output" ] || { echo "File already exists: $output" >&2; exit 1; }
-work=$(mktemp -d "$PWD/.dockerboost-install.XXXXXX")
+script_dir=$(dirname -- "$script_path")
+work=$(mktemp -d "$script_dir/.dockerboost-install.XXXXXX")
 mkdir "$work/$name"
 curl -fsSL --get --data-urlencode "arch=$arch" --data-urlencode "docker=$docker" --data-urlencode "compose=$compose" -o "$work/plan.json" "$origin/api/install/plan"
 for file in readme.md daemon.json docker.service install_docker.sh uninstall_docker.sh; do
