@@ -242,7 +242,7 @@ monitor() {
           fi
           if [ "$category" = success ] && [ -f "$job_dir/total" ]; then
             total=$(cat "$job_dir/total")
-            size_text=$(awk -v t="$total" 'BEGIN {printf "%.1f/%.1f MiB", t/1048576, t/1048576}')
+            size_text=$(awk -v t="$total" 'BEGIN {printf "%.1f/%.1f M", t/1048576, t/1048576}')
           fi
           if [ "$category" = active ] && [ -s "$job_dir/work" ]; then
             work=$(cat "$job_dir/work")
@@ -262,7 +262,7 @@ monitor() {
               elapsed=$((now - $1)); delta=$((current - $2)); speed=0
               if [ "$elapsed" -gt 0 ] && [ "$delta" -gt 0 ]; then speed=$((delta / elapsed)); fi
               printf '%s %s\n' "$now" "$current" > "$job_dir/sample"
-              size_text=$(awk -v c="$current" -v t="$total" 'BEGIN {printf "%.1f/%.1f MiB", c/1048576, t/1048576}')
+              size_text=$(awk -v c="$current" -v t="$total" 'BEGIN {printf "%.1f/%.1f M", c/1048576, t/1048576}')
               if [ "$phase" = downloading ] && [ "$total" -gt 0 ]; then phase="$(awk -v c="$current" -v t="$total" 'BEGIN {n=int(c*100/t); if(n>100)n=100; printf "%d%%",n}')"; fi
               if [ "$phase" != packing ]; then speed_text=$(awk -v s="$speed" 'BEGIN {printf "%.1f M/s", s/1048576}'); fi
             fi
@@ -311,7 +311,7 @@ if [ -n "$monitor_pid" ]; then
   wait "$monitor_pid" 2>/dev/null || :
   monitor_pid=''
 fi
-# Size columns to the supplied values so the final report retains full names.
+# Keep the final report compact; full image names remain in failure details.
 image_width=5 platform_width=8
 index=1
 while [ "$index" -le "$jobs" ]; do
@@ -320,12 +320,13 @@ while [ "$index" -le "$jobs" ]; do
   [ "${#platform}" -le "$platform_width" ] || platform_width=${#platform}
   index=$((index + 1))
 done
-summary_border=$(printf '+-%*s-+-%*s-+-%*s-+-%*s-+-%*s-+-%*s-+' "$image_width" '' 7 '' "$platform_width" '' 14 '' 13 '' 12 '' | tr ' ' '-')
+[ "$image_width" -le 40 ] || image_width=40
+summary_border=$(printf '+-%*s-+-%*s-+-%*s-+-%*s-+-%*s-+-%*s-+' "$image_width" '' 7 '' "$platform_width" '' 10 '' 6 '' 9 '' | tr ' ' '-')
 summary_title='Download summary'
 summary_padding=$(((${#summary_border} - ${#summary_title}) / 2))
 printf '\n%*s%s\n' "$summary_padding" '' "$summary_title"
 printf '%s\n' "$summary_border"
-printf '| %-*s | %-7s | %-*s | %-14s | %-13s | %-12s |\n' "$image_width" Image Status "$platform_width" Platform Size Time Speed
+printf '| %-*s | %-7s | %-*s | %-10s | %-6s | %-9s |\n' "$image_width" Image Status "$platform_width" Platform Size Time Speed
 printf '%s\n' "$summary_border"
 success_count=0 failed_count=0 index=1 total_downloaded=0 first_download='' last_download=''
 while [ "$index" -le "$jobs" ]; do
@@ -334,7 +335,7 @@ while [ "$index" -le "$jobs" ]; do
   image=$(cat "$queue/$index/image"); platform=$(cat "$queue/$index/platform")
   total_text='-' duration_text='-' average_text='-'
   if [ -f "$queue/$index/total" ]; then
-    total_text=$(awk -v t="$(cat "$queue/$index/total")" 'BEGIN {printf "%.1f MiB", t/1048576}')
+    total_text=$(awk -v t="$(cat "$queue/$index/total")" 'BEGIN {printf "%.1f M", t/1048576}')
   fi
   if [ -f "$queue/$index/download-start" ] && [ -f "$queue/$index/download-end" ]; then
     started=$(cat "$queue/$index/download-start")
@@ -351,13 +352,14 @@ while [ "$index" -le "$jobs" ]; do
       duration_text='<1s'
     fi
   fi
-  printf '| %-*s | %-7s | %-*s | %-14s | %-13s | %-12s |\n' "$image_width" "$image" "$status" "$platform_width" "$platform" "$total_text" "$duration_text" "$average_text"
+  if [ "${#image}" -gt "$image_width" ]; then image=$(printf '%.*s...' "$((image_width - 3))" "$image"); fi
+  printf '| %-*s | %-7s | %-*s | %-10s | %-6s | %-9s |\n' "$image_width" "$image" "$status" "$platform_width" "$platform" "$total_text" "$duration_text" "$average_text"
   index=$((index + 1))
 done
 printf '%s\n' "$summary_border"
 total_size='-' total_time='-' total_speed='-'
 if [ -n "$first_download" ]; then
-  total_size=$(awk -v b="$total_downloaded" 'BEGIN {printf "%.1f MiB", b/1048576}')
+  total_size=$(awk -v b="$total_downloaded" 'BEGIN {printf "%.1f M", b/1048576}')
   elapsed=$((last_download - first_download))
   if [ "$elapsed" -gt 0 ]; then
     total_time="${elapsed}s"

@@ -112,11 +112,11 @@ if (url.endsWith('/api/download-plan')) {
     assert.ok(maxImages > 1 && maxImages <= 4, `concurrent images: ${maxImages}`);
     assert.ok(maxBlobs > 1 && maxBlobs <= 3, `concurrent blobs per image: ${maxBlobs}`);
     assert.equal(peakImages.size, 7);
-    assert.match(result.stdout, new RegExp(`Succeeded \\(${fail ? 6 : 7}\\)  Failed \\(${fail ? 1 : 0}\\)  Size [\\d.]+ MiB  Time (?:<1s|\\d+s)  Speed (?:-|[\\d.]+ M/s)\\n`));
+    assert.match(result.stdout, new RegExp(`Succeeded \\(${fail ? 6 : 7}\\)  Failed \\(${fail ? 1 : 0}\\)  Size [\\d.]+ M  Time (?:<1s|\\d+s)  Speed (?:-|[\\d.]+ M/s)\\n`));
     assert.match(result.stdout, /\| Size\s+\| Time\s+\| Speed\s+\|/);
-    assert.match(result.stdout, /\| image1:latest\s+\| success\s+\| linux\/amd64\s+\|\s+[\d.]+ MiB\s+\|\s+(?:<1s|\d+s)\s+\|\s+(?:-|[\d.]+ M\/s)\s+\|/);
+    assert.match(result.stdout, /\| image1:latest\s+\| success\s+\| linux\/amd64\s+\|\s+[\d.]+ M\s+\|\s+(?:<1s|\d+s)\s+\|\s+(?:-|[\d.]+ M\/s)\s+\|/);
     if (fail) {
-      assert.match(result.stdout, /\| image0:latest\s+\| failed\s+\| linux\/amd64\s+\|\s+[\d.]+ MiB\s+\|/);
+      assert.match(result.stdout, /\| image0:latest\s+\| failed\s+\| linux\/amd64\s+\|\s+[\d.]+ M\s+\|/);
       assert.match(result.stdout, /Unable to download or verify image blobs after retries/);
       assert.match(result.stdout, /sha256:0{64}/);
     }
@@ -160,6 +160,7 @@ if (url.endsWith('/api/download-plan')) {
 for (const mode of ['metadata', 'exists']) {
   test(`summary explains ${mode === 'metadata' ? 'metadata errors' : 'existing archives'}`, async () => {
     const dir = await mkdtemp(join(tmpdir(), 'dockerboost-summary-'));
+    const image = mode === 'metadata' ? 'example/very-long-image-name-that-exceeds-the-summary-column:latest' : 'nginx:latest';
     try {
       await mkdir(join(dir, 'bin'));
       const helper = join(dir, 'download.sh');
@@ -170,8 +171,17 @@ const fs = require('node:fs'); const a = process.argv.slice(2), out = a[a.indexO
 if (process.env.MODE === 'metadata') { process.stderr.write('HTTP 404\\n'); process.exit(22); }
 fs.writeFileSync(out, JSON.stringify({image:'nginx:latest',repository:'library/nginx',source:'auto',config:{digest:'sha256:'+'a'.repeat(64),size:3},layers:[]}));
 `, {mode:0o755});
-      const result = spawnSync('sh', [helper, 'https://example.com', 'nginx:latest', 'linux/amd64', 'auto'], {cwd:dir, encoding:'utf8', env:{...process.env, PATH:`${join(dir,'bin')}:${process.env.PATH}`, MODE:mode}});
+      const result = spawnSync('sh', [helper, 'https://example.com', image, 'linux/amd64', 'auto'], {cwd:dir, encoding:'utf8', env:{...process.env, PATH:`${join(dir,'bin')}:${process.env.PATH}`, MODE:mode}});
       assert.equal(result.status, 1);
+      const table = result.stdout.split('\n').filter(line => /^[+|]/.test(line));
+      assert.equal(new Set(table.map(line => line.length)).size, 1, 'summary borders and rows align');
+      const columns = table.find(line => line.startsWith('| Image')).split('|').slice(1, -1).map(column => column.length - 2);
+      assert.deepEqual(columns, [Math.min(image.length, 40), 7, 11, 10, 6, 9]);
+      if (mode === 'metadata') {
+        assert.ok(table.some(line => line.includes(`${image.slice(0, 37)}...`)));
+        assert.ok(!table.some(line => line.includes(image)));
+        assert.ok(result.stdout.includes(`\n${image}:\n`), 'failure details preserve the full image reference');
+      }
       assert.match(result.stdout, /Succeeded \(0\)  Failed \(1\)  Size -  Time -  Speed -\n/);
       assert.match(result.stdout, mode === 'metadata' ? /Could not retrieve image metadata[\s\S]*HTTP 404/ : /Output already exists:/);
       if (mode === 'exists') assert.equal(await readFile(join(dir,'nginx_latest_linux_amd64.tar'),'utf8'), 'original');
