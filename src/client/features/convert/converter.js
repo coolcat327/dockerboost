@@ -39,6 +39,20 @@ function literalCodec(input) {
   };
 }
 
+// Keep generated services easy to scan while retaining unfamiliar fields and their order.
+const serviceFieldOrder = [
+  'image', 'container_name', 'hostname', 'restart', 'init', 'user', 'working_dir',
+  'entrypoint', 'command', 'environment', 'env_file', 'ports', 'expose',
+  'volumes', 'network_mode', 'networks', 'depends_on', 'healthcheck',
+  'labels', 'logging', 'deploy'
+];
+const orderServiceFields = service => {
+  const ordered = {};
+  for (const key of serviceFieldOrder) if (Object.hasOwn(service, key)) ordered[key] = service[key];
+  for (const [key, value] of Object.entries(service)) if (!Object.hasOwn(ordered, key)) ordered[key] = value;
+  return ordered;
+};
+
 export function convert(input, direction) {
   if (!input.trim()) fail('empty');
   if (new TextEncoder().encode(input).length > inputLimit) fail('size');
@@ -63,6 +77,7 @@ export function convert(input, direction) {
     if (input.includes('$')) warnings.push('variablesRun');
     if (tokens.includes('--network') && service.network_mode === 'host') warnings.push('host');
     delete doc.name; // Upstream inserts a placeholder that is not a valid project name.
+    for (const [name, value] of Object.entries(doc.services)) doc.services[name] = orderServiceFields(value);
     const notes = codec.decode(converted.split('\n').filter(line => line.startsWith('#')))
       .flatMap(line => line.split(/\r?\n/).map(part => part.startsWith('#') ? part : `# ${part}`));
     if (notes.length) warnings.push('options');

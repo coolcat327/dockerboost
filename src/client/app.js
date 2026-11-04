@@ -48,12 +48,13 @@ const positionIndicator = () => {
   tabs.classList.add('has-indicator');
 };
 const selectTab = (id) => {
-  registrations.forEach(({ feature, tab, panel }) => {
+  registrations.forEach(({ feature, tab, panel, instance }) => {
     const active = feature.id === id;
     tab.classList.toggle('active', active);
     tab.setAttribute('aria-selected', String(active));
     tab.tabIndex = active ? 0 : -1;
     panel.classList.toggle('active', active);
+    if (active) instance?.onActivate?.();
   });
   positionIndicator();
 };
@@ -89,7 +90,7 @@ document.addEventListener('click', async (event) => {
   if (!button) return;
   const target = document.getElementById(button.dataset.copy);
   try {
-    await navigator.clipboard.writeText(target.innerText);
+    await navigator.clipboard.writeText(target instanceof HTMLTextAreaElement ? target.value : target.innerText);
     clearTimeout(copyTimers.get(button));
     button.classList.add('is-copied');
     copyTimers.set(button, setTimeout(() => button.classList.remove('is-copied'), 1800));

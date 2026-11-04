@@ -16,6 +16,18 @@ test('run to Compose retains ports, environment, restart policy and argument bou
   assert.equal(web.restart, 'unless-stopped'); assert.deepEqual(web.command, ['sh', '-c', 'echo hello  world']);
   assert.ok(result.warnings.includes('lifecycle'));
 });
+test('generated Compose puts image and container name before operational settings', () => {
+  const result = toCompose('docker run -d --name web -p 8080:80 -e TZ=Asia/Shanghai -v data:/data --restart unless-stopped nginx:alpine');
+  const doc = parse(result.output), web = Object.values(doc.services)[0];
+  assert.deepEqual(Object.keys(web).slice(0, 3), ['image', 'container_name', 'restart']);
+  assert.ok(Object.keys(web).indexOf('environment') < Object.keys(web).indexOf('ports'));
+  assert.equal(web.image, 'nginx:alpine');
+  assert.equal(web.container_name, 'web');
+  assert.deepEqual(web.ports, ['8080:80']);
+  assert.deepEqual(web.environment, ['TZ=Asia/Shanghai']);
+  assert.ok(web.volumes);
+  assert.ok(doc.volumes);
+});
 test('run supports container run and backslash continuations, and retains literal dollar signs', () => {
   const result = toCompose("docker container run \\\n -e 'VALUE=$HOME' nginx");
   assert.deepEqual(service(result.output).environment, ['VALUE=$$HOME']);

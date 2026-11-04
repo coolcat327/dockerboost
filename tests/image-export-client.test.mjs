@@ -47,14 +47,14 @@ test('a removed worker asks for refresh without loading another release', async 
     requested.push(url);
     return new Response('<!doctype html>', { headers: { 'content-type': 'text/html' } });
   });
-  await assert.rejects(resolveImageExportWorker('/image-export-worker-OLD.js'), /刷新页面/);
-  assert.deepEqual(requested, ['/image-export-worker-OLD.js']);
+  await assert.rejects(resolveImageExportWorker('/assets/oldbuild/image-export-worker.js'), /刷新页面/);
+  assert.deepEqual(requested, ['/assets/oldbuild/image-export-worker.js']);
 });
 
 test('the worker from the page release is used unchanged', async t => {
   const { resolveImageExportWorker } = await import('../src/client/features/download/image-export-client.js');
   t.mock.method(globalThis, 'fetch', async () => new Response('self.onmessage = () => {};', { headers: { 'content-type': 'text/javascript' } }));
-  assert.equal(await resolveImageExportWorker('/image-export-worker-Abcd123_.js'), '/image-export-worker-Abcd123_.js');
+  assert.equal(await resolveImageExportWorker('/assets/newbuild/image-export-worker.js'), '/assets/newbuild/image-export-worker.js');
 });
 
 test('worker availability check respects stop requests', async t => {
@@ -63,7 +63,7 @@ test('worker availability check respects stop requests', async t => {
   t.mock.method(globalThis, 'fetch', (url, { signal }) => new Promise((resolve, reject) => {
     signal.addEventListener('abort', () => reject(signal.reason), { once: true });
   }));
-  const pending = resolveImageExportWorker('/image-export-worker-OLD.js', { signal: controller.signal });
+  const pending = resolveImageExportWorker('/assets/oldbuild/image-export-worker.js', { signal: controller.signal });
   controller.abort();
   await assert.rejects(pending, { name: 'AbortError' });
 });

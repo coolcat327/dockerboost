@@ -1,0 +1,1355 @@
+[
+  {
+    "id": "docker-run",
+    "family": "docker",
+    "command": "docker run",
+    "url": "https://docs.docker.com/reference/cli/docker/container/run/",
+    "summary": {"zh-CN":"从镜像创建并启动容器，配置端口、环境变量和挂载。","en":"Create a container and start it with ports, environment variables, and mounts."},
+    "usage": "docker run [OPTIONS] IMAGE [COMMAND] [ARG...]",
+    "examples": [
+      {"code":"docker run -d --name web -p 8080:80 nginx:alpine","description":{"zh-CN":"以 nginx:alpine 创建名为 web 的后台容器，将本机 8080 端口映射到容器 80 端口。","en":"Start nginx:alpine as a detached container named web, mapping host port 8080 to container port 80."}},
+      {"code":"docker run --rm -it alpine sh","description":{"zh-CN":"交互式运行 Alpine 的 sh；退出后自动删除容器。","en":"Run sh interactively in Alpine and remove the container on exit."}}
+    ],
+    "options": [
+      {"flag":"-d, --detach","description":{"zh-CN":"后台运行","en":"Run in the background"}},
+      {"flag":"-p, --publish","description":{"zh-CN":"映射宿主机与容器端口","en":"Map a host port to a container port"}},
+      {"flag":"-v, --volume","description":{"zh-CN":"挂载目录或数据卷","en":"Mount a directory or volume"}},
+      {"flag":"-e, --env","description":{"zh-CN":"设置环境变量","en":"Set an environment variable"}},
+      {"flag":"--restart","description":{"zh-CN":"设置重启策略","en":"Set a restart policy"}},
+      {"flag":"--rm","description":{"zh-CN":"退出时自动移除容器","en":"Remove the container on exit"}}
+    ]
+  },
+  {
+    "id": "docker-ps",
+    "family": "docker",
+    "command": "docker ps",
+    "url": "https://docs.docker.com/reference/cli/docker/container/ls/",
+    "summary": {"zh-CN":"列出运行中的容器，也可显示已停止的容器。","en":"List running containers or include stopped containers."},
+    "usage": "docker ps [OPTIONS]",
+    "examples": [
+      {"code":"docker ps -a","description":{"zh-CN":"列出所有容器，包括已停止的容器。","en":"List all containers, including stopped ones."}},
+      {"code":"docker ps --filter status=running","description":{"zh-CN":"仅列出状态为 running 的容器。","en":"List containers whose status is running."}}
+    ],
+    "options": [
+      {"flag":"-a, --all","description":{"zh-CN":"包含已停止的容器","en":"Include stopped containers"}},
+      {"flag":"-q, --quiet","description":{"zh-CN":"只输出容器 ID","en":"Only print container IDs"}},
+      {"flag":"--filter","description":{"zh-CN":"按条件筛选","en":"Filter the result"}}
+    ]
+  },
+  {
+    "id": "docker-start",
+    "family": "docker",
+    "command": "docker start",
+    "url": "https://docs.docker.com/reference/cli/docker/container/start/",
+    "summary": {"zh-CN":"启动已有的停止容器，保留原配置。","en":"Start existing stopped containers using their stored configuration."},
+    "usage": "docker start [OPTIONS] CONTAINER [CONTAINER...]",
+    "examples": [
+      {"code":"docker start web","description":{"zh-CN":"启动已有的 web 容器。","en":"Start the existing web container."}}
+    ],
+    "options": [
+      {"flag":"-a, --attach","description":{"zh-CN":"连接输出并转发信号","en":"Attach output and forward signals"}}
+    ]
+  },
+  {
+    "id": "docker-stop",
+    "family": "docker",
+    "command": "docker stop",
+    "url": "https://docs.docker.com/reference/cli/docker/container/stop/",
+    "summary": {"zh-CN":"向容器发送停止信号，超时后强制终止。","en":"Signal containers to stop, then force termination after the timeout."},
+    "usage": "docker stop [OPTIONS] CONTAINER [CONTAINER...]",
+    "examples": [
+      {"code":"docker stop --timeout 30 web","description":{"zh-CN":"停止 web，等待最多 30 秒后强制终止。","en":"Stop web, allowing up to 30 seconds before forcing termination."}}
+    ],
+    "options": [
+      {"flag":"-t, --timeout","description":{"zh-CN":"停止前等待的秒数","en":"Seconds to wait before force termination"}}
+    ]
+  },
+  {
+    "id": "docker-restart",
+    "family": "docker",
+    "command": "docker restart",
+    "url": "https://docs.docker.com/reference/cli/docker/container/restart/",
+    "summary": {"zh-CN":"停止并重新启动已有容器。","en":"Stop and restart existing containers."},
+    "usage": "docker restart [OPTIONS] CONTAINER [CONTAINER...]",
+    "examples": [
+      {"code":"docker restart web","description":{"zh-CN":"重新启动 web 容器。","en":"Restart the web container."}}
+    ],
+    "options": [
+      {"flag":"-t, --timeout","description":{"zh-CN":"停止前等待的秒数","en":"Stop timeout in seconds"}}
+    ]
+  },
+  {
+    "id": "docker-exec",
+    "family": "docker",
+    "command": "docker exec",
+    "url": "https://docs.docker.com/reference/cli/docker/container/exec/",
+    "summary": {"zh-CN":"在运行中的容器内执行额外命令。","en":"Execute an additional command inside a running container."},
+    "usage": "docker exec [OPTIONS] CONTAINER COMMAND [ARG...]",
+    "examples": [
+      {"code":"docker exec -it web sh","description":{"zh-CN":"在运行中的 web 容器内交互式打开 sh。","en":"Open an interactive sh in the running web container."}},
+      {"code":"docker exec -w /app web ls","description":{"zh-CN":"在 web 容器的 /app 目录中执行 ls。","en":"Run ls in /app inside web."}}
+    ],
+    "options": [
+      {"flag":"-i, --interactive","description":{"zh-CN":"保持标准输入打开","en":"Keep standard input open"}},
+      {"flag":"-t, --tty","description":{"zh-CN":"分配伪终端","en":"Allocate a pseudo-terminal"}},
+      {"flag":"-u, --user","description":{"zh-CN":"指定用户或 UID","en":"Select a user or UID"}}
+    ]
+  },
+  {
+    "id": "docker-logs",
+    "family": "docker",
+    "command": "docker logs",
+    "url": "https://docs.docker.com/reference/cli/docker/container/logs/",
+    "summary": {"zh-CN":"查看容器标准输出和错误日志。","en":"Read the container’s standard output and error logs."},
+    "usage": "docker logs [OPTIONS] CONTAINER",
+    "examples": [
+      {"code":"docker logs --tail 100 -f web","description":{"zh-CN":"查看 web 容器最后 100 行日志并持续跟踪新日志。","en":"Show the last 100 lines of web container logs and follow new output."}}
+    ],
+    "options": [
+      {"flag":"-f, --follow","description":{"zh-CN":"持续跟踪新日志","en":"Follow new log output"}},
+      {"flag":"--tail","description":{"zh-CN":"从末尾显示指定行数","en":"Show a number of lines from the end"}},
+      {"flag":"--since","description":{"zh-CN":"仅查看指定时间后的日志","en":"Show logs since a time"}}
+    ]
+  },
+  {
+    "id": "docker-inspect",
+    "family": "docker",
+    "command": "docker inspect",
+    "url": "https://docs.docker.com/reference/cli/docker/inspect/",
+    "summary": {"zh-CN":"查看容器、镜像等对象的详细信息。","en":"Inspect detailed metadata for containers, images, and other objects."},
+    "usage": "docker inspect [OPTIONS] NAME|ID [NAME|ID...]",
+    "examples": [
+      {"code":"docker inspect web","description":{"zh-CN":"查看 web 容器的完整元数据。","en":"Inspect all metadata for web."}},
+      {"code":"docker inspect --format '{{.State.Status}}' web","description":{"zh-CN":"仅输出 web 容器的状态字段。","en":"Print only the state of web."}}
+    ],
+    "options": [
+      {"flag":"-f, --format","description":{"zh-CN":"使用 Go 模板格式化输出","en":"Format output with a Go template"}}
+    ]
+  },
+  {
+    "id": "docker-stats",
+    "family": "docker",
+    "command": "docker stats",
+    "url": "https://docs.docker.com/reference/cli/docker/container/stats/",
+    "summary": {"zh-CN":"查看 CPU、内存、网络和磁盘使用情况。","en":"View CPU, memory, network, and block I/O usage."},
+    "usage": "docker stats [OPTIONS] [CONTAINER...]",
+    "examples": [
+      {"code":"docker stats --no-stream","description":{"zh-CN":"输出所有运行中容器的一次资源用量快照。","en":"Print one resource usage snapshot for running containers."}},
+      {"code":"docker stats web","description":{"zh-CN":"持续查看 web 容器的资源用量。","en":"Stream resource usage for web."}}
+    ],
+    "options": [
+      {"flag":"--no-stream","description":{"zh-CN":"只输出一次快照","en":"Print a single snapshot"}}
+    ]
+  },
+  {
+    "id": "docker-cp",
+    "family": "docker",
+    "command": "docker cp",
+    "url": "https://docs.docker.com/reference/cli/docker/container/cp/",
+    "summary": {"zh-CN":"在本机与容器之间复制文件或目录。","en":"Copy files or directories between the host and a container."},
+    "usage": "docker cp [OPTIONS] CONTAINER:SRC_PATH DEST_PATH",
+    "examples": [
+      {"code":"docker cp web:/etc/nginx/nginx.conf ./nginx.conf","description":{"zh-CN":"将 web 中的 Nginx 配置复制到当前目录。","en":"Copy the Nginx configuration from web to the current directory."}},
+      {"code":"docker cp ./index.html web:/usr/share/nginx/html/","description":{"zh-CN":"将本地 index.html 复制到 web 的网站目录。","en":"Copy the local index.html to the web container’s document directory."}}
+    ],
+    "options": [
+      {"flag":"-a, --archive","description":{"zh-CN":"保留源文件的用户和组信息","en":"Preserve source user and group information"}}
+    ]
+  },
+  {
+    "id": "docker-rm",
+    "family": "docker",
+    "command": "docker rm",
+    "url": "https://docs.docker.com/reference/cli/docker/container/rm/",
+    "summary": {"zh-CN":"删除容器；删除前确认容器数据已保存。","en":"Remove containers after saving any required container data."},
+    "usage": "docker rm [OPTIONS] CONTAINER [CONTAINER...]",
+    "examples": [
+      {"code":"docker rm stopped-web","description":{"zh-CN":"删除已停止的 stopped-web 容器。","en":"Remove the stopped container stopped-web."}}
+    ],
+    "options": [
+      {"flag":"-f, --force","description":{"zh-CN":"强制删除运行中的容器","en":"Force-remove a running container"}},
+      {"flag":"-v, --volumes","description":{"zh-CN":"同时移除关联的匿名卷","en":"Also remove associated anonymous volumes"}}
+    ]
+  },
+  {
+    "id": "docker-pull",
+    "family": "docker",
+    "command": "docker pull",
+    "url": "https://docs.docker.com/reference/cli/docker/image/pull/",
+    "summary": {"zh-CN":"从镜像仓库下载镜像。","en":"Download an image from a registry."},
+    "usage": "docker pull [OPTIONS] NAME[:TAG|@DIGEST]",
+    "examples": [
+      {"code":"docker pull nginx:alpine","description":{"zh-CN":"下载 nginx 的 alpine 标签。","en":"Download the alpine tag of nginx."}},
+      {"code":"docker pull --platform linux/arm64 redis:7-alpine","description":{"zh-CN":"下载适用于 Linux ARM64 的 redis:7-alpine 镜像。","en":"Download redis:7-alpine for Linux ARM64."}}
+    ],
+    "options": [
+      {"flag":"--platform","description":{"zh-CN":"选择操作系统和 CPU 架构","en":"Choose an OS and CPU architecture"}}
+    ]
+  },
+  {
+    "id": "docker-push",
+    "family": "docker",
+    "command": "docker push",
+    "url": "https://docs.docker.com/reference/cli/docker/image/push/",
+    "summary": {"zh-CN":"将本地镜像推送到有权限的仓库。","en":"Push a local image to a registry you can write to."},
+    "usage": "docker push [OPTIONS] NAME[:TAG]",
+    "examples": [
+      {"code":"docker push registry.example.com/team/app:1.0","description":{"zh-CN":"将 app:1.0 推送到指定仓库。","en":"Push app:1.0 to the specified registry."}}
+    ],
+    "options": [
+      {"flag":"-a, --all-tags","description":{"zh-CN":"推送仓库中的全部本地标签","en":"Push all local tags for the repository"}}
+    ]
+  },
+  {
+    "id": "docker-images",
+    "family": "docker",
+    "command": "docker images",
+    "url": "https://docs.docker.com/reference/cli/docker/image/ls/",
+    "summary": {"zh-CN":"列出本地镜像及标签。","en":"List local images and tags."},
+    "usage": "docker images [OPTIONS] [REPOSITORY[:TAG]]",
+    "examples": [
+      {"code":"docker images","description":{"zh-CN":"列出本地镜像。","en":"List local images."}},
+      {"code":"docker images nginx","description":{"zh-CN":"列出本地 nginx 镜像。","en":"List local nginx images."}}
+    ],
+    "options": [
+      {"flag":"-a, --all","description":{"zh-CN":"包含中间镜像","en":"Include intermediate images"}},
+      {"flag":"--digests","description":{"zh-CN":"显示镜像摘要","en":"Display image digests"}}
+    ]
+  },
+  {
+    "id": "docker-build",
+    "family": "docker",
+    "command": "docker build",
+    "url": "https://docs.docker.com/reference/cli/docker/buildx/build/",
+    "summary": {"zh-CN":"按 Dockerfile 和构建上下文生成镜像。","en":"Build an image from a Dockerfile and build context."},
+    "usage": "docker build [OPTIONS] PATH | URL | -",
+    "examples": [
+      {"code":"docker build -t myapp:1.0 .","description":{"zh-CN":"使用当前目录作为构建上下文，生成 myapp:1.0。","en":"Build myapp:1.0 using the current directory as context."}},
+      {"code":"docker build --no-cache -f Dockerfile.prod -t myapp:prod .","description":{"zh-CN":"使用 Dockerfile.prod 构建 myapp:prod，不使用构建缓存。","en":"Build myapp:prod from Dockerfile.prod without the build cache."}}
+    ],
+    "options": [
+      {"flag":"-t, --tag","description":{"zh-CN":"设置镜像名称与标签","en":"Set an image name and tag"}},
+      {"flag":"-f, --file","description":{"zh-CN":"指定 Dockerfile","en":"Select a Dockerfile"}},
+      {"flag":"--no-cache","description":{"zh-CN":"不使用构建缓存","en":"Disable the build cache"}}
+    ]
+  },
+  {
+    "id": "docker-tag",
+    "family": "docker",
+    "command": "docker tag",
+    "url": "https://docs.docker.com/reference/cli/docker/image/tag/",
+    "summary": {"zh-CN":"为现有镜像增加目标名称或标签。","en":"Add a target name or tag to an existing image."},
+    "usage": "docker tag SOURCE_IMAGE[:TAG] TARGET_IMAGE[:TAG]",
+    "examples": [
+      {"code":"docker tag myapp:1.0 registry.example.com/team/myapp:1.0","description":{"zh-CN":"为 myapp:1.0 添加仓库目标标签，供后续推送。","en":"Add a registry target tag to myapp:1.0 for a later push."}}
+    ],
+    "options": []
+  },
+  {
+    "id": "docker-rmi",
+    "family": "docker",
+    "command": "docker rmi",
+    "url": "https://docs.docker.com/reference/cli/docker/image/rm/",
+    "summary": {"zh-CN":"移除本地镜像引用或镜像。","en":"Remove local image references or images."},
+    "usage": "docker rmi [OPTIONS] IMAGE [IMAGE...]",
+    "examples": [
+      {"code":"docker rmi myapp:old","description":{"zh-CN":"移除本地 myapp:old 镜像引用。","en":"Remove the local myapp:old image reference."}}
+    ],
+    "options": [
+      {"flag":"-f, --force","description":{"zh-CN":"强制移除","en":"Force removal"}}
+    ]
+  },
+  {
+    "id": "docker-save",
+    "family": "docker",
+    "command": "docker save",
+    "url": "https://docs.docker.com/reference/cli/docker/image/save/",
+    "summary": {"zh-CN":"把镜像与标签保存为可导入的 TAR 文件。","en":"Save images and tags to an importable TAR archive."},
+    "usage": "docker save [OPTIONS] IMAGE [IMAGE...]",
+    "examples": [
+      {"code":"docker save -o images.tar nginx:alpine redis:7-alpine","description":{"zh-CN":"将 nginx 和 redis 镜像保存到 images.tar。","en":"Save the nginx and redis images to images.tar."}}
+    ],
+    "options": [
+      {"flag":"-o, --output","description":{"zh-CN":"写入指定文件","en":"Write to a file"}}
+    ]
+  },
+  {
+    "id": "docker-load",
+    "family": "docker",
+    "command": "docker load",
+    "url": "https://docs.docker.com/reference/cli/docker/image/load/",
+    "summary": {"zh-CN":"从镜像归档恢复镜像和标签。","en":"Restore images and tags from an image archive."},
+    "usage": "docker load [OPTIONS]",
+    "examples": [
+      {"code":"docker load -i images.tar","description":{"zh-CN":"从 images.tar 导入镜像及其标签。","en":"Load images and tags from images.tar."}}
+    ],
+    "options": [
+      {"flag":"-i, --input","description":{"zh-CN":"从指定文件读取","en":"Read from a file"}}
+    ]
+  },
+  {
+    "id": "docker-login",
+    "family": "docker",
+    "command": "docker login",
+    "url": "https://docs.docker.com/reference/cli/docker/login/",
+    "summary": {"zh-CN":"登录镜像仓库；脚本通过标准输入传递密码。","en":"Authenticate to a registry; pass passwords via stdin in scripts."},
+    "usage": "docker login [OPTIONS] [SERVER]",
+    "examples": [
+      {"code":"docker login","description":{"zh-CN":"交互式登录默认 Docker Hub。","en":"Sign in to Docker Hub interactively."}},
+      {"code":"docker login registry.example.com --username myuser --password-stdin","description":{"zh-CN":"以 myuser 登录指定仓库，并从标准输入读取密码或令牌。","en":"Sign in to the specified registry as myuser, reading the password or token from standard input."}}
+    ],
+    "options": [
+      {"flag":"-u, --username","description":{"zh-CN":"仓库用户名","en":"Registry username"}},
+      {"flag":"--password-stdin","description":{"zh-CN":"从标准输入读取密码或令牌","en":"Read the password or token from stdin"}}
+    ]
+  },
+  {
+    "id": "docker-logout",
+    "family": "docker",
+    "command": "docker logout",
+    "url": "https://docs.docker.com/reference/cli/docker/logout/",
+    "summary": {"zh-CN":"清除指定仓库的登录凭据。","en":"Remove stored authentication for a registry."},
+    "usage": "docker logout [SERVER]",
+    "examples": [
+      {"code":"docker logout registry.example.com","description":{"zh-CN":"清除指定仓库的登录凭据。","en":"Remove credentials for the specified registry."}}
+    ],
+    "options": []
+  },
+  {
+    "id": "docker-network-ls",
+    "family": "docker",
+    "command": "docker network ls",
+    "url": "https://docs.docker.com/reference/cli/docker/network/ls/",
+    "summary": {"zh-CN":"列出 Docker 网络。","en":"List Docker networks."},
+    "usage": "docker network ls [OPTIONS]",
+    "examples": [
+      {"code":"docker network ls","description":{"zh-CN":"列出本机 Docker 网络。","en":"List local Docker networks."}}
+    ],
+    "options": [
+      {"flag":"--filter","description":{"zh-CN":"按网络属性筛选","en":"Filter by network properties"}}
+    ]
+  },
+  {
+    "id": "docker-network-create",
+    "family": "docker",
+    "command": "docker network create",
+    "url": "https://docs.docker.com/reference/cli/docker/network/create/",
+    "summary": {"zh-CN":"创建供容器连接的网络。","en":"Create a network for container connections."},
+    "usage": "docker network create [OPTIONS] NETWORK",
+    "examples": [
+      {"code":"docker network create app-net","description":{"zh-CN":"创建名为 app-net 的网络。","en":"Create a network named app-net."}}
+    ],
+    "options": [
+      {"flag":"-d, --driver","description":{"zh-CN":"选择网络驱动","en":"Choose a network driver"}},
+      {"flag":"--subnet","description":{"zh-CN":"指定子网","en":"Set the subnet"}}
+    ]
+  },
+  {
+    "id": "docker-network-connect",
+    "family": "docker",
+    "command": "docker network connect",
+    "url": "https://docs.docker.com/reference/cli/docker/network/connect/",
+    "summary": {"zh-CN":"将已有容器连接到网络。","en":"Connect an existing container to a network."},
+    "usage": "docker network connect [OPTIONS] NETWORK CONTAINER",
+    "examples": [
+      {"code":"docker network connect app-net web","description":{"zh-CN":"将 web 容器连接到 app-net 网络。","en":"Connect web to the app-net network."}}
+    ],
+    "options": [
+      {"flag":"--alias","description":{"zh-CN":"添加网络内别名","en":"Add a network-scoped alias"}}
+    ]
+  },
+  {
+    "id": "docker-volume-ls",
+    "family": "docker",
+    "command": "docker volume ls",
+    "url": "https://docs.docker.com/reference/cli/docker/volume/ls/",
+    "summary": {"zh-CN":"列出持久化数据卷。","en":"List persistent data volumes."},
+    "usage": "docker volume ls [OPTIONS]",
+    "examples": [
+      {"code":"docker volume ls","description":{"zh-CN":"列出本机数据卷。","en":"List local volumes."}}
+    ],
+    "options": [
+      {"flag":"-q, --quiet","description":{"zh-CN":"仅输出卷名称","en":"Only print volume names"}}
+    ]
+  },
+  {
+    "id": "docker-volume-create",
+    "family": "docker",
+    "command": "docker volume create",
+    "url": "https://docs.docker.com/reference/cli/docker/volume/create/",
+    "summary": {"zh-CN":"创建独立于容器生命周期的数据卷。","en":"Create a volume that persists independently of a container."},
+    "usage": "docker volume create [OPTIONS] [VOLUME]",
+    "examples": [
+      {"code":"docker volume create app-data","description":{"zh-CN":"创建名为 app-data 的数据卷。","en":"Create a volume named app-data."}}
+    ],
+    "options": [
+      {"flag":"--label","description":{"zh-CN":"为卷添加标签","en":"Add a volume label"}}
+    ]
+  },
+  {
+    "id": "docker-volume-inspect",
+    "family": "docker",
+    "command": "docker volume inspect",
+    "url": "https://docs.docker.com/reference/cli/docker/volume/inspect/",
+    "summary": {"zh-CN":"查看卷的驱动、挂载点等信息。","en":"Inspect volume drivers, mountpoints, and metadata."},
+    "usage": "docker volume inspect [OPTIONS] VOLUME [VOLUME...]",
+    "examples": [
+      {"code":"docker volume inspect app-data","description":{"zh-CN":"查看 app-data 的挂载点、驱动和元数据。","en":"Inspect the mountpoint, driver, and metadata of app-data."}}
+    ],
+    "options": []
+  },
+  {
+    "id": "docker-system-df",
+    "family": "docker",
+    "command": "docker system df",
+    "url": "https://docs.docker.com/reference/cli/docker/system/df/",
+    "summary": {"zh-CN":"查看镜像、容器、卷与构建缓存的磁盘占用。","en":"Inspect disk usage for images, containers, volumes, and build cache."},
+    "usage": "docker system df [OPTIONS]",
+    "examples": [
+      {"code":"docker system df -v","description":{"zh-CN":"详细显示镜像、容器、卷和构建缓存的磁盘占用。","en":"Show detailed disk usage for images, containers, volumes, and build cache."}}
+    ],
+    "options": [
+      {"flag":"-v, --verbose","description":{"zh-CN":"显示详细占用","en":"Display detailed usage"}}
+    ]
+  },
+  {
+    "id": "docker-system-prune",
+    "family": "docker",
+    "command": "docker system prune",
+    "url": "https://docs.docker.com/reference/cli/docker/system/prune/",
+    "summary": {"zh-CN":"清理未使用资源，执行前确认删除范围。","en":"Clean unused resources after reviewing the deletion scope."},
+    "usage": "docker system prune [OPTIONS]",
+    "examples": [
+      {"code":"docker system prune","description":{"zh-CN":"交互确认后清理未使用的容器、网络、悬空镜像和构建缓存。","en":"After confirmation, prune unused containers, networks, dangling images, and build cache."}}
+    ],
+    "options": [
+      {"flag":"-a, --all","description":{"zh-CN":"同时清理全部未使用镜像","en":"Also remove all unused images"}},
+      {"flag":"--volumes","description":{"zh-CN":"同时清理未使用匿名卷","en":"Also prune unused anonymous volumes"}}
+    ]
+  },
+  {
+    "id": "docker-info",
+    "family": "docker",
+    "command": "docker info",
+    "url": "https://docs.docker.com/reference/cli/docker/info/",
+    "summary": {"zh-CN":"查看 Docker 服务与运行环境信息。","en":"Inspect Docker daemon and runtime information."},
+    "usage": "docker info [OPTIONS]",
+    "examples": [
+      {"code":"docker info","description":{"zh-CN":"显示 Docker 服务端与运行环境信息。","en":"Display Docker daemon and runtime information."}}
+    ],
+    "options": []
+  },
+  {
+    "id": "docker-version",
+    "family": "docker",
+    "command": "docker version",
+    "url": "https://docs.docker.com/reference/cli/docker/version/",
+    "summary": {"zh-CN":"显示客户端与服务端版本。","en":"Display client and server versions."},
+    "usage": "docker version [OPTIONS]",
+    "examples": [
+      {"code":"docker version","description":{"zh-CN":"显示客户端和服务端版本。","en":"Display client and server versions."}}
+    ],
+    "options": []
+  },
+  {
+    "id": "docker-attach",
+    "family": "docker",
+    "command": "docker attach",
+    "url": "https://docs.docker.com/reference/cli/docker/container/attach/",
+    "summary": {"zh-CN":"连接到运行容器的标准输入和输出。","en":"Attach to a running container’s standard streams."},
+    "usage": "docker attach [OPTIONS] CONTAINER",
+    "examples": [
+      {"code":"docker attach web","description":{"zh-CN":"连接到 web 容器的标准流。","en":"Attach to the standard streams of web."}}
+    ],
+    "options": []
+  },
+  {
+    "id": "docker-commit",
+    "family": "docker",
+    "command": "docker commit",
+    "url": "https://docs.docker.com/reference/cli/docker/container/commit/",
+    "summary": {"zh-CN":"从容器的文件系统变更创建镜像。","en":"Create an image from a container’s filesystem changes."},
+    "usage": "docker commit [OPTIONS] CONTAINER [REPOSITORY[:TAG]]",
+    "examples": [
+      {"code":"docker commit web web:snapshot","description":{"zh-CN":"将 web 容器的变更保存为 web:snapshot 镜像。","en":"Save changes in web as the web:snapshot image."}}
+    ],
+    "options": []
+  },
+  {
+    "id": "docker-create",
+    "family": "docker",
+    "command": "docker create",
+    "url": "https://docs.docker.com/reference/cli/docker/container/create/",
+    "summary": {"zh-CN":"创建容器但不启动。","en":"Create a container without starting it."},
+    "usage": "docker create [OPTIONS] IMAGE [COMMAND] [ARG...]",
+    "examples": [
+      {"code":"docker create --name web nginx:alpine","description":{"zh-CN":"从 nginx:alpine 创建名为 web 的容器，不启动它。","en":"Create a container named web from nginx:alpine without starting it."}}
+    ],
+    "options": []
+  },
+  {
+    "id": "docker-diff",
+    "family": "docker",
+    "command": "docker diff",
+    "url": "https://docs.docker.com/reference/cli/docker/container/diff/",
+    "summary": {"zh-CN":"查看容器文件系统的变更。","en":"Inspect changes to a container filesystem."},
+    "usage": "docker diff CONTAINER",
+    "examples": [
+      {"code":"docker diff web","description":{"zh-CN":"列出 web 容器中新增、修改或删除的文件。","en":"List added, changed, and deleted files in web."}}
+    ],
+    "options": []
+  },
+  {
+    "id": "docker-events",
+    "family": "docker",
+    "command": "docker events",
+    "url": "https://docs.docker.com/reference/cli/docker/system/events/",
+    "summary": {"zh-CN":"实时查看 Docker 服务端事件。","en":"Stream Docker daemon events."},
+    "usage": "docker events [OPTIONS]",
+    "examples": [
+      {"code":"docker events --filter container=web","description":{"zh-CN":"持续查看与 web 容器相关的事件。","en":"Stream events associated with the web container."}}
+    ],
+    "options": []
+  },
+  {
+    "id": "docker-export",
+    "family": "docker",
+    "command": "docker export",
+    "url": "https://docs.docker.com/reference/cli/docker/container/export/",
+    "summary": {"zh-CN":"将容器文件系统导出为 TAR，不包含卷内容。","en":"Export a container filesystem as TAR, excluding volume contents."},
+    "usage": "docker export [OPTIONS] CONTAINER",
+    "examples": [
+      {"code":"docker export -o web.tar web","description":{"zh-CN":"将 web 容器的文件系统导出到 web.tar，卷内容不包含在内。","en":"Export the web filesystem to web.tar, excluding volume contents."}}
+    ],
+    "options": []
+  },
+  {
+    "id": "docker-import",
+    "family": "docker",
+    "command": "docker import",
+    "url": "https://docs.docker.com/reference/cli/docker/image/import/",
+    "summary": {"zh-CN":"从文件系统归档创建镜像。","en":"Create an image from a filesystem archive."},
+    "usage": "docker import [OPTIONS] file|URL|- [REPOSITORY[:TAG]]",
+    "examples": [
+      {"code":"docker import web.tar web:imported","description":{"zh-CN":"从 web.tar 创建 web:imported 镜像。","en":"Create the web:imported image from web.tar."}}
+    ],
+    "options": []
+  },
+  {
+    "id": "docker-kill",
+    "family": "docker",
+    "command": "docker kill",
+    "url": "https://docs.docker.com/reference/cli/docker/container/kill/",
+    "summary": {"zh-CN":"向运行中的容器发送信号。","en":"Send a signal to running containers."},
+    "usage": "docker kill [OPTIONS] CONTAINER [CONTAINER...]",
+    "examples": [
+      {"code":"docker kill --signal HUP web","description":{"zh-CN":"向 web 容器的主进程发送 HUP 信号。","en":"Send HUP to the main process of web."}}
+    ],
+    "options": []
+  },
+  {
+    "id": "docker-pause",
+    "family": "docker",
+    "command": "docker pause",
+    "url": "https://docs.docker.com/reference/cli/docker/container/pause/",
+    "summary": {"zh-CN":"暂停容器内的所有进程。","en":"Pause all processes in containers."},
+    "usage": "docker pause CONTAINER [CONTAINER...]",
+    "examples": [
+      {"code":"docker pause web","description":{"zh-CN":"暂停 web 容器内的进程。","en":"Pause processes in web."}}
+    ],
+    "options": []
+  },
+  {
+    "id": "docker-unpause",
+    "family": "docker",
+    "command": "docker unpause",
+    "url": "https://docs.docker.com/reference/cli/docker/container/unpause/",
+    "summary": {"zh-CN":"恢复暂停的容器进程。","en":"Resume paused container processes."},
+    "usage": "docker unpause CONTAINER [CONTAINER...]",
+    "examples": [
+      {"code":"docker unpause web","description":{"zh-CN":"恢复 web 容器内暂停的进程。","en":"Resume paused processes in web."}}
+    ],
+    "options": []
+  },
+  {
+    "id": "docker-port",
+    "family": "docker",
+    "command": "docker port",
+    "url": "https://docs.docker.com/reference/cli/docker/container/port/",
+    "summary": {"zh-CN":"查看容器的端口映射。","en":"List port mappings for a container."},
+    "usage": "docker port CONTAINER [PRIVATE_PORT[/PROTO]]",
+    "examples": [
+      {"code":"docker port web","description":{"zh-CN":"列出 web 容器的端口映射。","en":"List port mappings for web."}}
+    ],
+    "options": []
+  },
+  {
+    "id": "docker-rename",
+    "family": "docker",
+    "command": "docker rename",
+    "url": "https://docs.docker.com/reference/cli/docker/container/rename/",
+    "summary": {"zh-CN":"重命名容器。","en":"Rename a container."},
+    "usage": "docker rename CONTAINER NEW_NAME",
+    "examples": [
+      {"code":"docker rename web web-old","description":{"zh-CN":"将 web 容器重命名为 web-old。","en":"Rename web to web-old."}}
+    ],
+    "options": []
+  },
+  {
+    "id": "docker-top",
+    "family": "docker",
+    "command": "docker top",
+    "url": "https://docs.docker.com/reference/cli/docker/container/top/",
+    "summary": {"zh-CN":"查看容器中运行的进程。","en":"Display processes running in a container."},
+    "usage": "docker top CONTAINER [ps OPTIONS]",
+    "examples": [
+      {"code":"docker top web","description":{"zh-CN":"查看 web 容器中的进程。","en":"Show processes in web."}}
+    ],
+    "options": []
+  },
+  {
+    "id": "docker-update",
+    "family": "docker",
+    "command": "docker update",
+    "url": "https://docs.docker.com/reference/cli/docker/container/update/",
+    "summary": {"zh-CN":"更新容器的资源或重启配置。","en":"Update container resource or restart configuration."},
+    "usage": "docker update [OPTIONS] CONTAINER [CONTAINER...]",
+    "examples": [
+      {"code":"docker update --restart unless-stopped web","description":{"zh-CN":"将 web 的重启策略设为 unless-stopped。","en":"Set the restart policy of web to unless-stopped."}}
+    ],
+    "options": []
+  },
+  {
+    "id": "docker-wait",
+    "family": "docker",
+    "command": "docker wait",
+    "url": "https://docs.docker.com/reference/cli/docker/container/wait/",
+    "summary": {"zh-CN":"等待容器退出并显示退出码。","en":"Wait for containers to exit and print their exit codes."},
+    "usage": "docker wait CONTAINER [CONTAINER...]",
+    "examples": [
+      {"code":"docker wait web","description":{"zh-CN":"等待 web 退出并输出其退出码。","en":"Wait for web to exit and print its exit code."}}
+    ],
+    "options": []
+  },
+  {
+    "id": "docker-container-prune",
+    "family": "docker",
+    "command": "docker container prune",
+    "url": "https://docs.docker.com/reference/cli/docker/container/prune/",
+    "summary": {"zh-CN":"清理已停止的容器。","en":"Remove stopped containers."},
+    "usage": "docker container prune [OPTIONS]",
+    "examples": [
+      {"code":"docker container prune","description":{"zh-CN":"确认后删除所有已停止的容器。","en":"After confirmation, remove all stopped containers."}}
+    ],
+    "options": []
+  },
+  {
+    "id": "docker-image-inspect",
+    "family": "docker",
+    "command": "docker image inspect",
+    "url": "https://docs.docker.com/reference/cli/docker/image/inspect/",
+    "summary": {"zh-CN":"查看镜像元数据。","en":"Inspect image metadata."},
+    "usage": "docker image inspect [OPTIONS] IMAGE [IMAGE...]",
+    "examples": [
+      {"code":"docker image inspect nginx:alpine","description":{"zh-CN":"查看 nginx:alpine 镜像的元数据。","en":"Inspect metadata for nginx:alpine."}}
+    ],
+    "options": []
+  },
+  {
+    "id": "docker-image-history",
+    "family": "docker",
+    "command": "docker image history",
+    "url": "https://docs.docker.com/reference/cli/docker/image/history/",
+    "summary": {"zh-CN":"查看镜像层的创建历史。","en":"Show image layer history."},
+    "usage": "docker image history [OPTIONS] IMAGE",
+    "examples": [
+      {"code":"docker image history nginx:alpine","description":{"zh-CN":"查看 nginx:alpine 的镜像层历史。","en":"Show layer history for nginx:alpine."}}
+    ],
+    "options": []
+  },
+  {
+    "id": "docker-image-prune",
+    "family": "docker",
+    "command": "docker image prune",
+    "url": "https://docs.docker.com/reference/cli/docker/image/prune/",
+    "summary": {"zh-CN":"清理未使用的镜像。","en":"Remove unused images."},
+    "usage": "docker image prune [OPTIONS]",
+    "examples": [
+      {"code":"docker image prune","description":{"zh-CN":"确认后删除悬空镜像。","en":"After confirmation, remove dangling images."}}
+    ],
+    "options": []
+  },
+  {
+    "id": "docker-search",
+    "family": "docker",
+    "command": "docker search",
+    "url": "https://docs.docker.com/reference/cli/docker/search/",
+    "summary": {"zh-CN":"在 Docker Hub 搜索镜像。","en":"Search Docker Hub for images."},
+    "usage": "docker search [OPTIONS] TERM",
+    "examples": [
+      {"code":"docker search nginx","description":{"zh-CN":"在 Docker Hub 搜索 nginx 镜像。","en":"Search Docker Hub for nginx images."}}
+    ],
+    "options": []
+  },
+  {
+    "id": "docker-network-inspect",
+    "family": "docker",
+    "command": "docker network inspect",
+    "url": "https://docs.docker.com/reference/cli/docker/network/inspect/",
+    "summary": {"zh-CN":"查看网络配置与连接的容器。","en":"Inspect network configuration and connected containers."},
+    "usage": "docker network inspect [OPTIONS] NETWORK [NETWORK...]",
+    "examples": [
+      {"code":"docker network inspect app-net","description":{"zh-CN":"查看 app-net 的配置和连接信息。","en":"Inspect configuration and connections for app-net."}}
+    ],
+    "options": []
+  },
+  {
+    "id": "docker-network-disconnect",
+    "family": "docker",
+    "command": "docker network disconnect",
+    "url": "https://docs.docker.com/reference/cli/docker/network/disconnect/",
+    "summary": {"zh-CN":"断开容器与网络的连接。","en":"Disconnect a container from a network."},
+    "usage": "docker network disconnect [OPTIONS] NETWORK CONTAINER",
+    "examples": [
+      {"code":"docker network disconnect app-net web","description":{"zh-CN":"断开 web 与 app-net 的连接。","en":"Disconnect web from app-net."}}
+    ],
+    "options": []
+  },
+  {
+    "id": "docker-network-rm",
+    "family": "docker",
+    "command": "docker network rm",
+    "url": "https://docs.docker.com/reference/cli/docker/network/rm/",
+    "summary": {"zh-CN":"删除未使用的网络。","en":"Remove networks."},
+    "usage": "docker network rm NETWORK [NETWORK...]",
+    "examples": [
+      {"code":"docker network rm app-net","description":{"zh-CN":"删除 app-net 网络。","en":"Remove the app-net network."}}
+    ],
+    "options": []
+  },
+  {
+    "id": "docker-network-prune",
+    "family": "docker",
+    "command": "docker network prune",
+    "url": "https://docs.docker.com/reference/cli/docker/network/prune/",
+    "summary": {"zh-CN":"清理未使用的网络。","en":"Remove unused networks."},
+    "usage": "docker network prune [OPTIONS]",
+    "examples": [
+      {"code":"docker network prune","description":{"zh-CN":"确认后删除所有未被容器使用的网络。","en":"After confirmation, remove networks unused by containers."}}
+    ],
+    "options": []
+  },
+  {
+    "id": "docker-volume-rm",
+    "family": "docker",
+    "command": "docker volume rm",
+    "url": "https://docs.docker.com/reference/cli/docker/volume/rm/",
+    "summary": {"zh-CN":"删除未被容器使用的数据卷。","en":"Remove volumes not used by containers."},
+    "usage": "docker volume rm [OPTIONS] VOLUME [VOLUME...]",
+    "examples": [
+      {"code":"docker volume rm app-data","description":{"zh-CN":"删除未使用的 app-data 卷及其中数据。","en":"Remove the unused app-data volume and its data."}}
+    ],
+    "options": []
+  },
+  {
+    "id": "docker-volume-prune",
+    "family": "docker",
+    "command": "docker volume prune",
+    "url": "https://docs.docker.com/reference/cli/docker/volume/prune/",
+    "summary": {"zh-CN":"清理未使用的本地卷。","en":"Remove unused local volumes."},
+    "usage": "docker volume prune [OPTIONS]",
+    "examples": [
+      {"code":"docker volume prune","description":{"zh-CN":"确认后清理未使用的匿名本地卷。","en":"After confirmation, remove unused anonymous local volumes."}}
+    ],
+    "options": []
+  },
+  {
+    "id": "docker-builder-prune",
+    "family": "docker",
+    "command": "docker builder prune",
+    "url": "https://docs.docker.com/reference/cli/docker/builder/prune/",
+    "summary": {"zh-CN":"清理构建缓存。","en":"Remove build cache."},
+    "usage": "docker builder prune [OPTIONS]",
+    "examples": [
+      {"code":"docker builder prune","description":{"zh-CN":"确认后清理未使用的构建缓存。","en":"After confirmation, remove unused build cache."}}
+    ],
+    "options": []
+  },
+  {
+    "id": "docker-buildx-ls",
+    "family": "docker",
+    "command": "docker buildx ls",
+    "url": "https://docs.docker.com/reference/cli/docker/buildx/ls/",
+    "summary": {"zh-CN":"列出 Buildx 构建器。","en":"List Buildx builders."},
+    "usage": "docker buildx ls [OPTIONS]",
+    "examples": [
+      {"code":"docker buildx ls","description":{"zh-CN":"列出可用的 Buildx 构建器及节点。","en":"List available Buildx builders and nodes."}}
+    ],
+    "options": []
+  },
+  {
+    "id": "docker-buildx-build",
+    "family": "docker",
+    "command": "docker buildx build",
+    "url": "https://docs.docker.com/reference/cli/docker/buildx/build/",
+    "summary": {"zh-CN":"使用 Buildx 构建镜像。","en":"Build an image with Buildx."},
+    "usage": "docker buildx build [OPTIONS] PATH | URL | -",
+    "examples": [
+      {"code":"docker buildx build --platform linux/amd64,linux/arm64 -t example/app:1.0 --push .","description":{"zh-CN":"使用当前目录构建 AMD64 和 ARM64 镜像并推送到仓库。","en":"Build AMD64 and ARM64 images from the current directory and push them to the registry."}}
+    ],
+    "options": []
+  },
+  {
+    "id": "docker-context-ls",
+    "family": "docker",
+    "command": "docker context ls",
+    "url": "https://docs.docker.com/reference/cli/docker/context/ls/",
+    "summary": {"zh-CN":"列出 Docker 上下文。","en":"List Docker contexts."},
+    "usage": "docker context ls [OPTIONS]",
+    "examples": [
+      {"code":"docker context ls","description":{"zh-CN":"列出上下文及当前选中项。","en":"List contexts and identify the current one."}}
+    ],
+    "options": []
+  },
+  {
+    "id": "docker-context-inspect",
+    "family": "docker",
+    "command": "docker context inspect",
+    "url": "https://docs.docker.com/reference/cli/docker/context/inspect/",
+    "summary": {"zh-CN":"查看上下文配置。","en":"Inspect context configuration."},
+    "usage": "docker context inspect [OPTIONS] [CONTEXT...]",
+    "examples": [
+      {"code":"docker context inspect default","description":{"zh-CN":"查看 default 上下文的配置。","en":"Inspect the default context configuration."}}
+    ],
+    "options": []
+  },
+  {
+    "id": "docker-context-use",
+    "family": "docker",
+    "command": "docker context use",
+    "url": "https://docs.docker.com/reference/cli/docker/context/use/",
+    "summary": {"zh-CN":"切换当前 Docker 上下文。","en":"Switch the current Docker context."},
+    "usage": "docker context use CONTEXT",
+    "examples": [
+      {"code":"docker context use default","description":{"zh-CN":"将当前上下文切换为 default。","en":"Switch the current context to default."}}
+    ],
+    "options": []
+  },
+  {
+    "id": "docker-context-create",
+    "family": "docker",
+    "command": "docker context create",
+    "url": "https://docs.docker.com/reference/cli/docker/context/create/",
+    "summary": {"zh-CN":"创建 Docker 上下文。","en":"Create a Docker context."},
+    "usage": "docker context create [OPTIONS] CONTEXT",
+    "examples": [
+      {"code":"docker context create remote --docker host=ssh://user@example.com","description":{"zh-CN":"创建通过 SSH 连接远程 Docker 服务的 remote 上下文。","en":"Create a remote context that connects to Docker over SSH."}}
+    ],
+    "options": []
+  },
+  {
+    "id": "docker-context-rm",
+    "family": "docker",
+    "command": "docker context rm",
+    "url": "https://docs.docker.com/reference/cli/docker/context/rm/",
+    "summary": {"zh-CN":"删除 Docker 上下文。","en":"Remove Docker contexts."},
+    "usage": "docker context rm [OPTIONS] CONTEXT [CONTEXT...]",
+    "examples": [
+      {"code":"docker context rm remote","description":{"zh-CN":"删除 remote 上下文。","en":"Remove the remote context."}}
+    ],
+    "options": []
+  },
+  {
+    "id": "docker-system-info",
+    "family": "docker",
+    "command": "docker system info",
+    "url": "https://docs.docker.com/reference/cli/docker/system/info/",
+    "summary": {"zh-CN":"查看 Docker 服务端信息。","en":"Display Docker daemon information."},
+    "usage": "docker system info [OPTIONS]",
+    "examples": [
+      {"code":"docker system info","description":{"zh-CN":"显示 Docker 服务端的配置与资源信息。","en":"Display Docker daemon configuration and resource information."}}
+    ],
+    "options": []
+  },
+  {
+    "id": "docker-swarm-init",
+    "family": "docker",
+    "command": "docker swarm init",
+    "url": "https://docs.docker.com/reference/cli/docker/swarm/init/",
+    "summary": {"zh-CN":"初始化 Swarm 并将当前节点设为管理节点。","en":"Initialize a Swarm and make this node a manager."},
+    "usage": "docker swarm init [OPTIONS]",
+    "examples": [
+      {"code":"docker swarm init --advertise-addr 192.0.2.10","description":{"zh-CN":"使用指定的通告地址初始化 Swarm。","en":"Initialize a Swarm with the specified advertised address."}}
+    ],
+    "options": []
+  },
+  {
+    "id": "docker-swarm-join",
+    "family": "docker",
+    "command": "docker swarm join",
+    "url": "https://docs.docker.com/reference/cli/docker/swarm/join/",
+    "summary": {"zh-CN":"将节点加入 Swarm。","en":"Join a node to a Swarm."},
+    "usage": "docker swarm join [OPTIONS] HOST:PORT",
+    "examples": [
+      {"code":"docker swarm join --token SWMTKN-example 192.0.2.10:2377","description":{"zh-CN":"使用示例令牌和管理节点地址加入 Swarm；执行前替换令牌和地址。","en":"Join a Swarm using an example token and manager address; replace both before running."}}
+    ],
+    "options": []
+  },
+  {
+    "id": "docker-swarm-leave",
+    "family": "docker",
+    "command": "docker swarm leave",
+    "url": "https://docs.docker.com/reference/cli/docker/swarm/leave/",
+    "summary": {"zh-CN":"让当前节点离开 Swarm。","en":"Leave the Swarm on this node."},
+    "usage": "docker swarm leave [OPTIONS]",
+    "examples": [
+      {"code":"docker swarm leave","description":{"zh-CN":"让当前工作节点离开 Swarm。","en":"Make the current worker node leave the Swarm."}}
+    ],
+    "options": []
+  },
+  {
+    "id": "docker-node-ls",
+    "family": "docker",
+    "command": "docker node ls",
+    "url": "https://docs.docker.com/reference/cli/docker/node/ls/",
+    "summary": {"zh-CN":"列出 Swarm 节点，需在管理节点运行。","en":"List Swarm nodes on a manager."},
+    "usage": "docker node ls [OPTIONS]",
+    "examples": [
+      {"code":"docker node ls","description":{"zh-CN":"在管理节点列出 Swarm 节点。","en":"List Swarm nodes on a manager."}}
+    ],
+    "options": []
+  },
+  {
+    "id": "docker-service-ls",
+    "family": "docker",
+    "command": "docker service ls",
+    "url": "https://docs.docker.com/reference/cli/docker/service/ls/",
+    "summary": {"zh-CN":"列出 Swarm 服务。","en":"List Swarm services."},
+    "usage": "docker service ls [OPTIONS]",
+    "examples": [
+      {"code":"docker service ls","description":{"zh-CN":"在管理节点列出 Swarm 服务。","en":"List Swarm services on a manager."}}
+    ],
+    "options": []
+  },
+  {
+    "id": "docker-service-create",
+    "family": "docker",
+    "command": "docker service create",
+    "url": "https://docs.docker.com/reference/cli/docker/service/create/",
+    "summary": {"zh-CN":"创建 Swarm 服务。","en":"Create a Swarm service."},
+    "usage": "docker service create [OPTIONS] IMAGE [COMMAND] [ARG...]",
+    "examples": [
+      {"code":"docker service create --name web --replicas 2 nginx:alpine","description":{"zh-CN":"创建两个副本的 web Swarm 服务。","en":"Create a web Swarm service with two replicas."}}
+    ],
+    "options": []
+  },
+  {
+    "id": "docker-service-ps",
+    "family": "docker",
+    "command": "docker service ps",
+    "url": "https://docs.docker.com/reference/cli/docker/service/ps/",
+    "summary": {"zh-CN":"列出 Swarm 服务的任务。","en":"List tasks for a Swarm service."},
+    "usage": "docker service ps [OPTIONS] SERVICE [SERVICE...]",
+    "examples": [
+      {"code":"docker service ps web","description":{"zh-CN":"查看 web 服务的任务和状态。","en":"Show tasks and status for the web service."}}
+    ],
+    "options": []
+  },
+  {
+    "id": "docker-service-update",
+    "family": "docker",
+    "command": "docker service update",
+    "url": "https://docs.docker.com/reference/cli/docker/service/update/",
+    "summary": {"zh-CN":"更新 Swarm 服务配置。","en":"Update a Swarm service."},
+    "usage": "docker service update [OPTIONS] SERVICE",
+    "examples": [
+      {"code":"docker service update --replicas 3 web","description":{"zh-CN":"将 web 服务扩展为三个副本。","en":"Scale the web service to three replicas."}}
+    ],
+    "options": []
+  },
+  {
+    "id": "docker-service-logs",
+    "family": "docker",
+    "command": "docker service logs",
+    "url": "https://docs.docker.com/reference/cli/docker/service/logs/",
+    "summary": {"zh-CN":"查看 Swarm 服务日志。","en":"Fetch logs for a Swarm service."},
+    "usage": "docker service logs [OPTIONS] SERVICE|TASK",
+    "examples": [
+      {"code":"docker service logs --tail 100 -f web","description":{"zh-CN":"查看 web 服务最后 100 行日志并持续跟踪。","en":"Show the last 100 lines of web service logs and follow new output."}}
+    ],
+    "options": []
+  },
+  {
+    "id": "docker-service-rm",
+    "family": "docker",
+    "command": "docker service rm",
+    "url": "https://docs.docker.com/reference/cli/docker/service/rm/",
+    "summary": {"zh-CN":"删除 Swarm 服务。","en":"Remove Swarm services."},
+    "usage": "docker service rm SERVICE [SERVICE...]",
+    "examples": [
+      {"code":"docker service rm web","description":{"zh-CN":"删除 web Swarm 服务。","en":"Remove the web Swarm service."}}
+    ],
+    "options": []
+  },
+  {
+    "id": "docker-stack-deploy",
+    "family": "docker",
+    "command": "docker stack deploy",
+    "url": "https://docs.docker.com/reference/cli/docker/stack/deploy/",
+    "summary": {"zh-CN":"从 Compose 文件部署 Swarm 应用栈。","en":"Deploy a Swarm stack from a Compose file."},
+    "usage": "docker stack deploy [OPTIONS] STACK",
+    "examples": [
+      {"code":"docker stack deploy -c compose.yaml myapp","description":{"zh-CN":"使用 compose.yaml 部署名为 myapp 的 Swarm 应用栈。","en":"Deploy the myapp Swarm stack using compose.yaml."}}
+    ],
+    "options": []
+  },
+  {
+    "id": "docker-stack-ls",
+    "family": "docker",
+    "command": "docker stack ls",
+    "url": "https://docs.docker.com/reference/cli/docker/stack/ls/",
+    "summary": {"zh-CN":"列出 Swarm 应用栈。","en":"List Swarm stacks."},
+    "usage": "docker stack ls [OPTIONS]",
+    "examples": [
+      {"code":"docker stack ls","description":{"zh-CN":"列出管理节点上的应用栈。","en":"List stacks on a manager node."}}
+    ],
+    "options": []
+  },
+  {
+    "id": "docker-stack-services",
+    "family": "docker",
+    "command": "docker stack services",
+    "url": "https://docs.docker.com/reference/cli/docker/stack/services/",
+    "summary": {"zh-CN":"列出应用栈中的服务。","en":"List services in a stack."},
+    "usage": "docker stack services [OPTIONS] STACK",
+    "examples": [
+      {"code":"docker stack services myapp","description":{"zh-CN":"列出 myapp 应用栈中的服务。","en":"List services in the myapp stack."}}
+    ],
+    "options": []
+  },
+  {
+    "id": "docker-stack-rm",
+    "family": "docker",
+    "command": "docker stack rm",
+    "url": "https://docs.docker.com/reference/cli/docker/stack/rm/",
+    "summary": {"zh-CN":"删除 Swarm 应用栈。","en":"Remove Swarm stacks."},
+    "usage": "docker stack rm [OPTIONS] STACK [STACK...]",
+    "examples": [
+      {"code":"docker stack rm myapp","description":{"zh-CN":"删除 myapp 应用栈及其服务。","en":"Remove the myapp stack and its services."}}
+    ],
+    "options": []
+  },
+  {
+    "id": "docker-secret-ls",
+    "family": "docker",
+    "command": "docker secret ls",
+    "url": "https://docs.docker.com/reference/cli/docker/secret/ls/",
+    "summary": {"zh-CN":"列出 Swarm 密钥。","en":"List Swarm secrets."},
+    "usage": "docker secret ls [OPTIONS]",
+    "examples": [
+      {"code":"docker secret ls","description":{"zh-CN":"在管理节点列出 Swarm 密钥。","en":"List Swarm secrets on a manager."}}
+    ],
+    "options": []
+  },
+  {
+    "id": "docker-config-ls",
+    "family": "docker",
+    "command": "docker config ls",
+    "url": "https://docs.docker.com/reference/cli/docker/config/ls/",
+    "summary": {"zh-CN":"列出 Swarm 配置。","en":"List Swarm configs."},
+    "usage": "docker config ls [OPTIONS]",
+    "examples": [
+      {"code":"docker config ls","description":{"zh-CN":"在管理节点列出 Swarm 配置。","en":"List Swarm configs on a manager."}}
+    ],
+    "options": []
+  },
+  {
+    "id": "docker-plugin-ls",
+    "family": "docker",
+    "command": "docker plugin ls",
+    "url": "https://docs.docker.com/reference/cli/docker/plugin/ls/",
+    "summary": {"zh-CN":"列出 Docker 插件。","en":"List Docker plugins."},
+    "usage": "docker plugin ls [OPTIONS]",
+    "examples": [
+      {"code":"docker plugin ls","description":{"zh-CN":"列出已安装的 Docker 插件。","en":"List installed Docker plugins."}}
+    ],
+    "options": []
+  },
+  {
+    "id": "compose-up",
+    "family": "compose",
+    "command": "docker compose up",
+    "url": "https://docs.docker.com/reference/cli/docker/compose/up/",
+    "summary": {"zh-CN":"创建并启动项目服务，可后台运行。","en":"Create and start project services, optionally in the background."},
+    "usage": "docker compose up [OPTIONS] [SERVICE...]",
+    "examples": [
+      {"code":"docker compose up -d","description":{"zh-CN":"在后台创建并启动项目服务。","en":"Create and start project services in the background."}},
+      {"code":"docker compose up -d --build web","description":{"zh-CN":"先构建 web 的镜像，再在后台启动 web 及其依赖。","en":"Build the web image, then start web and its dependencies in the background."}}
+    ],
+    "options": [
+      {"flag":"-d, --detach","description":{"zh-CN":"在后台运行服务","en":"Run services in the background"}},
+      {"flag":"--build","description":{"zh-CN":"启动前构建镜像","en":"Build images before starting"}},
+      {"flag":"--wait","description":{"zh-CN":"等待服务运行或健康","en":"Wait for services to run or become healthy"}}
+    ]
+  },
+  {
+    "id": "compose-down",
+    "family": "compose",
+    "command": "docker compose down",
+    "url": "https://docs.docker.com/reference/cli/docker/compose/down/",
+    "summary": {"zh-CN":"停止并移除项目容器和网络。","en":"Stop and remove project containers and networks."},
+    "usage": "docker compose down [OPTIONS] [SERVICES]",
+    "examples": [
+      {"code":"docker compose down","description":{"zh-CN":"停止并删除项目容器和网络，默认保留卷。","en":"Stop and remove project containers and networks, retaining volumes by default."}}
+    ],
+    "options": [
+      {"flag":"-v, --volumes","description":{"zh-CN":"同时删除声明的命名卷与匿名卷，外部卷除外","en":"Also delete declared named and anonymous volumes, excluding external volumes"}},
+      {"flag":"--remove-orphans","description":{"zh-CN":"移除配置中已不存在的服务容器","en":"Remove containers for services absent from the configuration"}}
+    ]
+  },
+  {
+    "id": "compose-ps",
+    "family": "compose",
+    "command": "docker compose ps",
+    "url": "https://docs.docker.com/reference/cli/docker/compose/ps/",
+    "summary": {"zh-CN":"查看当前项目服务的状态和端口。","en":"Inspect service state and ports in the current project."},
+    "usage": "docker compose ps [OPTIONS] [SERVICE...]",
+    "examples": [
+      {"code":"docker compose ps -a","description":{"zh-CN":"列出项目服务容器，包括已停止的容器。","en":"List project service containers, including stopped ones."}}
+    ],
+    "options": [
+      {"flag":"-a, --all","description":{"zh-CN":"包含已停止的服务容器","en":"Include stopped service containers"}},
+      {"flag":"--format","description":{"zh-CN":"选择输出格式","en":"Choose an output format"}}
+    ]
+  },
+  {
+    "id": "compose-logs",
+    "family": "compose",
+    "command": "docker compose logs",
+    "url": "https://docs.docker.com/reference/cli/docker/compose/logs/",
+    "summary": {"zh-CN":"查看项目全部或指定服务的日志。","en":"Read logs for all or selected project services."},
+    "usage": "docker compose logs [OPTIONS] [SERVICE...]",
+    "examples": [
+      {"code":"docker compose logs -f --tail 100 web","description":{"zh-CN":"查看 web 服务最后 100 行日志并持续跟踪新日志。","en":"Show the last 100 lines of web service logs and follow new output."}}
+    ],
+    "options": [
+      {"flag":"-f, --follow","description":{"zh-CN":"跟踪日志输出","en":"Follow log output"}},
+      {"flag":"--tail","description":{"zh-CN":"显示末尾指定行数","en":"Show lines from the end"}},
+      {"flag":"-t, --timestamps","description":{"zh-CN":"显示时间戳","en":"Show timestamps"}}
+    ]
+  },
+  {
+    "id": "compose-exec",
+    "family": "compose",
+    "command": "docker compose exec",
+    "url": "https://docs.docker.com/reference/cli/docker/compose/exec/",
+    "summary": {"zh-CN":"在已运行的服务容器中执行命令。","en":"Execute a command in an existing running service container."},
+    "usage": "docker compose exec [OPTIONS] SERVICE COMMAND [ARGS...]",
+    "examples": [
+      {"code":"docker compose exec web sh","description":{"zh-CN":"在运行中的 web 服务容器内打开 sh。","en":"Open sh in the running web service container."}},
+      {"code":"docker compose exec -T db pg_dump -U postgres app","description":{"zh-CN":"禁用伪终端，在 db 服务容器中以 postgres 用户导出 app 数据库到标准输出。","en":"Disable the TTY and dump the app database to standard output from db as postgres."}}
+    ],
+    "options": [
+      {"flag":"-T, --no-TTY","description":{"zh-CN":"禁用默认分配的伪终端","en":"Disable the default pseudo-terminal"}},
+      {"flag":"-u, --user","description":{"zh-CN":"指定执行用户","en":"Choose an execution user"}}
+    ]
+  },
+  {
+    "id": "compose-run",
+    "family": "compose",
+    "command": "docker compose run",
+    "url": "https://docs.docker.com/reference/cli/docker/compose/run/",
+    "summary": {"zh-CN":"创建一次性服务容器执行任务，默认不映射服务端口。","en":"Create a one-off service container; service ports are not published by default."},
+    "usage": "docker compose run [OPTIONS] SERVICE [COMMAND] [ARGS...]",
+    "examples": [
+      {"code":"docker compose run --rm web npm test","description":{"zh-CN":"创建一次性 web 容器运行 npm test，退出后删除该容器。","en":"Run npm test in a one-off web container and remove it on exit."}}
+    ],
+    "options": [
+      {"flag":"--rm","description":{"zh-CN":"任务退出后删除容器","en":"Remove the container after exit"}},
+      {"flag":"--service-ports","description":{"zh-CN":"映射服务声明的端口","en":"Publish the configured service ports"}},
+      {"flag":"--no-deps","description":{"zh-CN":"不启动依赖服务","en":"Do not start dependency services"}}
+    ]
+  },
+  {
+    "id": "compose-build",
+    "family": "compose",
+    "command": "docker compose build",
+    "url": "https://docs.docker.com/reference/cli/docker/compose/build/",
+    "summary": {"zh-CN":"构建或重新构建项目服务镜像。","en":"Build or rebuild project service images."},
+    "usage": "docker compose build [OPTIONS] [SERVICE...]",
+    "examples": [
+      {"code":"docker compose build","description":{"zh-CN":"构建项目服务镜像。","en":"Build the project service images."}},
+      {"code":"docker compose build --no-cache web","description":{"zh-CN":"不使用构建缓存重新构建 web 镜像。","en":"Rebuild the web image without the build cache."}}
+    ],
+    "options": [
+      {"flag":"--no-cache","description":{"zh-CN":"禁用构建缓存","en":"Disable the build cache"}},
+      {"flag":"--pull","description":{"zh-CN":"尝试拉取更新的基础镜像","en":"Try pulling updated base images"}}
+    ]
+  },
+  {
+    "id": "compose-pull",
+    "family": "compose",
+    "command": "docker compose pull",
+    "url": "https://docs.docker.com/reference/cli/docker/compose/pull/",
+    "summary": {"zh-CN":"拉取项目服务依赖的镜像。","en":"Pull images required by project services."},
+    "usage": "docker compose pull [OPTIONS] [SERVICE...]",
+    "examples": [
+      {"code":"docker compose pull","description":{"zh-CN":"拉取项目服务所需镜像。","en":"Pull images for project services."}},
+      {"code":"docker compose pull web","description":{"zh-CN":"拉取 web 服务的镜像。","en":"Pull the web service image."}}
+    ],
+    "options": [
+      {"flag":"--ignore-buildable","description":{"zh-CN":"跳过可构建的服务","en":"Skip services that can be built"}}
+    ]
+  },
+  {
+    "id": "compose-push",
+    "family": "compose",
+    "command": "docker compose push",
+    "url": "https://docs.docker.com/reference/cli/docker/compose/push/",
+    "summary": {"zh-CN":"推送项目服务镜像至对应仓库。","en":"Push project service images to their registries."},
+    "usage": "docker compose push [OPTIONS] [SERVICE...]",
+    "examples": [
+      {"code":"docker compose push web","description":{"zh-CN":"将 web 服务镜像推送到其配置的仓库。","en":"Push the web service image to its configured registry."}}
+    ],
+    "options": [
+      {"flag":"--include-deps","description":{"zh-CN":"同时推送依赖服务镜像","en":"Include images for dependency services"}}
+    ]
+  },
+  {
+    "id": "compose-config",
+    "family": "compose",
+    "command": "docker compose config",
+    "url": "https://docs.docker.com/reference/cli/docker/compose/config/",
+    "summary": {"zh-CN":"合并配置、展开变量并校验 Compose 文件。","en":"Merge configuration, resolve variables, and validate Compose files."},
+    "usage": "docker compose config [OPTIONS] [SERVICE...]",
+    "examples": [
+      {"code":"docker compose config","description":{"zh-CN":"合并并输出解析后的 Compose 配置。","en":"Merge and print the resolved Compose configuration."}},
+      {"code":"docker compose -f compose.yaml -f compose.prod.yaml config","description":{"zh-CN":"按顺序合并基础与生产配置并输出结果。","en":"Merge the base and production configurations in order and print the result."}},
+      {"code":"docker compose config --images","description":{"zh-CN":"列出解析后服务使用的镜像。","en":"List images used by the resolved services."}}
+    ],
+    "options": [
+      {"flag":"-q, --quiet","description":{"zh-CN":"只校验，不输出配置","en":"Validate without printing configuration"}},
+      {"flag":"--images","description":{"zh-CN":"只列出服务镜像","en":"Only list service images"}},
+      {"flag":"--no-interpolate","description":{"zh-CN":"不展开环境变量","en":"Do not resolve environment variables"}}
+    ]
+  },
+  {
+    "id": "compose-start",
+    "family": "compose",
+    "command": "docker compose start",
+    "url": "https://docs.docker.com/reference/cli/docker/compose/start/",
+    "summary": {"zh-CN":"启动已有的服务容器，不创建新容器。","en":"Start existing service containers without creating new ones."},
+    "usage": "docker compose start [OPTIONS] [SERVICE...]",
+    "examples": [
+      {"code":"docker compose start web","description":{"zh-CN":"启动已有的 web 服务容器。","en":"Start existing web service containers."}}
+    ],
+    "options": []
+  },
+  {
+    "id": "compose-stop",
+    "family": "compose",
+    "command": "docker compose stop",
+    "url": "https://docs.docker.com/reference/cli/docker/compose/stop/",
+    "summary": {"zh-CN":"停止服务但保留容器和网络。","en":"Stop services while retaining containers and networks."},
+    "usage": "docker compose stop [OPTIONS] [SERVICE...]",
+    "examples": [
+      {"code":"docker compose stop web","description":{"zh-CN":"停止 web 服务容器并保留它。","en":"Stop and retain web service containers."}}
+    ],
+    "options": [
+      {"flag":"-t, --timeout","description":{"zh-CN":"设置停止超时秒数","en":"Set the stop timeout in seconds"}}
+    ]
+  },
+  {
+    "id": "compose-restart",
+    "family": "compose",
+    "command": "docker compose restart",
+    "url": "https://docs.docker.com/reference/cli/docker/compose/restart/",
+    "summary": {"zh-CN":"重启服务容器；配置变化请通过 up 应用。","en":"Restart service containers; apply configuration changes with up."},
+    "usage": "docker compose restart [OPTIONS] [SERVICE...]",
+    "examples": [
+      {"code":"docker compose restart web","description":{"zh-CN":"重启 web 服务容器。","en":"Restart web service containers."}}
+    ],
+    "options": [
+      {"flag":"--no-deps","description":{"zh-CN":"不重启依赖服务","en":"Do not restart dependencies"}}
+    ]
+  },
+  {
+    "id": "compose-rm",
+    "family": "compose",
+    "command": "docker compose rm",
+    "url": "https://docs.docker.com/reference/cli/docker/compose/rm/",
+    "summary": {"zh-CN":"移除已停止的服务容器。","en":"Remove stopped service containers."},
+    "usage": "docker compose rm [OPTIONS] [SERVICE...]",
+    "examples": [
+      {"code":"docker compose rm web","description":{"zh-CN":"移除已停止的 web 服务容器。","en":"Remove stopped web service containers."}}
+    ],
+    "options": [
+      {"flag":"-s, --stop","description":{"zh-CN":"移除前先停止容器","en":"Stop containers before removal"}},
+      {"flag":"-v, --volumes","description":{"zh-CN":"同时移除关联匿名卷","en":"Also remove associated anonymous volumes"}}
+    ]
+  },
+  {
+    "id": "compose-top",
+    "family": "compose",
+    "command": "docker compose top",
+    "url": "https://docs.docker.com/reference/cli/docker/compose/top/",
+    "summary": {"zh-CN":"查看各服务容器中的进程。","en":"List processes running inside service containers."},
+    "usage": "docker compose top [SERVICE...]",
+    "examples": [
+      {"code":"docker compose top","description":{"zh-CN":"列出项目各服务容器中的进程。","en":"List processes in the project’s service containers."}}
+    ],
+    "options": []
+  },
+  {
+    "id": "compose-ls",
+    "family": "compose",
+    "command": "docker compose ls",
+    "url": "https://docs.docker.com/reference/cli/docker/compose/ls/",
+    "summary": {"zh-CN":"列出 Compose 项目。","en":"List Compose projects."},
+    "usage": "docker compose ls [OPTIONS]",
+    "examples": [
+      {"code":"docker compose ls -a","description":{"zh-CN":"列出 Compose 项目，包括已停止的项目。","en":"List Compose projects, including stopped projects."}}
+    ],
+    "options": [
+      {"flag":"-a, --all","description":{"zh-CN":"包含已停止的项目","en":"Include stopped projects"}}
+    ]
+  },
+  {
+    "id": "compose-cp",
+    "family": "compose",
+    "command": "docker compose cp",
+    "url": "https://docs.docker.com/reference/cli/docker/compose/cp/",
+    "summary": {"zh-CN":"在本机与服务容器之间复制文件。","en":"Copy files between the host and a service container."},
+    "usage": "docker compose cp [OPTIONS] SERVICE:SRC_PATH DEST_PATH",
+    "examples": [
+      {"code":"docker compose cp web:/etc/nginx/nginx.conf ./nginx.conf","description":{"zh-CN":"将 web 服务容器中的 Nginx 配置复制到当前目录。","en":"Copy the Nginx configuration from the web service container to the current directory."}}
+    ],
+    "options": []
+  },
+  {
+    "id": "compose-images",
+    "family": "compose",
+    "command": "docker compose images",
+    "url": "https://docs.docker.com/reference/cli/docker/compose/images/",
+    "summary": {"zh-CN":"列出项目服务所用镜像。","en":"List images used by project services."},
+    "usage": "docker compose images [OPTIONS] [SERVICE...]",
+    "examples": [
+      {"code":"docker compose images","description":{"zh-CN":"列出项目服务容器使用的镜像。","en":"List images used by project service containers."}}
+    ],
+    "options": []
+  },
+  {
+    "id": "compose-stats",
+    "family": "compose",
+    "command": "docker compose stats",
+    "url": "https://docs.docker.com/reference/cli/docker/compose/stats/",
+    "summary": {"zh-CN":"查看服务容器的实时资源用量。","en":"View live resource usage for service containers."},
+    "usage": "docker compose stats [OPTIONS] [SERVICE]",
+    "examples": [
+      {"code":"docker compose stats --no-stream","description":{"zh-CN":"输出项目服务容器的一次资源用量快照。","en":"Print one resource usage snapshot for project service containers."}}
+    ],
+    "options": [
+      {"flag":"--no-stream","description":{"zh-CN":"显示一次快照","en":"Display a single snapshot"}}
+    ]
+  }
+]

@@ -2,7 +2,7 @@ import { config } from '../config.js';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { readFile, access } from 'node:fs/promises';
+import { readFile, access, readdir } from 'node:fs/promises';
 
 const root = new URL('../', import.meta.url);
 
@@ -32,7 +32,7 @@ test('versioned resources use the intended cache rules', async () => {
   const html = await readFile(new URL('dist/index.html', root), 'utf8');
   const version = html.match(/\/assets\/([A-Za-z0-9_-]+)\/app\.bundle\.js/)?.[1];
   assert.match(version || '', /^[a-z]{8}$/);
-  for (const name of ['download-images.sh', 'download-docker.sh', 'docker-icon.svg', 'github-icon.svg', 'app.css', 'image-export-worker.js', 'converter-licenses.txt']) {
+  for (const name of ['download-images.sh', 'download-docker.sh', 'docker-icon.svg', 'github-icon.svg', 'app.css', 'image-export-worker.js', 'command-manual.json']) {
     assert.ok((await readFile(new URL(`dist/assets/${version}/${name}`, root))).length > 0, name);
   }
   for (const name of ['download-images.sh', 'download-docker.sh']) {
@@ -53,9 +53,28 @@ test('page loads ESM chunks lazily while download worker remains standalone', as
   assert.match(html, /<script type="module" src="\/assets\/[^/]+\/app\.bundle\.js"><\/script>/);
   const appPath = html.match(/src="(\/assets\/[^/]+\/app\.bundle\.js)"/)?.[1];
   const app = await readFile(new URL(`dist${appPath}`, root), 'utf8');
+  assert.doesNotMatch(app, /docker logs --tail 100 -f web/, 'manual entries must not be bundled in the app');
+  assert.match(app, /command-manual\.json/);
   const imports = [...app.matchAll(/import\("(\.\/chunks\/[^"]+)"\)/g)].map(match => match[1]);
-  assert.ok(imports.some(path => path.includes('converter-')), 'converter must remain a lazy chunk');
-  for (const path of imports) await access(new URL(path, new URL(`dist${appPath}`, root)));
+  assert.ok(imports.includes('./chunks/converter.js'), 'converter must remain a lazy chunk without a filename hash');
+  const appUrl = new URL(`dist${appPath}`, root);
+  const chunks = await readdir(new URL('./chunks/', appUrl));
+  assert.ok(chunks.includes('converter.js'));
+  for (const name of chunks) assert.doesNotMatch(name, /-[A-Z0-9]{8}\.js$/, `unexpected filename hash: ${name}`);
+  // Follow both static and dynamic relative imports, including imports inside chunks.
+  const visited = new Set();
+  const checkImports = async url => {
+    if (visited.has(url.href)) return;
+    visited.add(url.href);
+    const source = await readFile(url, 'utf8');
+    for (const [, path] of source.matchAll(/(?:from|import)\s*(?:\(\s*)?["'](\.[^"']+)["']/g)) {
+      const dependency = new URL(path, url);
+      assert.ok(dependency.href.startsWith(new URL('./', appUrl).href), `import leaves release directory: ${path}`);
+      await checkImports(dependency);
+    }
+  };
+  await checkImports(appUrl);
+  assert.ok(visited.has(new URL('./chunks/converter.js', appUrl).href));
   const workerPath = html.match(/name="image-export-worker" content="([^"]+)"/)?.[1];
   const worker = await readFile(new URL(`dist${workerPath}`, root), 'utf8');
   assert.doesNotMatch(worker, /\bimport\s*[{"']/);
