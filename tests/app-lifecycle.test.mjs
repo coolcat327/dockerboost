@@ -115,9 +115,14 @@ for (const failLanguage of [false, true]) {
     assert.equal(status.className, 'feature-error-status');
     assert.equal(status.getAttribute('role'), 'status');
     assert.match(status.children[0].textContent, /初始化失败/);
+    const [message, retry] = status.children;
+    retry.focus();
     e.english.emit('click');
     assert.match(status.children[0].textContent, /Could not initialize/);
     assert.equal(status.children[1].textContent, 'Refresh page');
+    assert.equal(status.children[0], message);
+    assert.equal(status.children[1], retry, 'language changes preserve the error controls');
+    assert.equal(retry.focused, true);
     e.tabs.get('install').emit('click');
     e.tabs.get('setup').emit('click');
     assert.equal(e.initCalls.filter(id => id === 'setup').length, 1);

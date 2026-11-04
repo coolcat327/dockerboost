@@ -32,11 +32,7 @@ export const initHeroIntro = () => {
   const onResize = () => { if (window.innerWidth !== viewportWidth) finish(); };
   const onVisibility = () => {
     if (document.hidden) { release(); if (overlay) finish(); }
-    else if (!overlay) {
-      clearTimeout(timer);
-      timer = setTimeout(finish, 1500);
-      if (art.complete) start();
-    }
+    else if (art.complete) start();
   };
   const start = () => {
     if (finished || overlay || preparing) return;
@@ -90,13 +86,14 @@ export const initHeroIntro = () => {
   window.addEventListener('resize', onResize, { passive: true });
   document.addEventListener('visibilitychange', onVisibility);
   reduced.addEventListener('change', finish);
-  // Hidden pages can load tools immediately; their intro still waits for visibility.
-  if (document.hidden) release();
-  else timer = setTimeout(finish, 1500);
-  if (art.complete) start();
-  else {
+  // Bound tool startup, not image readiness: a cold download/decode may take
+  // longer, but should still play unless an interaction or failure cancels it.
+  if (!document.hidden) timer = setTimeout(release, 1500);
+  if (!art.complete) {
     art.addEventListener('load', start, { once: true });
     art.addEventListener('error', finish, { once: true });
   }
+  // Hidden pages release tools immediately and start the intro when visible.
+  onVisibility();
   return ready;
 };

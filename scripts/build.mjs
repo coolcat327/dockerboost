@@ -73,10 +73,14 @@ const result = await build({
   chunkNames: 'chunks/[name]-[hash]',
 });
 
+const outputFor = (entryPoint) => {
+  const output = Object.entries(result.metafile.outputs).find(([, metadata]) => metadata.entryPoint === entryPoint)?.[0];
+  if (!output) throw new Error(`No build output found for ${entryPoint}`);
+  return `/${output.replace(/^dist\//, '')}`;
+};
+
 // Build the intro separately so even bundler runtime helpers cannot become
 // blocking requests before its first frame. Source code still imports app.js.
-const toolsOutput = Object.entries(result.metafile.outputs).find(([, metadata]) => metadata.entryPoint === 'src/client/app.js')?.[0];
-if (!toolsOutput) throw new Error('Missing tool stage output');
 const bootstrapResult = await build({
   ...buildOptions,
   entryPoints: { 'app.bundle': 'src/client/bootstrap.js' },
@@ -84,7 +88,7 @@ const bootstrapResult = await build({
   plugins: [{
     name: 'tool-stage-url',
     setup(builder) {
-      builder.onResolve({ filter: /^\.\/app\.js$/ }, () => ({ path: `./${basename(toolsOutput)}`, external: true }));
+      builder.onResolve({ filter: /^\.\/app\.js$/ }, () => ({ path: `./${basename(outputFor('src/client/app.js'))}`, external: true }));
     },
   }],
 });
@@ -115,12 +119,6 @@ const workerResult = await build({
   format: 'iife',
 });
 Object.assign(result.metafile.outputs, workerResult.metafile.outputs);
-
-const outputFor = (entryPoint) => {
-  const output = Object.entries(result.metafile.outputs).find(([, metadata]) => metadata.entryPoint === entryPoint)?.[0];
-  if (!output) throw new Error(`No build output found for ${entryPoint}`);
-  return `/${output.replace(/^dist\//, '')}`;
-};
 
 const iconPath = `/assets/${version}/docker-icon.svg`;
 const githubIconPath = `/assets/${version}/github-icon.svg`;

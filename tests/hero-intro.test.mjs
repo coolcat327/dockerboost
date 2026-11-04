@@ -129,7 +129,7 @@ test('a failed decode releases tools without covering the page', async (t) => {
   assert.equal(e.classes.size, 0);
 });
 
-test('slow images time out without delaying tools indefinitely', async (t) => {
+test('slow cold images release tools at the deadline and still play once loaded', async (t) => {
   const e = environment(t);
   e.art.complete = false;
   t.mock.timers.enable({ apis: ['setTimeout'] });
@@ -138,6 +138,53 @@ test('slow images time out without delaying tools indefinitely', async (t) => {
   t.mock.timers.tick(1499); await Promise.resolve();
   assert.equal(ready, false);
   t.mock.timers.tick(1); await startup;
+  assert.equal(e.overlays.length, 0);
+  e.art.naturalWidth = 560;
+  e.art.emit('load');
+  assert.equal(e.overlays.length, 1);
+  assert.equal(e.classes.has('hero-intro-active'), true);
+  e.window.emit('pagehide');
+});
+
+test('slow decoding can finish after tools are released', async (t) => {
+  const e = environment(t);
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  let decoded;
+  e.art.decode = () => new Promise(resolve => { decoded = resolve; });
+  const startup = initHeroIntro();
+  t.mock.timers.tick(1500); await startup;
+  assert.equal(e.overlays.length, 0);
+  decoded(); await Promise.resolve();
+  assert.equal(e.overlays.length, 1);
+  e.window.emit('pagehide');
+});
+
+for (const event of ['pointerdown', 'scroll', 'pagehide']) {
+  test(`${event} after the readiness deadline prevents a late cold intro`, async (t) => {
+    const e = environment(t);
+    e.art.complete = false;
+    t.mock.timers.enable({ apis: ['setTimeout'] });
+    const startup = initHeroIntro();
+    t.mock.timers.tick(1500); await startup;
+    e.window.emit(event);
+    e.art.emit('load');
+    assert.equal(e.overlays.length, 0);
+  });
+}
+
+test('a slow cold image still waits for page visibility after releasing tools', async (t) => {
+  const e = environment(t);
+  e.art.complete = false;
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  const startup = initHeroIntro();
+  t.mock.timers.tick(1500); await startup;
+  e.document.hidden = true;
+  e.document.emit('visibilitychange');
+  e.art.complete = true;
   e.art.emit('load');
   assert.equal(e.overlays.length, 0);
+  e.document.hidden = false;
+  e.document.emit('visibilitychange');
+  assert.equal(e.overlays.length, 1);
+  e.window.emit('pagehide');
 });

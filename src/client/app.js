@@ -24,14 +24,9 @@ const registrations = features.map((feature) => {
     selectionGroups.set(feature.selectionGroup, store);
   }
   const selectionStore = selectionGroups.get(feature.selectionGroup);
-  return { feature, tab, panel, instance: undefined, selectionStore, status: undefined };
+  return { feature, tab, panel, instance: undefined, selectionStore };
 });
 language.bind(registrations);
-document.querySelectorAll('.language').forEach(button => button.addEventListener('click', () => {
-  registrations.forEach(registration => {
-    if (registration.status) renderInitError(registration);
-  });
-}));
 
 const tabs = document.querySelector('.tool-tabs');
 const indicator = document.createElement('span');
@@ -50,27 +45,27 @@ const positionIndicator = () => {
   indicator.style.setProperty('--tab-width', `${Math.max(0, tab.offsetWidth - 24)}px`);
   tabs.classList.add('has-indicator');
 };
-const renderInitError = (registration) => {
-  const { panel } = registration;
-  const status = registration.status ||= document.createElement('div');
+const createInitError = (panel) => {
+  const status = document.createElement('div');
   status.className = 'feature-error-status';
   status.setAttribute('role', 'status');
-  status.replaceChildren();
-  const english = document.documentElement.lang === 'en';
   const message = document.createElement('p');
-  message.textContent = english ? 'Could not initialize this tool. Refresh the page to try again.' : '功能初始化失败，请刷新页面后重试。';
-  status.append(message);
   const retry = document.createElement('button');
   retry.type = 'button';
   retry.className = 'button-secondary';
-  retry.textContent = english ? 'Refresh page' : '刷新页面';
   retry.addEventListener('click', () => window.location.reload());
-  status.append(retry);
-  if (!status.isConnected) panel.prepend(status);
+  status.append(message, retry);
+  panel.prepend(status);
+  const setLanguage = () => {
+    const english = document.documentElement.lang === 'en';
+    message.textContent = english ? 'Could not initialize this tool. Refresh the page to try again.' : '功能初始化失败，请刷新页面后重试。';
+    retry.textContent = english ? 'Refresh page' : '刷新页面';
+  };
+  setLanguage();
+  return { setLanguage };
 };
 const activate = (registration) => {
   const { feature, panel } = registration;
-  if (registration.status) return;
   if (registration.instance) { registration.instance.onActivate?.(); return; }
   try {
     registration.instance = feature.init({ panel, locale: language.locale, messages: () => language.messages(feature), flash, selectionStore: registration.selectionStore, sharedBatchHash });
@@ -79,9 +74,8 @@ const activate = (registration) => {
     registration.instance?.onActivate?.();
   } catch (error) {
     console.error(`Failed to initialize feature ${feature.id}`, error);
-    registration.instance = undefined;
     panel.classList.add('feature-failed');
-    renderInitError(registration);
+    registration.instance = createInitError(panel);
   }
 };
 const selectTab = (id) => {
