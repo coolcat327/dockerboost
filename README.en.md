@@ -20,6 +20,8 @@ DockerBoost is a lightweight Docker toolkit for Cloudflare Workers and EdgeOne P
 | Configure registry mirrors | Generate configuration, backup, and recovery commands |
 | Pull images | Enter an image name, paste a `docker pull` command, or import Compose / image lists to generate pull and tagging commands for a selected architecture |
 | Download images | Export individual TAR archives in the browser or copy terminal download commands; batch mode supports per-image selection, cancellation, retry, and removal, with up to 5 concurrent image downloads by default |
+| Convert commands | Convert between `docker run` and Compose locally in the browser, with notices for options and orchestration that need manual handling |
+| Search the manual | Search common Docker and Docker Compose commands, options, and examples, with links to the full official reference |
 | Share selections | Share one image selection or a complete download queue; recipients automatically resolve queued images without starting downloads |
 
 Pull and Download share single-image selections. Choose an image source automatically or manually; batch queues select sources automatically and allow bulk or per-image architecture choices. Expand Compose variables and multiple files with `docker compose config` first; `build` is not executed.
@@ -59,7 +61,7 @@ See [Local development and tools](docs/development.md) for prerequisites, debugg
 
 | Location | Purpose |
 | --- | --- |
-| `src/client/` | Vanilla JavaScript page, four feature tabs, shared capabilities, and styles |
+| `src/client/` | Vanilla JavaScript page, six feature tabs, shared capabilities, and styles |
 | `src/api/` | Hono APIs, streaming Registry proxy, and platform adapters |
 | `edge-functions/` | Thin EdgeOne file route entries |
 | `public/`, `scripts/` | Static resources, build tooling, and architecture checks |

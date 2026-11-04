@@ -4,6 +4,7 @@
 
 | 已完成计划 | 范围 |
 | --- | --- |
+| [转换与命令手册](plans/command-tools.md) | 本地双向转换、Docker / Compose 命令查询与移动端适配 |
 | [固定脚本与参数统一](plans/fixed-parameter-scripts.md) | 镜像及离线安装包终端下载改为静态脚本加参数 |
 | [统一下载信息与进度](plans/unified-download-progress.md) | 下载展示、真实进度与状态重置 |
 | [工具区视觉与响应式控件](plans/responsive-controls.md) | 按钮层级、表单容器查询与交互反馈 |

@@ -38,6 +38,11 @@ tabs.append(indicator);
 const positionIndicator = () => {
   const tab = registrations.find(({ tab }) => tab.classList.contains('active'))?.tab;
   if (!tab) return;
+  // Keep the selected tab visible after resizing or changing language.
+  if (tab.offsetLeft < tabs.scrollLeft) tabs.scrollLeft = tab.offsetLeft;
+  else if (tab.offsetLeft + tab.offsetWidth > tabs.scrollLeft + tabs.clientWidth) {
+    tabs.scrollLeft = tab.offsetLeft + tab.offsetWidth - tabs.clientWidth + 4;
+  }
   indicator.style.setProperty('--tab-x', `${tab.offsetLeft + 12}px`);
   indicator.style.setProperty('--tab-width', `${Math.max(0, tab.offsetWidth - 24)}px`);
   tabs.classList.add('has-indicator');

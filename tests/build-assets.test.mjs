@@ -32,7 +32,7 @@ test('versioned resources use the intended cache rules', async () => {
   const html = await readFile(new URL('dist/index.html', root), 'utf8');
   const version = html.match(/\/assets\/([A-Za-z0-9_-]+)\/app\.bundle\.js/)?.[1];
   assert.match(version || '', /^[a-z]{8}$/);
-  for (const name of ['download-images.sh', 'download-docker.sh', 'docker-icon.svg', 'github-icon.svg', 'app.css', 'image-export-worker.js']) {
+  for (const name of ['download-images.sh', 'download-docker.sh', 'docker-icon.svg', 'github-icon.svg', 'app.css', 'image-export-worker.js', 'converter-licenses.txt']) {
     assert.ok((await readFile(new URL(`dist/assets/${version}/${name}`, root))).length > 0, name);
   }
   for (const name of ['download-images.sh', 'download-docker.sh']) {
@@ -46,4 +46,17 @@ test('versioned resources use the intended cache rules', async () => {
     const value = edge.headers.find(rule => rule.source === path)?.headers.find(header => header.key === 'Cache-Control')?.value;
     assert.equal(value, 'public, max-age=31536000, immutable');
   }
+});
+
+test('page loads ESM chunks lazily while download worker remains standalone', async () => {
+  const html = await readFile(new URL('dist/index.html', root), 'utf8');
+  assert.match(html, /<script type="module" src="\/assets\/[^/]+\/app\.bundle\.js"><\/script>/);
+  const appPath = html.match(/src="(\/assets\/[^/]+\/app\.bundle\.js)"/)?.[1];
+  const app = await readFile(new URL(`dist${appPath}`, root), 'utf8');
+  const imports = [...app.matchAll(/import\("(\.\/chunks\/[^"]+)"\)/g)].map(match => match[1]);
+  assert.ok(imports.some(path => path.includes('converter-')), 'converter must remain a lazy chunk');
+  for (const path of imports) await access(new URL(path, new URL(`dist${appPath}`, root)));
+  const workerPath = html.match(/name="image-export-worker" content="([^"]+)"/)?.[1];
+  const worker = await readFile(new URL(`dist${workerPath}`, root), 'utf8');
+  assert.doesNotMatch(worker, /\bimport\s*[{"']/);
 });

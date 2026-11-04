@@ -6,7 +6,7 @@
 
 公共默认配置集中在根目录 `config.js`：`site.author` 为页脚作者署名，`site.links` 包含 GitHub 仓库、在线安装脚本及安装区相关资源链接，`imageSources` 为默认镜像源列表。修改后重新构建或部署生效，Wrangler 开发模式监听该文件；构建校验页面链接使用 HTTPS 并转义后注入静态 HTML，无需运行时接口。Worker 优先使用 `IMAGE_SOURCES` 覆盖默认源，格式见 [接口参考](api.md#镜像源配置)。`config.js` 内通过 JSDoc 声明配置类型，并使用 `// @ts-check` 纳入类型检查；新增配置字段时同步维护文件内的类型标注；功能机制常量保留在所属模块。
 
-页面模板位于 `src/client/index.html`，构建时注入配置和版本化资源路径并输出到 `dist/index.html`；`public/` 保留静态资源和托管配置。修改源码或静态资源，不要编辑生成的 `dist/`。CSS 由 `styles/index.css` 构建为一个文件；基础、全站滚动条、页面共用、标签专属样式依次导入。滚动条的颜色、尺寸和平台兼容统一在 `styles/scrollbars.css` 维护，规则见 [视觉规范](ui.md#滚动条)。共用表单通过工具面板的 CSS 容器查询切换一列、两列及宽屏布局；断点依据面板可用宽度而非整个视口。断点、任务表重排与验收矩阵统一遵循[响应式布局标准](ui.md#响应式布局标准)。
+页面模板位于 `src/client/index.html`，构建时注入配置和版本化资源路径并输出到 `dist/index.html`；`public/` 保留静态资源和托管配置。修改源码或静态资源，不要编辑生成的 `dist/`。页面以 ESM 加载，转换库通过动态 import 在首次转换时加载；构建分块全部位于同一版本资源目录。下载 Worker 继续单独构建为经典 Worker，不共享页面分块。CSS 由 `styles/index.css` 构建为一个文件；基础、全站滚动条、页面共用、标签专属样式依次导入。滚动条的颜色、尺寸和平台兼容统一在 `styles/scrollbars.css` 维护，规则见 [视觉规范](ui.md#滚动条)。共用表单通过工具面板的 CSS 容器查询切换一列、两列及宽屏布局；断点依据面板可用宽度而非整个视口。断点、任务表重排与验收矩阵统一遵循[响应式布局标准](ui.md#响应式布局标准)。
 
 Hero 入场由 `hero-intro.js` 管理，指针视差、工具区柔光及背景暂停由 `page-motion.js` 管理；均使用原生 JavaScript 与 CSS。具体动画参数以源码为准，视觉约束见 [视觉与交互规范](ui.md)。
 
@@ -45,3 +45,11 @@ Compose 提取 `services.*.image` 与 `platform`。不执行 build；缺少 imag
 ## 分享恢复
 
 单镜像分享通过 `/api/share` 生成片段参数，入口恢复表单后重新查询架构。队列分享通过下载功能内的 `queue-share.js` 编解码与校验，入口传入 `sharedBatchHash` 并恢复队列；格式与限制见[队列分享](downloads.md#队列分享)。两类分享复用 `share-link.js` 的复制及手动回退。命令复制沿用页面入口的 `.copy-all[data-copy]` 事件，`data-copy` 指向命令元素 ID，复用成功勾选与 toast 反馈。
+
+## 转换与命令手册
+
+`convert` 使用 Composerize 1.7.6、Decomposerize 1.4.4（MIT）及 shell-quote；仅在浏览器本地解析，不执行或上传输入，不持久化输入。支持一条 `docker run` / `docker container run`（含反斜杠续行）与包含 services 的 Compose 双向转换，输入上限 64 KiB，Compose 最多 100 个服务。输出保留命令参数边界并转义 Shell 参数；Shell 操作符、未闭合引号、缺少镜像和未展开 Compose 变量会报错。美元符号按字面值保留，Shell 环境变量不在浏览器展开；需展开时在本地处理后再粘贴。
+
+转换不会执行 build、创建网络 / 卷或实现依赖等待；不支持的选项、运行方式及复杂编排通过提示和引擎注释说明。默认生成后台运行命令。转换不保证所有字段无损往返，执行前需核对；编辑输入或切换方向立即清空过期结果和复制入口。转换库加载失败提示刷新页面后重试。
+
+`manual/catalog.js` 保存独立编写的中英文常用命令摘要、用法、参数、示例与 Docker 官方参考链接；搜索覆盖两种语言及命令 / 参数 / 示例，可按 Docker 或 Docker Compose 筛选，零结果保留提示。完整参数、最新命令与版本要求通过官方命令索引和条目链接查询。更新条目时核对对应官方 URL 与行为，不复制整份第三方教程。

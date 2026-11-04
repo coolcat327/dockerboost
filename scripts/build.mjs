@@ -53,19 +53,35 @@ const result = await build({
   absWorkingDir: root,
   entryPoints: {
     'app.bundle': 'src/client/app.js',
-    'image-export-worker': 'src/client/features/download/image-export-worker.js',
     app: 'src/client/styles/index.css',
   },
   outdir: assetDir,
   bundle: true,
   minify: true,
   define: { __DOCKERBOOST_VERSION__: JSON.stringify(version) },
-  format: 'iife',
+  format: 'esm',
+  splitting: true,
+  chunkNames: 'chunks/[name]-[hash]',
   target: 'es2020',
   entryNames: '[name]',
   metafile: true,
   logLevel: 'info',
 });
+
+// The download worker remains a standalone classic worker; only the page uses ESM chunks.
+const workerResult = await build({
+  absWorkingDir: root,
+  entryPoints: ['src/client/features/download/image-export-worker.js'],
+  outdir: assetDir,
+  bundle: true,
+  minify: true,
+  define: { __DOCKERBOOST_VERSION__: JSON.stringify(version) },
+  format: 'iife',
+  target: 'es2020',
+  metafile: true,
+  logLevel: 'info',
+});
+Object.assign(result.metafile.outputs, workerResult.metafile.outputs);
 
 const outputFor = (entryPoint) => {
   const output = Object.entries(result.metafile.outputs).find(([, metadata]) => metadata.entryPoint === entryPoint)?.[0];
@@ -95,5 +111,6 @@ const html = sourceHtml
   .replaceAll('/image-export-worker.js', outputFor('src/client/features/download/image-export-worker.js'))
   .replaceAll('/docker-icon.svg', iconPath)
   .replaceAll('/github-icon.svg', githubIconPath)
+  .replaceAll('/converter-licenses.txt', `/assets/${version}/converter-licenses.txt`)
   .replace(`src="${heroSource}"`, `src="${heroPath}"`);
 await writeFile(index, html);

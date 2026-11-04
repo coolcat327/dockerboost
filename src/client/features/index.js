@@ -3,5 +3,8 @@ import { feature as setup } from './setup/index.js';
 import { feature as pull } from './pull/index.js';
 import { feature as download } from './download/index.js';
 
+import { feature as convert } from './convert/index.js';
+import { feature as manual } from './manual/index.js';
+
 // Register a new tab here after adding its button, panel, and feature module.
-export const features = [install, setup, pull, download];
+export const features = [install, setup, pull, download, convert, manual];

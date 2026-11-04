@@ -28,8 +28,11 @@
   },
   "dependencies": {
     "@noble/hashes": "2.4.0",
+    "composerize": "1.7.6",
+    "decomposerize": "1.4.4",
     "hono": "4.13.13",
     "modern-tar": "0.8.6",
+    "shell-quote": "1.8.3",
     "yaml": "^2.9.1"
   },
   "packageManager": "pnpm@12.14.0",
