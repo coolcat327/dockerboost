@@ -54,13 +54,14 @@ test('page loads ESM chunks lazily while download worker remains standalone', as
   const appPath = html.match(/src="(\/assets\/[^/]+\/app\.bundle\.js)"/)?.[1];
   const app = await readFile(new URL(`dist${appPath}`, root), 'utf8');
   assert.doesNotMatch(app, /docker logs --tail 100 -f web/, 'manual entries must not be bundled in the app');
-  assert.match(app, /command-manual\.json/);
+  assert.doesNotMatch(app, /command-manual\.json/);
   const imports = [...app.matchAll(/import\("(\.\/chunks\/[^"]+)"\)/g)].map(match => match[1]);
-  assert.ok(imports.includes('./chunks/converter.js'), 'converter must remain a lazy chunk without a filename hash');
+  for (const feature of ['install', 'setup', 'pull', 'download', 'convert', 'manual']) {
+    assert.ok(imports.some(path => path.includes(`/${feature}-`)), `${feature} must load on demand`);
+  }
   const appUrl = new URL(`dist${appPath}`, root);
   const chunks = await readdir(new URL('./chunks/', appUrl));
-  assert.ok(chunks.includes('converter.js'));
-  for (const name of chunks) assert.doesNotMatch(name, /-[A-Z0-9]{8}\.js$/, `unexpected filename hash: ${name}`);
+  assert.ok(chunks.some(name => /^converter-.*\.js$/.test(name)));
   // Follow both static and dynamic relative imports, including imports inside chunks.
   const visited = new Set();
   const checkImports = async url => {
@@ -74,7 +75,7 @@ test('page loads ESM chunks lazily while download worker remains standalone', as
     }
   };
   await checkImports(appUrl);
-  assert.ok(visited.has(new URL('./chunks/converter.js', appUrl).href));
+  assert.ok([...visited].some(path => /\/converter-.*\.js$/.test(path)));
   const workerPath = html.match(/name="image-export-worker" content="([^"]+)"/)?.[1];
   const worker = await readFile(new URL(`dist${workerPath}`, root), 'utf8');
   assert.doesNotMatch(worker, /\bimport\s*[{"']/);

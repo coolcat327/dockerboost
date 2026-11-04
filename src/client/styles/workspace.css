@@ -157,3 +157,7 @@
 .copy-all.is-copied { --action-icon:url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%221.7%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22m5%2012%204%204L19%206%22%2F%3E%3C%2Fsvg%3E"); }
 .generate-button::before, .copy-all::before { content:'';width:18px;height:18px;flex:0 0 18px;background:currentColor;mask:var(--action-icon) center / contain no-repeat; }
 @media (forced-colors:active) { .generate-button::before, .copy-all::before { background:ButtonText; } }
+
+/* Keep controls unavailable until their feature module has initialized. */
+.tool-panel.feature-pending > :not(.feature-load-status) { display: none; }
+.feature-load-status { padding: 24px 0; color: var(--muted); }

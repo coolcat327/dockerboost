@@ -62,7 +62,7 @@ const result = await build({
   define: { __DOCKERBOOST_VERSION__: JSON.stringify(version) },
   format: 'esm',
   splitting: true,
-  chunkNames: 'chunks/[name]',
+  chunkNames: 'chunks/[name]-[hash]',
   target: 'es2020',
   entryNames: '[name]',
   metafile: true,

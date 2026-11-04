@@ -25,10 +25,14 @@ const registrations = features.map((feature) => {
     selectionGroups.set(feature.selectionGroup, store);
   }
   const selectionStore = selectionGroups.get(feature.selectionGroup);
-  const instance = feature.init({ panel, locale: language.locale, messages: () => language.messages(feature), flash, selectionStore, sharedBatchHash });
-  return { feature, tab, panel, instance };
+  return { feature, tab, panel, instance: undefined, selectionStore, loading: undefined, status: undefined };
 });
 language.bind(registrations);
+document.querySelectorAll('.language').forEach(button => button.addEventListener('click', () => {
+  registrations.forEach(registration => {
+    if (registration.status?.isConnected) renderLoadStatus(registration, !registration.panel.hasAttribute('aria-busy'));
+  });
+}));
 
 const tabs = document.querySelector('.tool-tabs');
 const indicator = document.createElement('span');
@@ -47,14 +51,58 @@ const positionIndicator = () => {
   indicator.style.setProperty('--tab-width', `${Math.max(0, tab.offsetWidth - 24)}px`);
   tabs.classList.add('has-indicator');
 };
+const renderLoadStatus = (registration, failed = false) => {
+  const { panel } = registration;
+  const status = registration.status ||= document.createElement('div');
+  status.className = 'feature-load-status';
+  status.setAttribute('role', 'status');
+  status.replaceChildren();
+  const english = document.documentElement.lang === 'en';
+  const message = document.createElement('p');
+  message.textContent = failed
+    ? (english ? 'Could not load this tool. Refresh the page to try again.' : '功能加载失败，请刷新页面后重试。')
+    : (english ? 'Loading tool…' : '正在加载功能…');
+  status.append(message);
+  if (failed) {
+    const retry = document.createElement('button');
+    retry.type = 'button';
+    retry.className = 'button-secondary';
+    retry.textContent = english ? 'Refresh page' : '刷新页面';
+    retry.addEventListener('click', () => window.location.reload());
+    status.append(retry);
+  }
+  if (!status.isConnected) panel.prepend(status);
+};
+const activate = (registration) => {
+  const { feature, panel } = registration;
+  if (registration.instance) { registration.instance.onActivate?.(); return; }
+  if (registration.loading) return;
+  panel.setAttribute('aria-busy', 'true');
+  panel.classList.add('feature-pending');
+  renderLoadStatus(registration);
+  registration.loading = feature.load().then(({ feature: loaded }) => {
+    registration.instance = loaded.init({ panel, locale: language.locale, messages: () => language.messages(feature), flash, selectionStore: registration.selectionStore, sharedBatchHash });
+    registration.instance?.setLanguage?.(language.messages(feature));
+    if (sharedState && feature.id === sharedState.tab) window.history.replaceState(window.history.state, '', '/');
+    registration.status.remove();
+    panel.classList.remove('feature-pending');
+    panel.removeAttribute('aria-busy');
+    if (panel.classList.contains('active')) registration.instance?.onActivate?.();
+  }).catch((error) => {
+    console.error(`Failed to initialize feature ${feature.id}`, error);
+    panel.removeAttribute('aria-busy');
+    renderLoadStatus(registration, true);
+  });
+};
 const selectTab = (id) => {
-  registrations.forEach(({ feature, tab, panel, instance }) => {
+  registrations.forEach((registration) => {
+    const { feature, tab, panel } = registration;
     const active = feature.id === id;
     tab.classList.toggle('active', active);
     tab.setAttribute('aria-selected', String(active));
     tab.tabIndex = active ? 0 : -1;
     panel.classList.toggle('active', active);
-    if (active) instance?.onActivate?.();
+    if (active) activate(registration);
   });
   positionIndicator();
 };
@@ -101,4 +149,3 @@ document.addEventListener('click', async (event) => {
 
 initHeroIntro();
 initPageMotion();
-if (sharedState) window.history.replaceState(window.history.state, '', '/');

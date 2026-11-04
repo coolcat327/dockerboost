@@ -5,8 +5,7 @@ import { clearDownloadCaches, createDownloadTask } from '../../common/browser-do
 import { createDownloadProgress } from '../../common/download-progress.js';
 import { Sha256 } from '../../common/sha256.js';
 import { writeArchive } from '../download/archive-format.js';
-const zh = { tab: '安装', kicker: 'DOCKER INSTALLATION', title: '在线安装与离线包', description: '选择 Linux 架构与版本，下载后复制到离线机器安装。', copy: '复制全部' };
-const en = { tab: 'Install', kicker: 'DOCKER INSTALLATION', title: 'Online & offline install', description: 'Select Linux architecture and versions, then transfer the bundle to your offline machine.', copy: 'Copy all' };
+import { messages } from './messages.js';
 
 const translations = {
   'zh-CN': {
@@ -28,7 +27,7 @@ const translations = {
 };
 
 export const feature = {
-  id: 'install', messages: { 'zh-CN': zh, en },
+  id: 'install', messages,
   init({ panel }) {
     const arch = panel.querySelector('#install-arch');
     const docker = panel.querySelector('#install-docker');
@@ -186,9 +185,9 @@ export const feature = {
     void clearDownloadCaches().catch(() => {});
     ready(); renderArch(); setStatus('chooseArch');
     return { setLanguage(message) {
-      text = translations[message === en ? 'en' : 'zh-CN'];
+      text = translations[message === messages.en ? 'en' : 'zh-CN'];
       panel.querySelectorAll('[data-install-text]').forEach(node => { node.innerHTML = text[node.dataset.installText]; });
-      progress.setLanguage(message === en ? 'en' : 'zh-CN');
+      progress.setLanguage(message === messages.en ? 'en' : 'zh-CN');
       renderArch();
       if (!selectedArch) { docker.replaceChildren(new Option(text.chooseVersion, '')); }
       renderCommand(); renderPackage(); ready();
