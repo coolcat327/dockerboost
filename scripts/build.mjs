@@ -57,6 +57,7 @@ const result = await build({
   },
   outdir: assetDir,
   bundle: true,
+  external: ['./fonts/*'],
   minify: true,
   define: { __DOCKERBOOST_VERSION__: JSON.stringify(version) },
   format: 'esm',

@@ -1,4 +1,7 @@
 /* Page foundation and chrome. */
+@font-face { font-family: Manrope; src: url('./fonts/manrope-variable.ttf') format('truetype'); font-style: normal; font-weight: 400 800; font-display: swap; }
+@font-face { font-family: 'DM Mono'; src: url('./fonts/dm-mono-regular.ttf') format('truetype'); font-style: normal; font-weight: 400; font-display: swap; }
+@font-face { font-family: 'DM Mono'; src: url('./fonts/dm-mono-medium.ttf') format('truetype'); font-style: normal; font-weight: 500; font-display: swap; }
 :root {
   color-scheme:dark;
   --bg:#090a0c; --surface:#121417; --surface-2:#191c20; --inset:#0c0e11;

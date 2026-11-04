@@ -8,6 +8,8 @@
 
 页面模板位于 `src/client/index.html`，构建时注入配置和版本化资源路径并输出到 `dist/index.html`；`public/` 保留静态资源和托管配置。修改源码或静态资源，不要编辑生成的 `dist/`。页面以 ESM 加载，转换库通过动态 import 在首次转换时加载；构建分块全部位于同一版本资源目录，文件名不带内容哈希；发布标识由目录路径区分。下载 Worker 继续单独构建为经典 Worker，不共享页面分块。CSS 由 `styles/index.css` 构建为一个文件；基础、全站滚动条、页面共用、标签专属样式依次导入。滚动条的颜色、尺寸和平台兼容统一在 `styles/scrollbars.css` 维护，规则见 [视觉规范](ui.md#滚动条)。共用表单通过工具面板的 CSS 容器查询切换一列、两列及宽屏布局；断点依据面板可用宽度而非整个视口。断点、任务表重排与验收矩阵统一遵循[响应式布局标准](ui.md#响应式布局标准)。
 
+Manrope 和 DM Mono 字体及其 OFL 许可证保存在 `public/fonts/`，通过 CSS 相对路径从同一版本资源目录加载；字体加载期间使用系统备用字体，不请求 Google Fonts。
+
 Hero 入场由 `hero-intro.js` 管理，指针视差、工具区柔光及背景暂停由 `page-motion.js` 管理；均使用原生 JavaScript 与 CSS。具体动画参数以源码为准，视觉约束见 [视觉与交互规范](ui.md)。
 
 构建只复制选中的 Hero，将 public 中非控制文件、非 HTML 资源复制到 `/assets/<发布标识>/`，并在该目录生成 JS 和 CSS；页面中的现有资源引用及下载命令使用版本路径。新增普通资源的文件和目录名不得以 `_` 开头，并需使用对应版本路径引用；HTML 和平台要求的 `_` 开头控制文件保留固定路径。发布标识与下载请求的隔离机制见 [下载任务与缓存](downloads.md#发布标识与请求隔离)。`public/_headers` 和 `edgeone.json` 为版本资源目录统一设置一年不可变缓存。首页保留 `index.html`，使用 `no-cache`，由 Cloudflare Workers Assets 提供默认首页及原生 SPA 回退，不生成重写规则。
