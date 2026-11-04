@@ -49,38 +49,70 @@ await cp(publicDir, assetDir, {
   },
 });
 
-const result = await build({
+const buildOptions = {
   absWorkingDir: root,
-  entryPoints: {
-    'app.bundle': 'src/client/app.js',
-    app: 'src/client/styles/index.css',
-  },
   outdir: assetDir,
   bundle: true,
-  external: ['./fonts/*'],
   minify: true,
   define: { __DOCKERBOOST_VERSION__: JSON.stringify(version) },
-  format: 'esm',
-  splitting: true,
-  chunkNames: 'chunks/[name]-[hash]',
   target: 'es2020',
-  entryNames: '[name]',
   metafile: true,
   logLevel: 'info',
+};
+const result = await build({
+  ...buildOptions,
+  entryPoints: {
+    tools: 'src/client/app.js',
+    app: 'src/client/styles/index.css',
+  },
+  external: ['./fonts/*'],
+  format: 'esm',
+  // Split at loading stages (intro, tools, converter), not at every tool tab.
+  // esbuild may share large dependencies such as YAML between those stages.
+  splitting: true,
+  chunkNames: 'chunks/[name]-[hash]',
 });
+
+// Build the intro separately so even bundler runtime helpers cannot become
+// blocking requests before its first frame. Source code still imports app.js.
+const toolsOutput = Object.entries(result.metafile.outputs).find(([, metadata]) => metadata.entryPoint === 'src/client/app.js')?.[0];
+if (!toolsOutput) throw new Error('Missing tool stage output');
+const bootstrapResult = await build({
+  ...buildOptions,
+  entryPoints: { 'app.bundle': 'src/client/bootstrap.js' },
+  format: 'esm',
+  plugins: [{
+    name: 'tool-stage-url',
+    setup(builder) {
+      builder.onResolve({ filter: /^\.\/app\.js$/ }, () => ({ path: `./${basename(toolsOutput)}`, external: true }));
+    },
+  }],
+});
+Object.assign(result.metafile.outputs, bootstrapResult.metafile.outputs);
+
+// Keep request counts reviewable as features and shared dependencies evolve.
+const pageScripts = Object.entries(result.metafile.outputs).filter(([path]) => path.endsWith('.js'));
+const startupScripts = new Set();
+const includeStaticImports = (path) => {
+  if (startupScripts.has(path)) return;
+  startupScripts.add(path);
+  for (const dependency of result.metafile.outputs[path].imports) {
+    if (!dependency.external && dependency.kind !== 'dynamic-import') includeStaticImports(dependency.path);
+  }
+};
+for (const [path, metadata] of pageScripts) {
+  if (['src/client/bootstrap.js', 'src/client/app.js'].includes(metadata.entryPoint)) includeStaticImports(path);
+}
+if (pageScripts.length > 5 || startupScripts.size > 4) {
+  throw new Error(`Too many browser JS files: ${pageScripts.length} total, ${startupScripts.size} at startup. Consolidate loading stages or review the request budget.`);
+}
+console.log(`Browser JS: ${pageScripts.length}/5 files, ${startupScripts.size}/4 at startup; converter loads on input. Download worker: 1 standalone file.`);
 
 // The download worker remains a standalone classic worker; only the page uses ESM chunks.
 const workerResult = await build({
-  absWorkingDir: root,
+  ...buildOptions,
   entryPoints: ['src/client/features/download/image-export-worker.js'],
-  outdir: assetDir,
-  bundle: true,
-  minify: true,
-  define: { __DOCKERBOOST_VERSION__: JSON.stringify(version) },
   format: 'iife',
-  target: 'es2020',
-  metafile: true,
-  logLevel: 'info',
 });
 Object.assign(result.metafile.outputs, workerResult.metafile.outputs);
 
@@ -108,10 +140,10 @@ const html = sourceHtml
     return escapeHtml(pageConfig[key]);
   })
   .replaceAll('/app.css', outputFor('src/client/styles/index.css'))
-  .replaceAll('/app.bundle.js', outputFor('src/client/app.js'))
+  .replaceAll('/app.bundle.js', outputFor('src/client/bootstrap.js'))
   .replaceAll('/image-export-worker.js', outputFor('src/client/features/download/image-export-worker.js'))
   .replaceAll('/docker-icon.svg', iconPath)
   .replaceAll('/github-icon.svg', githubIconPath)
   .replaceAll('/converter-licenses.txt', `/assets/${version}/converter-licenses.txt`)
-  .replace(`src="${heroSource}"`, `src="${heroPath}"`);
+  .replaceAll(`"${heroSource}"`, `"${heroPath}"`);
 await writeFile(index, html);

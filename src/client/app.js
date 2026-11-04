@@ -1,6 +1,5 @@
 import { features } from './features/index.js';
 import { initPageMotion } from './page-motion.js';
-import { initHeroIntro } from './hero-intro.js';
 import { createLanguage } from './common/language.js';
 import { createSelectionStore } from './common/selection-store.js';
 import { restoreSharedState, queueSharePrefix } from './common/share-link.js';
@@ -25,12 +24,12 @@ const registrations = features.map((feature) => {
     selectionGroups.set(feature.selectionGroup, store);
   }
   const selectionStore = selectionGroups.get(feature.selectionGroup);
-  return { feature, tab, panel, instance: undefined, selectionStore, loading: undefined, status: undefined };
+  return { feature, tab, panel, instance: undefined, selectionStore, status: undefined };
 });
 language.bind(registrations);
 document.querySelectorAll('.language').forEach(button => button.addEventListener('click', () => {
   registrations.forEach(registration => {
-    if (registration.status?.isConnected) renderLoadStatus(registration, !registration.panel.hasAttribute('aria-busy'));
+    if (registration.status) renderInitError(registration);
   });
 }));
 
@@ -51,48 +50,39 @@ const positionIndicator = () => {
   indicator.style.setProperty('--tab-width', `${Math.max(0, tab.offsetWidth - 24)}px`);
   tabs.classList.add('has-indicator');
 };
-const renderLoadStatus = (registration, failed = false) => {
+const renderInitError = (registration) => {
   const { panel } = registration;
   const status = registration.status ||= document.createElement('div');
-  status.className = 'feature-load-status';
+  status.className = 'feature-error-status';
   status.setAttribute('role', 'status');
   status.replaceChildren();
   const english = document.documentElement.lang === 'en';
   const message = document.createElement('p');
-  message.textContent = failed
-    ? (english ? 'Could not load this tool. Refresh the page to try again.' : '功能加载失败，请刷新页面后重试。')
-    : (english ? 'Loading tool…' : '正在加载功能…');
+  message.textContent = english ? 'Could not initialize this tool. Refresh the page to try again.' : '功能初始化失败，请刷新页面后重试。';
   status.append(message);
-  if (failed) {
-    const retry = document.createElement('button');
-    retry.type = 'button';
-    retry.className = 'button-secondary';
-    retry.textContent = english ? 'Refresh page' : '刷新页面';
-    retry.addEventListener('click', () => window.location.reload());
-    status.append(retry);
-  }
+  const retry = document.createElement('button');
+  retry.type = 'button';
+  retry.className = 'button-secondary';
+  retry.textContent = english ? 'Refresh page' : '刷新页面';
+  retry.addEventListener('click', () => window.location.reload());
+  status.append(retry);
   if (!status.isConnected) panel.prepend(status);
 };
 const activate = (registration) => {
   const { feature, panel } = registration;
+  if (registration.status) return;
   if (registration.instance) { registration.instance.onActivate?.(); return; }
-  if (registration.loading) return;
-  panel.setAttribute('aria-busy', 'true');
-  panel.classList.add('feature-pending');
-  renderLoadStatus(registration);
-  registration.loading = feature.load().then(({ feature: loaded }) => {
-    registration.instance = loaded.init({ panel, locale: language.locale, messages: () => language.messages(feature), flash, selectionStore: registration.selectionStore, sharedBatchHash });
+  try {
+    registration.instance = feature.init({ panel, locale: language.locale, messages: () => language.messages(feature), flash, selectionStore: registration.selectionStore, sharedBatchHash });
     registration.instance?.setLanguage?.(language.messages(feature));
     if (sharedState && feature.id === sharedState.tab) window.history.replaceState(window.history.state, '', '/');
-    registration.status.remove();
-    panel.classList.remove('feature-pending');
-    panel.removeAttribute('aria-busy');
-    if (panel.classList.contains('active')) registration.instance?.onActivate?.();
-  }).catch((error) => {
+    registration.instance?.onActivate?.();
+  } catch (error) {
     console.error(`Failed to initialize feature ${feature.id}`, error);
-    panel.removeAttribute('aria-busy');
-    renderLoadStatus(registration, true);
-  });
+    registration.instance = undefined;
+    panel.classList.add('feature-failed');
+    renderInitError(registration);
+  }
 };
 const selectTab = (id) => {
   registrations.forEach((registration) => {
@@ -147,5 +137,4 @@ document.addEventListener('click', async (event) => {
   catch { flash(document.documentElement.lang === 'en' ? 'Copy failed. Please select the command manually.' : '复制失败，请手动选择命令'); }
 });
 
-initHeroIntro();
 initPageMotion();

@@ -158,6 +158,6 @@
 .generate-button::before, .copy-all::before { content:'';width:18px;height:18px;flex:0 0 18px;background:currentColor;mask:var(--action-icon) center / contain no-repeat; }
 @media (forced-colors:active) { .generate-button::before, .copy-all::before { background:ButtonText; } }
 
-/* Keep controls unavailable until their feature module has initialized. */
-.tool-panel.feature-pending > :not(.feature-load-status) { display: none; }
-.feature-load-status { padding: 24px 0; color: var(--muted); }
+/* Hide partially initialized controls after a tool fails. */
+.tool-panel.feature-failed > :not(.feature-error-status) { display: none; }
+.feature-error-status { padding: 24px 0; color: var(--muted); }

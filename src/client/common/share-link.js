@@ -6,11 +6,11 @@ export function restoreSharedState(hash) {
   if (!readable) return null;
   const params = new URLSearchParams(readable[2]);
   const state = { tab: readable[1], image: params.get('image'), source: params.get('source'), platform: params.get('platform') };
-  if (!state || !['pull', 'download'].includes(state.tab) || typeof state.image !== 'string'
+  if (typeof state.image !== 'string'
     || !state.image.trim() || state.image.length > 512 || typeof state.source !== 'string'
     || !/^[a-z0-9][a-z0-9-]{0,63}$/.test(state.source) || typeof state.platform !== 'string'
     || state.platform.length > 128 || (state.platform && !/^[a-z0-9_.-]+\/[a-z0-9_.-]+(?:\/[a-z0-9_.-]+)?$/.test(state.platform))) return null;
-  return { tab: state.tab, image: state.image, source: state.source, platform: state.platform };
+  return state;
 }
 
 export async function copyLink(url, messages) {

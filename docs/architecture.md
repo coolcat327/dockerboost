@@ -14,6 +14,7 @@
 | 位置 | 职责 |
 | --- | --- |
 | `src/client/index.html` | 页面模板，构建时注入配置及版本化资源路径 |
+| `src/client/bootstrap.js` | 轻量启动入口，优先准备 Hero 入场首帧，再动态加载工具区入口 |
 | `src/client/app.js` | 原生 JavaScript 页面入口，管理初始化、语言与标签切换 |
 | `src/client/features/` | 页面功能：install（安装）、setup（配置）、pull（拉取）、download（下载）、convert（转换）、manual（手册） |
 | `src/client/common/` | 前端复用能力，例如镜像选择、语言、浏览器下载任务与文件写入 |
@@ -36,9 +37,9 @@
 
 ## 依赖方向
 
-- 前端：`app.js` → `features/index.js` → 各功能入口；功能模块复用 `client/common`。专属实现和样式留在功能目录，共用样式由 `styles/index.css` 按级联顺序导入。
+- 前端：`bootstrap.js` → `hero-intro.js`，入场首帧就绪或跳过后动态加载 `app.js`；`app.js` → `features/index.js` → 各功能入口使用静态依赖，合并工具界面，首次激活才初始化。转换引擎在输入时动态加载，功能模块复用 `client/common`。分包和请求预算见[前端构建规则](frontend.md#分包与加载顺序)。专属实现和样式留在功能目录，共用样式由 `styles/index.css` 按级联顺序导入。
 - 后端：平台入口 → `api/app.ts` → 各业务 `index.ts` → 本业务处理函数；业务复用 `api/common`。应用入口负责挂载、全局错误与未命中回退，业务入口只注册子路由。
-- 业务目录不互相引用，common 不依赖 routes，业务与 common 不反向依赖应用或平台入口，平台入口不互相依赖。
+- 后端业务目录不互相引用，common 不依赖 routes，业务与 common 不反向依赖应用或平台入口，平台入口不互相依赖。
 - 仅一侧复用的能力留在对应 common；确有前后端共用的纯逻辑时再建立 `src/shared/`，当前无需预建目录。
 - `edge-functions/` 只保留平台要求的文件路由重导出，不承载业务逻辑。
 
