@@ -6,6 +6,7 @@ export const feature = {
     const input = panel.querySelector('#convert-input'), output = panel.querySelector('#convert-output');
     const status = panel.querySelector('[data-convert-status]'), notices = panel.querySelector('[data-convert-notices]');
     let revision = 0, state = 'idle', errorCode = '', warnings = [];
+    const composing = new WeakSet();
     const render = () => {
       const m = messages();
       status.textContent = state === 'error' ? (m.errors[errorCode] || m.errors.fallback) : m[state];
@@ -14,8 +15,12 @@ export const feature = {
       notices.hidden = !warnings.length;
       panel.querySelectorAll('.copy-all').forEach(button => { button.textContent = m.copy; button.disabled = !panel.querySelector('#' + button.dataset.copy).value; });
     };
+    const clearResult = (source, target) => {
+      revision++; target.value = ''; warnings = []; source.removeAttribute('aria-invalid'); target.removeAttribute('aria-invalid'); panel.querySelectorAll('.copy-all').forEach(button => button.classList.remove('is-copied'));
+    };
     const update = async (source, target, direction) => {
-      const current = ++revision; target.value = ''; warnings = []; source.removeAttribute('aria-invalid'); target.removeAttribute('aria-invalid'); panel.querySelectorAll('.copy-all').forEach(button => button.classList.remove('is-copied'));
+      clearResult(source, target);
+      const current = revision;
       if (!source.value.trim()) { state = 'idle'; render(); return; }
       state = 'working'; render();
       let loaded = false;
@@ -26,8 +31,16 @@ export const feature = {
       } catch (error) { if (current !== revision) return; errorCode = loaded ? error.message : 'load'; state = 'error'; source.setAttribute('aria-invalid', 'true'); }
       render();
     };
-    input.addEventListener('input', () => update(input, output, 'run-to-compose'));
-    output.addEventListener('input', () => update(output, input, 'compose-to-run'));
+    const bind = (source, target, direction) => {
+      source.addEventListener('compositionstart', () => { composing.add(source); clearResult(source, target); state = 'idle'; render(); });
+      source.addEventListener('compositionend', () => { composing.delete(source); void update(source, target, direction); });
+      source.addEventListener('input', () => {
+        if (composing.has(source)) { clearResult(source, target); state = 'idle'; render(); }
+        else void update(source, target, direction);
+      });
+    };
+    bind(input, output, 'run-to-compose');
+    bind(output, input, 'compose-to-run');
     panel.querySelector('form').addEventListener('submit', event => event.preventDefault());
     render();
     return { setLanguage: render };

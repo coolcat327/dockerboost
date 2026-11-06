@@ -1,4 +1,5 @@
 import { messages } from './messages.js';
+import { pullCommand } from './pull-command.js';
 import { createImageSelection } from '../../common/image-selection.js';
 import { initBatchPull } from './batch.js';
 import { shareSelection } from '../../common/share-link.js';
@@ -11,19 +12,23 @@ export const feature = {
     const form = panel.querySelector('#image-form');
     const shareButton = panel.querySelector('#pull-share');
     const command = panel.querySelector('#pull-all-command');
-    let selection;
-    const resetCommand = () => { command.textContent = locale().waitingPlatforms; };
+    const copyCommand = panel.querySelector('[data-copy="pull-all-command"]');
+    let selection, commandState = 'waitingPlatforms';
+    const showStatus = state => { commandState = state; command.textContent = locale()[state]; copyCommand.disabled = true; };
+    const resetCommand = () => showStatus('waitingPlatforms');
     const buildPull = () => {
-      const { image: input, platform } = selection.current();
+      const { image: input, platform, platformUnsupported } = selection.current();
       if (!input.trim()) { resetCommand(); return; }
-      if (!platform) { command.textContent = locale().loadingPlatforms; return; }
+      if (!platform) { showStatus(platformUnsupported ? 'unsupportedPlatforms' : 'noPlatforms'); return; }
       const image = selection.resolve();
-      command.textContent = `docker pull --platform ${platform} ${image.accelerated} &&\ndocker tag ${image.accelerated} ${image.original} &&\ndocker image rm ${image.accelerated}`;
+      commandState = ''; copyCommand.disabled = false;
+      command.textContent = pullCommand(image, platform);
     };
     selection = createImageSelection({
       panel, locale, messages, flash, store: selectionStore,
+      onLoading: () => showStatus('loadingPlatforms'),
       onReady: buildPull,
-      onError: resetCommand,
+      onError: () => showStatus('failedPlatforms'),
       onReset: resetCommand
     });
     selection.init();
@@ -33,6 +38,6 @@ export const feature = {
       try { buildPull(); } catch { /* wait for a valid name */ }
     });
     const batch = initBatchPull({ panel, locale, messages, selectionStore });
-    return { setLanguage: (message) => { selection.setLanguage(); batch.setLanguage(message === feature.messages.en); } };
+    return { setLanguage: (message) => { selection.setLanguage(); if (commandState) showStatus(commandState); batch.setLanguage(message === feature.messages.en); } };
   }
 };

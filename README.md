@@ -16,8 +16,8 @@ DockerBoost 是支持 Cloudflare Workers 和 EdgeOne Pages 的轻量 Docker 工�
 
 | 功能 | 使用方式 |
 | --- | --- |
-| 安装 Docker | 生成在线安装命令，或下载包含 Docker、Compose、配置及安装/卸载脚本的离线包 |
-| 配置镜像加速 | 生成配置、备份与恢复命令 |
+| 引擎安装 | 生成在线安装命令，或下载包含 Docker、Compose、配置及安装/卸载脚本的离线包 |
+| 镜像加速 | 生成配置、备份与恢复命令 |
 | 拉取镜像 | 输入镜像名、粘贴 `docker pull` 命令，或批量导入 Compose / 镜像列表，生成指定架构的拉取与标签命令 |
 | 下载镜像 | 浏览器导出独立 TAR，或复制终端命令下载；批量模式支持逐项选择、停止、重试与移除，默认最多同时下载 5 个镜像 |
 | 转换命令 | 在浏览器本地将 `docker run` 与 Compose 双向转换，提示需要手动处理的参数及编排行为 |
@@ -63,6 +63,7 @@ pnpm run validate
 | --- | --- |
 | `src/client/` | 原生 JavaScript 页面、六个功能标签、共用能力与样式 |
 | `src/api/` | Hono API、Registry 透传与平台适配 |
+| `src/common/` | 前端与 API 共用的镜像引用解析、归档命名等纯逻辑 |
 | `edge-functions/` | EdgeOne 文件路由薄入口 |
 | `public/`、`scripts/` | 静态资源、构建及架构检查工具 |
 | `tests/` | 接口、脚本、归档及前端逻辑回归 |

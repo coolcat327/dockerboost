@@ -23,7 +23,12 @@ export function runExport(worker, payload, onProgress, { signal } = {}) {
     const finish = (callback, value) => { cleanup(); callback(value); };
     const onMessage = ({ data }) => {
       if (data?.ok === true) finish(resolve, data.result);
-      else if (data?.ok === false) finish(reject, new Error(data.error || '浏览器下载失败。'));
+      else if (data?.ok === false) {
+        const error = new Error(data.error || '浏览器下载失败。');
+        if (typeof data.code === 'string') error.code = data.code;
+        if (data.retryable === false) error.retryable = false;
+        finish(reject, error);
+      }
       else if (data?.phase) onProgress(data);
     };
     const onError = (event) => finish(reject, new Error(event.message || '浏览器下载任务启动失败。'));
@@ -34,6 +39,7 @@ export function runExport(worker, payload, onProgress, { signal } = {}) {
     worker.addEventListener('error', onError);
     worker.addEventListener('messageerror', onMessageError);
     signal?.addEventListener('abort', onAbort, { once: true });
-    worker.postMessage(payload);
+    try { worker.postMessage(payload); }
+    catch (error) { finish(reject, error); }
   });
 }

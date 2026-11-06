@@ -44,3 +44,39 @@ test('batch input accepts Compose and deduplicated image lists', () => {
   assert.deepEqual(result.issues, ['Line 5: invalid image']);
   assert.throws(() => imageList('x'.repeat(1024 * 1024 + 1)));
 });
+
+test('batch input reports incomplete image references instead of adding them', () => {
+  const list = imageList('nginx:latest\nnginx:\nowner//image\nredis@sha256:abc\nowner/../image');
+  assert.deepEqual(list.images.map(item => item.image), ['nginx:latest', 'redis@sha256:abc']);
+  assert.deepEqual(list.issues, ['Line 2: invalid image', 'Line 3: invalid image', 'Line 5: invalid image']);
+  const compose = composeImages('services:\n  good:\n    image: nginx:latest\n  bad:\n    image: "nginx:"');
+  assert.deepEqual(compose.images.map(item => item.image), ['nginx:latest']);
+  assert.deepEqual(compose.issues, ['bad: invalid image or platform']);
+});
+
+test('batch input enforces the 1 MiB limit in UTF-8 bytes', () => {
+  const multibyte = '界'.repeat(350000);
+  for (const parse of [composeImages, imageList, parseBatchImages]) {
+    assert.throws(() => parse(multibyte), /exceeds 1 MiB/);
+  }
+  assert.equal(imageList('界'.repeat(300000)).issues.length, 1);
+});
+
+
+test('malformed Compose does not turn YAML keys into candidate images', () => {
+  for (const text of [
+    'services:\n  web:\n    image: [',
+    'services: [nginx]',
+    'services: {}\ninclude: other.yml',
+    "'services': [nginx]",
+    'include: other.yml'
+  ]) assert.throws(() => parseBatchImages(text));
+  assert.deepEqual(parseBatchImages('services:latest\ninclude:stable').images.map(item => item.image), ['services:latest', 'include:stable']);
+});
+
+
+test('include-only configurations report the include limitation', () => {
+  for (const input of ['include: other.yml', 'include: []\nservices: {}', 'include: null\nservices: {}']) {
+    assert.throws(() => parseBatchImages(input), /include is not supported/);
+  }
+});

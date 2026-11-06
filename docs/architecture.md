@@ -24,6 +24,7 @@
 | `edge-functions/` | EdgeOne 的 `/api` 与 `/v2` 文件路由 |
 | `src/api/routes/` | 业务路由：install、images、download、registry、share、status；各目录 index.ts 注册子路由 |
 | `src/api/common/` | 跨业务复用能力，例如镜像源配置与选择、Registry 请求、镜像解析及 HTTP 适配 |
+| `src/common/` | 前端和 API 共同使用的纯逻辑，例如镜像引用解析与镜像归档命名 |
 | `public/` | 静态资源与托管配置 |
 | `scripts/` | 构建、发布标识和架构检查 |
 | `tests/` | 接口、安装脚本、归档及浏览器下载等回归测试 |
@@ -40,7 +41,7 @@
 - 前端：`bootstrap.js` → `hero-intro.js`，入场首帧就绪或跳过后动态加载 `app.js`；`app.js` → `features/index.js` → 各功能入口使用静态依赖，合并工具界面，首次激活才初始化。转换引擎在输入时动态加载，功能模块复用 `client/common`。分包和请求预算见[前端构建规则](frontend.md#分包与加载顺序)。专属实现和样式留在功能目录，共用样式由 `styles/index.css` 按级联顺序导入。
 - 后端：平台入口 → `api/app.ts` → 各业务 `index.ts` → 本业务处理函数；业务复用 `api/common`。应用入口负责挂载、全局错误与未命中回退，业务入口只注册子路由。
 - 后端业务目录不互相引用，common 不依赖 routes，业务与 common 不反向依赖应用或平台入口，平台入口不互相依赖。
-- 仅一侧复用的能力留在对应 common；确有前后端共用的纯逻辑时再建立 `src/shared/`，当前无需预建目录。
+- 前后端都使用的纯逻辑放在 `src/common/`，由 `src/client/` 和 `src/api/` 共同依赖。`src/common/` 不依赖前端或 API 模块。仅在一侧复用的能力留在 `src/client/common/` 或 `src/api/common/`。
 - `edge-functions/` 只保留平台要求的文件路由重导出，不承载业务逻辑。
 
 `pnpm run check:architecture` 自动检查 API 依赖边界；它不检查前端依赖，也不替代 TypeScript 和接口测试。

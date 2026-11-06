@@ -41,8 +41,12 @@ test('versioned resources use the intended cache rules', async () => {
   for (const name of ['download-images.sh', 'download-docker.sh']) {
     await assert.rejects(access(new URL(`dist/${name}`, root)));
   }
+  await assert.rejects(access(new URL('dist/fonts', root)), { code: 'ENOENT' });
+  const sourceFonts = await readdir(new URL('public/fonts/', root));
+  const publishedFonts = await readdir(new URL(`dist/assets/${version}/fonts/`, root));
+  assert.deepEqual(publishedFonts.sort(), sourceFonts.sort());
   await assert.rejects(access(new URL(`dist/assets/${version}/_headers`, root)));
-  const headers = await readFile(new URL('public/_headers', root), 'utf8');
+  const headers = await readFile(new URL('dist/_headers', root), 'utf8');
   assert.match(headers, /\/assets\/\*\n\s+Cache-Control: public, max-age=31536000, immutable/);
   const edge = JSON.parse(await readFile(new URL('edgeone.json', root), 'utf8'));
   for (const path of ['/assets/*']) {

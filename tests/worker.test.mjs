@@ -21,6 +21,51 @@ test('health, static fallback, method guards and retired archive route', async (
   assert.equal((await request('/api/missing')).headers.get('content-type'), 'application/json');
 });
 
+test('metadata APIs reject incomplete image references before contacting a registry', async t => {
+  let requests = 0;
+  t.mock.method(globalThis, 'fetch', async () => { requests++; throw new Error('unexpected request'); });
+  for (const image of [':latest', 'nginx:', 'nginx@', 'owner//image', 'owner/../image', 'owner/./image', 'nginx@sha256:abc/extra']) {
+    const response = await request(`/api/inspect?source=mirror-gcr&image=${encodeURIComponent(image)}`);
+    assert.equal(response.status, 400, image);
+  }
+  assert.equal(requests, 0);
+});
+
+test('tagged digest metadata requests use the repository without the tag', async t => {
+  const digest = `sha256:${'a'.repeat(64)}`;
+  const paths = [];
+  t.mock.method(globalThis, 'fetch', async url => {
+    paths.push(new URL(url).pathname);
+    return Response.json({ schemaVersion: 2, manifests: [] });
+  });
+  const response = await request(`/api/platforms?source=mirror-gcr&image=${encodeURIComponent(`nginx:stable@${digest}`)}`);
+  assert.equal(response.status, 200);
+  assert.deepEqual(paths, [`/v2/library/nginx/manifests/${digest}`]);
+});
+
+test('terminal plans retain qualified names and tags while resolving digest repository paths', async t => {
+  const sourceEnv = { ...env, IMAGE_SOURCES: JSON.stringify([{ id: 'ghcr', label: 'GHCR', url: 'https://ghcr.io', naming: 'native' }]) };
+  const digest = `sha256:${'a'.repeat(64)}`;
+  const config = { digest: `sha256:${'b'.repeat(64)}`, size: 3 };
+  const image = `ghcr.io/owner/image:stable@${digest}`;
+  const paths = [];
+  t.mock.method(globalThis, 'fetch', async url => {
+    const path = new URL(url).pathname; paths.push(path);
+    return path.includes('/blobs/') ? Response.json({ os: 'linux', architecture: 'amd64' }) : Response.json({ schemaVersion: 2, config, layers: [] });
+  });
+  const query = `image=${encodeURIComponent(image)}&source=ghcr`;
+  const planResponse = await worker.fetch(new Request(`https://example.com/api/download-plan?${query}`), sourceEnv);
+  assert.equal(planResponse.status, 200);
+  const plan = await planResponse.json();
+  assert.equal(plan.image, image);
+  assert.equal(plan.repository, 'owner/image');
+  assert.ok(plan.filename.startsWith('ghcr.io_owner_image_stable_sha256_'));
+  assert.ok(paths.includes(`/v2/owner/image/manifests/${digest}`));
+  const script = await worker.fetch(new Request(`https://example.com/api/download-script?${query}`), sourceEnv);
+  assert.equal(script.status, 200);
+  assert.match(await script.text(), /ghcr\.io\/owner\/image:stable/);
+});
+
 test('source list has a short cache', async () => {
   const sources = await request('/api/sources');
   assert.equal(sources.headers.get('cache-control'), 'public, max-age=300, s-maxage=3600');
@@ -72,6 +117,80 @@ test('single-platform responses include the platform without a second browser re
     '/v2/library/nginx/manifests/latest',
     `/v2/library/nginx/blobs/${config.digest}`
   ]);
+});
+
+test('platform lookup preserves a valid manifest when its optional config request fails', async t => {
+  const raw = JSON.stringify({ schemaVersion: 2, config: { digest: `sha256:${'a'.repeat(64)}`, size: 3 }, layers: [] });
+  let mode = 'network';
+  t.mock.method(globalThis, 'fetch', async url => {
+    if (String(url).includes('/manifests/')) return new Response(raw, { headers: { 'x-upstream': 'retained' } });
+    if (mode === 'network') throw new Error('connection failed');
+    return new Response('unavailable', { status: 503 });
+  });
+  for (mode of ['network', 'http']) {
+    const response = await request('/api/platforms?image=nginx:latest&source=mirror-gcr');
+    assert.equal(response.status, 200);
+    assert.equal(response.headers.get('x-upstream'), 'retained');
+    assert.equal(await response.text(), raw);
+  }
+});
+
+test('platform lookup does not return a fallback manifest when config reading is cancelled', async t => {
+  const config = { digest: `sha256:${'a'.repeat(64)}`, size: 3 };
+  let notify;
+  const started = new Promise(resolve => { notify = resolve; });
+  t.mock.method(globalThis, 'fetch', async (url, init) => {
+    if (String(url).includes('/manifests/')) return Response.json({ schemaVersion: 2, config, layers: [] });
+    return new Response(new ReadableStream({ start(controller) {
+      init.signal.addEventListener('abort', () => controller.error(new DOMException('Aborted', 'AbortError')), { once: true });
+      notify();
+    } }));
+  });
+  const controller = new AbortController();
+  const pending = worker.fetch(new Request('https://example.com/api/platforms?image=nginx&source=mirror-gcr', { signal: controller.signal }), env);
+  await started;
+  controller.abort();
+  assert.notEqual((await pending).status, 200);
+});
+
+test('download endpoints reject an unverified platform when single-manifest config lookup fails', async t => {
+  const config = { digest: `sha256:${'a'.repeat(64)}`, size: 3 };
+  let mode = 'network';
+  t.mock.method(globalThis, 'fetch', async url => {
+    if (String(url).includes('/manifests/')) return Response.json({ schemaVersion: 2, config, layers: [] });
+    if (mode === 'network') throw new Error('connection failed');
+    if (mode === 'malformed') return new Response('not json');
+    return new Response('unavailable', { status: 503 });
+  });
+  for (mode of ['network', 'malformed', 'http']) {
+    const inspect = await request('/api/inspect?image=nginx&source=mirror-gcr&platform=linux%2Farm64');
+    assert.equal((await inspect.json()).platform, 'linux/arm64');
+    for (const endpoint of ['/api/download-plan', '/api/download-script']) {
+      const response = await request(`${endpoint}?image=nginx&source=mirror-gcr&platform=linux%2Farm64`);
+      assert.equal(response.status, 502, `${mode} ${endpoint}`);
+      assert.match((await response.json()).error, /无法确认镜像架构/);
+    }
+  }
+});
+
+test('single-manifest metadata propagates cancellation while reading optional config', async t => {
+  const config = { digest: `sha256:${'a'.repeat(64)}`, size: 3 };
+  let notify;
+  t.mock.method(globalThis, 'fetch', async (url, init) => {
+    if (String(url).includes('/manifests/')) return Response.json({ schemaVersion: 2, config, layers: [] });
+    return new Response(new ReadableStream({ start(controller) {
+      init.signal.addEventListener('abort', () => controller.error(new DOMException('Aborted', 'AbortError')), { once: true });
+      notify();
+    } }));
+  });
+  for (const endpoint of ['/api/inspect', '/api/download-plan', '/api/download-script']) {
+    const started = new Promise(resolve => { notify = resolve; });
+    const controller = new AbortController();
+    const pending = worker.fetch(new Request(`https://example.com${endpoint}?image=nginx&source=mirror-gcr`, { signal: controller.signal }), env);
+    await started;
+    controller.abort();
+    assert.notEqual((await pending).status, 200, endpoint);
+  }
 });
 
 test('inspection reports the selected platform compressed image size', async (t) => {
@@ -128,7 +247,9 @@ test('download script resolves platforms without fetching layers', async (t) => 
 test('download script omits Docker Hub library namespace from archive filenames', async (t) => {
   const config = { digest: `sha256:${'a'.repeat(64)}`, size: 3 };
   const layer = { digest: `sha256:${'b'.repeat(64)}`, size: 3 };
-  t.mock.method(globalThis, 'fetch', async () => Response.json({ schemaVersion: 2, config, layers: [layer] }));
+  t.mock.method(globalThis, 'fetch', async url => String(url).includes('/blobs/')
+    ? Response.json({ os: 'linux', architecture: 'arm64', variant: 'v8' })
+    : Response.json({ schemaVersion: 2, config, layers: [layer] }));
   const response = await request('/api/download-script?image=library/postgres:18&platform=linux/arm64/v8');
   assert.equal(response.status, 200);
   assert.match(await response.text(), /postgres_18_linux_arm64_v8.tar/);
@@ -343,4 +464,192 @@ test('invalid JSON source overrides fail instead of silently using defaults', as
     assert.equal(response.status, 500);
     assert.deepEqual(await response.json(), { error: 'IMAGE_SOURCES 配置无效' });
   }
+});
+
+
+test('registry proxy propagates cancellation to automatic and selected sources', async t => {
+  const sourceEnv = { ...env, IMAGE_SOURCES: JSON.stringify([
+    { id: 'one', label: 'One', url: 'https://one.example' },
+    { id: 'two', label: 'Two', url: 'https://two.example' }
+  ]) };
+  let start;
+  let started = new Promise(resolve => { start = resolve; });
+  const signals = [];
+  t.mock.method(globalThis, 'fetch', (_url, init) => new Promise((_resolve, reject) => {
+    signals.push(init.signal); start();
+    init.signal.addEventListener('abort', () => reject(new DOMException('Aborted', 'AbortError')), { once: true });
+  }));
+  for (const suffix of ['?source=one', '?source=auto']) {
+    const controller = new AbortController();
+    const pending = worker.fetch(new Request(`https://example.com/v2/library/nginx/manifests/latest${suffix}`, { signal: controller.signal }), sourceEnv);
+    await started;
+    controller.abort();
+    await pending;
+    assert.equal(signals.at(-1).aborted, true);
+    started = new Promise(resolve => { start = resolve; });
+  }
+});
+
+test('cancelling automatic source selection aborts every concurrent upstream attempt', async t => {
+  const sourceEnv = { ...env, IMAGE_SOURCES: JSON.stringify([
+    { id: 'one', label: 'One', url: 'https://one.example' },
+    { id: 'two', label: 'Two', url: 'https://two.example' }
+  ]) };
+  const signals = [];
+  let bothStarted;
+  const ready = new Promise(resolve => { bothStarted = resolve; });
+  t.mock.method(globalThis, 'fetch', (_url, init) => new Promise((_resolve, reject) => {
+    signals.push(init.signal);
+    if (signals.length === 2) bothStarted();
+    init.signal.addEventListener('abort', () => reject(new DOMException('Aborted', 'AbortError')), { once: true });
+  }));
+  const controller = new AbortController();
+  const pending = worker.fetch(new Request('https://example.com/v2/library/nginx/manifests/latest?source=auto', { signal: controller.signal }), sourceEnv);
+  await ready;
+  controller.abort();
+  await pending;
+  assert.equal(signals.length, 2);
+  assert.ok(signals.every(signal => signal.aborted));
+});
+
+
+test('inspection counts each blob digest once and reports conflicting sizes as unknown', async t => {
+  const config = { digest: `sha256:${'a'.repeat(64)}`, size: 40 };
+  const layer = { digest: `sha256:${'b'.repeat(64)}`, size: 100 };
+  let conflict = false;
+  t.mock.method(globalThis, 'fetch', async url => {
+    if (new URL(url).pathname.includes('/blobs/')) return Response.json({ os: 'linux', architecture: 'amd64' });
+    return Response.json({ schemaVersion: 2, config, layers: [layer, { ...layer, size: conflict ? 101 : 100 }] });
+  });
+  let response = await request('/api/inspect?image=nginx:latest&source=mirror-gcr');
+  let data = await response.json();
+  assert.equal(data.layers, 2);
+  assert.equal(data.sizeBytes, 140);
+  conflict = true;
+  response = await request('/api/inspect?image=nginx:latest&source=mirror-gcr');
+  data = await response.json();
+  assert.equal(data.sizeBytes, null);
+});
+
+test('inspection reports unknown size for malformed layer descriptors', async t => {
+  const config = { digest: `sha256:${'a'.repeat(64)}`, size: 40 };
+  let layer = null;
+  t.mock.method(globalThis, 'fetch', async url => new URL(url).pathname.includes('/blobs/')
+    ? Response.json({ os: 'linux', architecture: 'amd64' })
+    : Response.json({ schemaVersion: 2, config, layers: [layer] }));
+  for (layer of [null, { digest: 123, size: 10 }]) {
+    const response = await request('/api/inspect?image=nginx:latest&source=mirror-gcr');
+    assert.equal(response.status, 200);
+    assert.equal((await response.json()).sizeBytes, null);
+  }
+});
+
+test('terminal downloads reject conflicting OCI blob sizes before producing a plan or script', async t => {
+  const config = { digest: `sha256:${'a'.repeat(64)}`, size: 3 };
+  const layer = { digest: `sha256:${'b'.repeat(64)}`, size: 4 };
+  t.mock.method(globalThis, 'fetch', async url => String(url).includes('/blobs/')
+    ? Response.json({ os: 'linux', architecture: 'amd64' })
+    : Response.json({ schemaVersion: 2, config, layers: [layer, { ...layer, size: 5 }] }));
+  for (const path of ['/api/download-plan', '/api/download-script']) {
+    const response = await request(`${path}?image=nginx&source=mirror-gcr`);
+    assert.equal(response.status, 502);
+    assert.match((await response.json()).error, /大小冲突/);
+  }
+});
+
+test('cancelling metadata and download-plan requests aborts nested registry lookups', async t => {
+  const digest = `sha256:${'a'.repeat(64)}`;
+  let notify, mode;
+  let started;
+  const signals = [];
+  t.mock.method(globalThis, 'fetch', (url, init) => {
+    const path = new URL(url).pathname;
+    const first = path.endsWith('/manifests/latest');
+    if (first) {
+      return Promise.resolve(Response.json(mode === 'plan'
+        ? { schemaVersion: 2, manifests: [{ digest, platform: { os: 'linux', architecture: 'amd64' } }] }
+        : { schemaVersion: 2, config: { digest, size: 3 }, layers: [] }));
+    }
+    return new Promise((_resolve, reject) => {
+      signals.push(init.signal); notify();
+      init.signal.addEventListener('abort', () => reject(new DOMException('Aborted', 'AbortError')), { once: true });
+    });
+  });
+  for (const [current, path] of [
+    ['platform', '/api/platforms?image=nginx&source=mirror-gcr'],
+    ['inspect', '/api/inspect?image=nginx&source=mirror-gcr'],
+    ['plan', '/api/download-plan?image=nginx&source=mirror-gcr']
+  ]) {
+    mode = current; started = new Promise(resolve => { notify = resolve; });
+    const controller = new AbortController();
+    const pending = worker.fetch(new Request(`https://example.com${path}`, { signal: controller.signal }), env);
+    await started; controller.abort(); await pending;
+    assert.equal(signals.at(-1).aborted, true, current);
+  }
+});
+
+test('automatic source selection releases discarded failure bodies', async t => {
+  const sourceEnv = { ...env, IMAGE_SOURCES: JSON.stringify([
+    { id: 'miss', label: 'Miss', url: 'https://miss.example' },
+    { id: 'hit', label: 'Hit', url: 'https://hit.example' }
+  ]) };
+  let cancelled = false;
+  t.mock.method(globalThis, 'fetch', async url => {
+    if (new URL(url).hostname === 'miss.example') return new Response(new ReadableStream({ cancel() { cancelled = true; } }), { status: 404 });
+    return Response.json({ schemaVersion: 2, manifests: [] });
+  });
+  const response = await worker.fetch(new Request('https://example.com/api/platforms?image=nginx&source=auto'), sourceEnv);
+  assert.equal(response.status, 200);
+  assert.equal(cancelled, true);
+});
+
+test('successful Registry authentication releases the discarded challenge body', async t => {
+  let calls = 0, cancelled = false;
+  t.mock.method(globalThis, 'fetch', async url => {
+    if (new URL(url).hostname === 'auth.example') return Response.json({ token: 'test-token' });
+    if (calls++ === 0) return new Response(new ReadableStream({ cancel() { cancelled = true; } }), { status: 401, headers: { 'www-authenticate': 'Bearer realm="https://auth.example/token"' } });
+    return Response.json({ schemaVersion: 2, manifests: [] });
+  });
+  const response = await request('/api/platforms?image=nginx&source=mirror-gcr');
+  assert.equal(response.status, 200);
+  assert.equal(cancelled, true);
+});
+
+test('platform resolution prefers exact matches and accepts variants only for generic requests', async t => {
+  const config = { digest: `sha256:${'c'.repeat(64)}`, size: 3 };
+  const layer = { digest: `sha256:${'d'.repeat(64)}`, size: 3 };
+  const variantDigest = `sha256:${'a'.repeat(64)}`;
+  const exactDigest = `sha256:${'b'.repeat(64)}`;
+  let mode = 'direct', requested = [];
+  t.mock.method(globalThis, 'fetch', async url => {
+    const path = new URL(url).pathname; requested.push(path);
+    if (path.includes('/blobs/')) return Response.json({ os: 'linux', architecture: 'arm64', variant: 'v8' });
+    if (path.endsWith('/manifests/latest') && mode !== 'direct') return Response.json({ schemaVersion: 2, manifests: [
+      { digest: variantDigest, platform: { os: 'linux', architecture: 'arm64', variant: 'v8' } },
+      ...(mode === 'index' ? [{ digest: exactDigest, platform: { os: 'linux', architecture: 'arm64', variant: '' } }] : [])
+    ] });
+    return Response.json({ schemaVersion: 2, config, layers: [layer] });
+  });
+  const endpoint = platform => `/api/download-plan?image=nginx:latest&source=mirror-gcr&platform=${encodeURIComponent(platform)}`;
+  let resolved = await request(endpoint('linux/arm64'));
+  assert.equal(resolved.status, 200);
+  const plan = await resolved.json();
+  assert.equal(plan.platform, 'linux/arm64/v8');
+  assert.equal(plan.filename, 'nginx_latest_linux_arm64_v8.tar');
+  assert.equal((await request(endpoint('linux/arm64/v8'))).status, 200);
+  assert.equal((await request(endpoint('linux/arm64/v9'))).status, 404);
+  mode = 'index'; requested = [];
+  resolved = await request(endpoint('linux/arm64'));
+  assert.equal(resolved.status, 200);
+  assert.equal((await resolved.json()).platform, 'linux/arm64');
+  assert.ok(requested.some(path => path.endsWith(exactDigest)));
+  requested = [];
+  assert.equal((await request(endpoint('linux/arm64/v8'))).status, 200);
+  assert.ok(requested.some(path => path.endsWith(variantDigest)));
+  assert.equal((await request(endpoint('linux/arm64/v9'))).status, 404);
+  mode = 'variant-only'; requested = [];
+  resolved = await request(endpoint('linux/arm64'));
+  assert.equal(resolved.status, 200);
+  assert.equal((await resolved.json()).platform, 'linux/arm64/v8');
+  assert.ok(requested.some(path => path.endsWith(variantDigest)));
 });

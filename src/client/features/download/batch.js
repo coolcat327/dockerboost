@@ -105,7 +105,7 @@ export function initBatch({ panel, locale, messages, flash, singleBusy, selectio
     $('[data-queue-count]').textContent = jobs.length;
     const done = jobs.filter(row => row.state === 'done').length;
     const failed = jobs.filter(row => row.state === 'failed').length;
-    const unresolved = jobs.filter(row => row.resolveError && !row.resolving).length;
+    const unresolved = jobs.filter(row => row.resolveError && !row.resolving && row.state !== 'failed').length;
     const running = jobs.filter(row => row.state === 'running').length;
     $('[data-summary]').textContent = jobs.length ? (english ? `${running} active · ${done} saved · ${failed + unresolved} failed` : `${running} 下载中 · ${done} 已保存 · ${failed + unresolved} 失败`) : '';
     $('[data-action=reparse]').disabled = queue.busy || !jobs.length || jobs.some(job => job.resolving);
@@ -178,11 +178,11 @@ export function initBatch({ panel, locale, messages, flash, singleBusy, selectio
       }
       update();
 
-    } catch (error) { $('[data-errors]').textContent = issueText(error.message); }
+    } catch (error) { issues = [error.message]; $('[data-errors]').textContent = issues.map(issueText).join('\n'); }
   }
   bindComposeInput({ input: $('#compose-input'), upload: $('input[type=file]'),
     onChange: clear, onParse: parseInput,
-    onError: error => { clear(); $('[data-errors]').textContent = issueText(error.message); }
+    onError: error => { clear(); issues = [error.message]; $('[data-errors]').textContent = issues.map(issueText).join('\n'); }
   });
   $('[data-action=add-all]').addEventListener('click', () => addSelected(rows));
   $('[data-platform]').addEventListener('change', () => {
@@ -216,7 +216,10 @@ export function initBatch({ panel, locale, messages, flash, singleBusy, selectio
         return exportArchive({ image, platform: entry.platform, source, signal, onProgress: event => row.progress.update(event) });
       }, { signal, onRetry: (error, retry) => row.progress.retry(error, retry) });
       row.progress.complete({ filename: result.filename, size: result.archive.size });
-    } catch (error) { row.progress.fail(error, signal.aborted); throw error; }
+    } catch (error) {
+      if (!signal.aborted && error?.code === 'PLATFORM_CHANGED') { row.ready = false; row.resolveError = { kind: 'resolveFailed', detail: error.message }; }
+      row.progress.fail(error, signal.aborted); throw error;
+    }
   }, update);
   function enqueue(row) {
     if (!row.ready || ['running', 'queued'].includes(row.state)) return;
@@ -232,7 +235,7 @@ export function initBatch({ panel, locale, messages, flash, singleBusy, selectio
     job.ready = !!job.platformSelect.value;
     // Unsupported bulk/Compose platforms must not silently fall back to another architecture.
     job.resolveError = job.ready ? null : { kind: 'unsupported' };
-    const entry = { image: job.selection.resolve().upstream, platform: job.platformSelect.value, source: job.selection.current().resolvedSource };
+    const entry = { image: job.selection.resolve().original, platform: job.platformSelect.value, source: job.selection.current().resolvedSource };
     if (keyFor(entry) !== keyFor(job.entry)) { job.state = undefined; job.progress.clear(); }
     job.entry = entry;
     update();
@@ -260,7 +263,7 @@ export function initBatch({ panel, locale, messages, flash, singleBusy, selectio
         job.resolving = false;
         const available = [...job.platformSelect.options].map(option => option.value);
         job.platforms = available.filter(Boolean);
-        for (const option of job.platformSelect.options) option.textContent = option.value.replace(/^linux\//, '');
+        for (const option of job.platformSelect.options) if (option.value) option.textContent = option.value.replace(/^linux\//, '');
         if (!job.platforms.length) { job.resolveError = { kind: 'resolveFailed' }; update(); return; }
         applyPlatform(job);
       },

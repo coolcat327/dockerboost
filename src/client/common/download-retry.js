@@ -17,7 +17,7 @@ export async function retryDownload(run, { signal, onRetry, wait = waitForRetry 
     try { return await run(attempt); }
     catch (error) {
       signal.throwIfAborted();
-      if (attempt === delays.length) throw error;
+      if (attempt === delays.length || error?.retryable === false) throw error;
       const delay = delays[attempt];
       onRetry?.(error, { attempt: attempt + 1, delay });
       await wait(delay, signal);

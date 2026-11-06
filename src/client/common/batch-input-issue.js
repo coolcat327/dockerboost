@@ -4,6 +4,8 @@ export function batchInputIssue(value, english) {
   return value
     .replace(/Line (\d+): invalid image/g, '第 $1 行：镜像格式无效')
     .replace('Input exceeds 1 MiB', '输入不能超过 1 MiB')
+    .replace('Compose services must be a mapping', 'Compose 的 services 必须为映射')
+    .replace('include is not supported; use docker compose config first', 'include 请先用 docker compose config 展开')
     .replace('missing image (build is not executed)', '未配置 image；不执行 build')
     .replace('unresolved variable or invalid platform', '变量未展开或平台格式无效')
     .replace('invalid image or platform', '镜像或平台格式无效')

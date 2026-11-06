@@ -14,7 +14,7 @@ export async function registryProxyResponse(request: Request, env: Env) {
   // Browser version identity affects the local cache key, not Registry requests.
   url.searchParams.delete('version');
   const readOnly = ['GET', 'HEAD'].includes(request.method);
-  const init = { method: request.method, headers: proxyHeaders(request), body: readOnly ? undefined : request.body };
+  const init = { method: request.method, headers: proxyHeaders(request), body: readOnly ? undefined : request.body, signal: request.signal };
   const response = readOnly || source
     ? await registryPublicFetch(env, proxy.path + url.search, init, source || 'auto')
     : await registryFetch(env, proxy.path + url.search, init);

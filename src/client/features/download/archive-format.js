@@ -1,29 +1,38 @@
 import { createTarPacker } from 'modern-tar';
+import { localImageTag, splitImageReference } from '../../../common/image-syntax.js';
 
 const encoder = new TextEncoder();
 const text = (value) => encoder.encode(typeof value === 'string' ? value : JSON.stringify(value));
-export const digestHex = (digest) => String(digest).replace(/^sha256:/, '');
+export function digestHex(digest) {
+  if (typeof digest !== 'string' || !/^sha256:[a-f0-9]{64}$/.test(digest)) throw new Error('不支持或无效的 blob digest（需要 sha256）。');
+  return digest.slice(7);
+}
 
 async function sha256(data) {
   const value = await crypto.subtle.digest('SHA-256', data);
   return Array.from(new Uint8Array(value), (part) => part.toString(16).padStart(2, '0')).join('');
 }
 
-export async function archiveEntries(manifest, repository, reference, repoTag) {
-  const manifestBytes = text(manifest);
+export async function archiveEntries(manifest, repository, reference, repoTag, originalManifestBytes) {
+  const manifestBytes = originalManifestBytes || text(manifest);
   const manifestDigest = await sha256(manifestBytes);
   const configPath = `blobs/sha256/${digestHex(manifest.config.digest)}`;
   const layerPaths = manifest.layers.map((item) => `blobs/sha256/${digestHex(item.digest)}`);
   // OCI imports bypass Docker's RepoTags normalization. Match Docker Hub's
   // canonical name so containerd can resolve the image again during docker run.
-  const firstComponent = repoTag.split('/')[0];
-  const qualified = repoTag.includes('/') && (/[.:]/.test(firstComponent) || firstComponent === 'localhost');
-  const imageName = qualified ? repoTag : `docker.io/${repoTag.includes('/') ? '' : 'library/'}${repoTag}`;
+  const tag = localImageTag(repoTag);
+  // An index digest may resolve to a platform-specific manifest with a different digest.
+  const displayName = tag || `${repoTag.slice(0, repoTag.indexOf('@'))}@sha256:${manifestDigest}`;
+  const firstComponent = displayName.split('/')[0];
+  const qualified = displayName.includes('/') && (/[.:]/.test(firstComponent) || firstComponent === 'localhost');
+  const imageName = qualified ? displayName : `docker.io/${displayName.includes('/') ? '' : 'library/'}${displayName}`;
+  const tagName = tag ? splitImageReference(tag)?.reference || reference : null;
+  const annotations = { 'io.containerd.image.name': imageName, ...(tagName ? { 'org.opencontainers.image.ref.name': tagName } : {}) };
   return [
     ['oci-layout', text('{"imageLayoutVersion":"1.0.0"}')],
-    ['index.json', text({ schemaVersion: 2, manifests: [{ mediaType: manifest.mediaType, digest: `sha256:${manifestDigest}`, size: manifestBytes.byteLength, annotations: { 'io.containerd.image.name': imageName, 'org.opencontainers.image.ref.name': reference } }] })],
-    ['manifest.json', text([{ Config: configPath, RepoTags: [repoTag], Layers: layerPaths }])],
-    ['repositories', text({ [repository]: { [reference]: digestHex(manifest.config.digest) } })],
+    ['index.json', text({ schemaVersion: 2, manifests: [{ mediaType: manifest.mediaType, digest: `sha256:${manifestDigest}`, size: manifestBytes.byteLength, annotations }] })],
+    ['manifest.json', text([{ Config: configPath, RepoTags: tag ? [tag] : [], Layers: layerPaths }])],
+    ['repositories', text(tagName ? { [repository]: { [tagName]: digestHex(manifest.config.digest) } } : {})],
     [`blobs/sha256/${manifestDigest}`, manifestBytes]
   ];
 }

@@ -1,4 +1,5 @@
 import { queueSharePrefix } from '../../common/share-link.js';
+import { splitImageReference } from '../../../common/image-syntax.js';
 const maxPayloadBytes = 1024 * 1024;
 const maxFragmentLength = 64 * 1024;
 const maxQueueEntries = 1000;
@@ -11,7 +12,7 @@ function validateQueue(queue) {
   for (const item of queue) {
     if (!Array.isArray(item) || item.length !== 2) throw new Error('SHARE_INVALID');
     const [image, platform] = item;
-    if (typeof image !== 'string' || !/^[a-zA-Z0-9][a-zA-Z0-9._/@:-]{0,511}$/.test(image)
+    if (typeof image !== 'string' || !/^[a-zA-Z0-9][a-zA-Z0-9._/@:-]{0,511}$/.test(image) || !splitImageReference(image)
       || typeof platform !== 'string' || platform.length > 128 || (platform && !platformPattern.test(platform))) throw new Error('SHARE_INVALID');
     const key = JSON.stringify(item);
     if (!seen.has(key)) { seen.add(key); entries.push({ image, platform }); }

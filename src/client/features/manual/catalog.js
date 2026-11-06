@@ -21,6 +21,10 @@ export function loadCatalog() {
 
 export function searchCommands(commands, query = '', family = 'all') {
   const terms = query.toLowerCase().trim().split(/\s+/).filter(Boolean);
-  return commands.filter(item => (family === 'all' || family === item.family) && terms.every(term =>
-    [item.command, item.usage, ...Object.values(item.summary), ...item.examples.flatMap(example => [example.code, ...Object.values(example.description)]), ...item.options.flatMap(option => [option.flag, ...Object.values(option.description)])].join(' ').toLowerCase().includes(term)));
+  return commands.filter(item => {
+    if (family !== 'all' && family !== item.family) return false;
+    if (!terms.length) return true;
+    const text = [item.command, item.usage, ...Object.values(item.summary), ...item.examples.flatMap(example => [example.code, ...Object.values(example.description)]), ...item.options.flatMap(option => [option.flag, ...Object.values(option.description)])].join(' ').toLowerCase();
+    return terms.every(term => text.includes(term));
+  });
 }

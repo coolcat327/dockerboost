@@ -37,7 +37,7 @@ function element() {
   };
 }
 
-function environment(t, { hash = '', failId, failLanguage = false } = {}) {
+function environment(t, { hash = '', pathname = '/', search = '', failId, failLanguage = false } = {}) {
   const ids = ['install', 'setup', 'pull', 'download', 'convert', 'manual'];
   const tabs = new Map(ids.map(id => [id, element()])), panels = new Map(ids.map(id => [id, element()]));
   const contexts = new Map(), instances = new Map(), initCalls = [], historyWrites = [];
@@ -66,7 +66,7 @@ function environment(t, { hash = '', failId, failLanguage = false } = {}) {
     createElement: () => ({ ...element(), isConnected: false }),
   };
   let reloads = 0;
-  const window = { ...element(), location: { hash, reload() { reloads++; } },
+  const window = { ...element(), location: { hash, pathname, search, reload() { reloads++; } },
     history: { state: null, replaceState(state, title, path) { historyWrites.push(path); window.location.hash = ''; } },
   };
   for (const [name, value] of Object.entries({ document, window, appTestFeatures: features,
@@ -136,12 +136,13 @@ for (const failLanguage of [false, true]) {
 for (const failId of [undefined, 'download']) {
   test(`shared link targets only its destination and ${failId ? 'survives failed' : 'clears after successful'} initialization`, async t => {
     const hash = '#download?image=nginx%3Alatest&source=auto&platform=linux%2Farm64';
-    const e = environment(t, { hash, failId });
+    const e = environment(t, { hash, pathname: '/tools', search: '?view=compact', failId });
     await startApp();
     assert.deepEqual(e.initCalls, ['download']);
     const { image, source, platform } = e.contexts.get('download').selectionStore.snapshot();
     assert.deepEqual({ image, source, platform }, { image: 'nginx:latest', source: 'auto', platform: 'linux/arm64' });
-    assert.deepEqual(e.historyWrites, failId ? [] : ['/']);
+    assert.equal(e.contexts.get('download').selectionStore.snapshot().platformIntent, 'linux/arm64');
+    assert.deepEqual(e.historyWrites, failId ? [] : ['/tools?view=compact']);
     assert.equal(e.window.location.hash, failId ? hash : '');
   });
 }
@@ -154,4 +155,40 @@ test('queue share activates only download and leaves fragment cleanup to the que
   assert.equal(e.contexts.get('download').sharedBatchHash, hash);
   assert.deepEqual(e.historyWrites, []);
   assert.equal(e.window.location.hash, hash);
+});
+
+test('copy does not mark changed content as copied while clipboard access is pending', async t => {
+  const e = environment(t);
+  const toast = element(), target = { ...element(), innerText: 'old command' }, button = element();
+  button.dataset.copy = 'command';
+  let finish;
+  const clipboard = new Promise(resolve => { finish = resolve; });
+  const originalQuery = globalThis.document.querySelector;
+  globalThis.document.querySelector = selector => selector === '#toast' ? toast : originalQuery(selector);
+  globalThis.document.getElementById = id => id === 'command' ? target : null;
+  const descriptor = Object.getOwnPropertyDescriptor(globalThis, 'HTMLTextAreaElement');
+  Object.defineProperty(globalThis, 'HTMLTextAreaElement', { configurable: true, value: class {} });
+  t.after(() => { if (descriptor) Object.defineProperty(globalThis, 'HTMLTextAreaElement', descriptor); else delete globalThis.HTMLTextAreaElement; });
+  globalThis.navigator.clipboard = { writeText: () => clipboard };
+  await startApp();
+  globalThis.document.emit('click', { target: { closest: () => button } });
+  target.innerText = 'new command';
+  finish();
+  await new Promise(setImmediate);
+  assert.equal(button.classList.contains('is-copied'), false);
+  assert.equal(toast.textContent, '内容已变化，请重新复制');
+  assert.ok(e.instances.has('install'));
+});
+
+
+test('the tools and language switching remain usable when local storage is unavailable', async t => {
+  const e = environment(t);
+  t.mock.method(globalThis.localStorage, 'getItem', () => { throw new DOMException('Storage blocked', 'SecurityError'); });
+  t.mock.method(globalThis.localStorage, 'setItem', () => { throw new DOMException('Storage blocked', 'SecurityError'); });
+  await startApp();
+  assert.deepEqual(e.initCalls, ['install']);
+  e.english.emit('click');
+  assert.equal(document.documentElement.lang, 'en');
+  e.tabs.get('setup').emit('click');
+  assert.equal(e.instances.get('setup').languages.at(-1), e.features[1].messages.en);
 });

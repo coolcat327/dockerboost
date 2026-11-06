@@ -7,9 +7,19 @@ export async function protectCacheJob(name, locks = navigator.locks) {
   const held = new Promise(resolve => { release = resolve; });
   let acquired;
   const ready = new Promise(resolve => { acquired = resolve; });
-  const task = locks ? locks.request(name, async () => { acquired(); await held; }) : null;
-  if (task) await Promise.race([ready, task]);
-  return async () => { release(); if (task) await task; activeJobs.delete(name); };
+  let task;
+  try {
+    task = locks ? locks.request(name, async () => { acquired(); await held; }) : null;
+    if (task) await Promise.race([ready, task]);
+  } catch (error) {
+    activeJobs.delete(name);
+    throw error;
+  }
+  return async () => {
+    release();
+    try { if (task) await task; }
+    finally { activeJobs.delete(name); }
+  };
 }
 
 export async function clearCacheDirectories(root, { matches = () => true, keep = new Set(), lockName = name => name, locks = navigator.locks } = {}) {
