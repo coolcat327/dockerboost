@@ -1,7 +1,7 @@
 /* Configuration commands and manual fallback. */
 [data-panel="setup"] .setup-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
 [data-panel="setup"] .setup-grid .command-block { margin-top: 27px; }
-[data-panel="setup"] .setup-grid .command-block code { min-height: 0; }
+[data-panel="setup"] .setup-grid .command-block code { height: 300px; overflow: auto; }
 [data-panel="setup"] #setup-command { white-space: pre; overflow-x: auto; overflow-wrap: normal; }
 [data-panel="setup"] .manual-fallback { margin-top: 24px; padding: 18px 20px; border-left: 2px solid #2a9dce; background: var(--inset); }
 [data-panel="setup"] .manual-fallback p { margin: 0 0 8px; color: var(--muted); font-size: 14px; line-height: 1.8; }
@@ -15,3 +15,7 @@
 @media (max-width: 600px) {
   [data-panel="setup"] .manual-fallback { padding: 16px; }
 }
+
+[data-panel="setup"] .setup-resources { margin-top: 24px; }
+[data-panel="setup"] .setup-resources h4 { margin: 0 0 10px; }
+[data-panel="setup"] .setup-resource-links { display: flex; flex-wrap: wrap; gap: 12px 24px; font-size: 14px; line-height: 1.8; }
