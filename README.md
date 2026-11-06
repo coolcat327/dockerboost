@@ -6,7 +6,7 @@
 
 **安装 Docker、生成拉取命令、把镜像带到内网。**
 
-[在线体验](https://docker.coolcat.win/) · [场景对比](#使用场景) · [本地运行](#本地开发) · [部署](#部署) · [文档导航](#文档导航)
+[在线体验](https://docker.coolcat.win/) · [场景对比](#使用场景) · [本地开发](#本地开发) · [部署](#部署) · [文档导航](#文档导航)
 
 </div>
 
@@ -51,11 +51,7 @@ DockerBoost 把 Docker 安装、镜像加速、拉取命令和离线归档集中
   <a href="docs/assets/workflow-demos/offline-image-transfer-our-zh.gif"><img src="docs/assets/workflow-demos/offline-image-transfer-our-zh.gif" width="49%" alt="DockerBoost — 在浏览器选择 nginx 和 linux/amd64，下载并在本地组装 TAR，再到目标机导入" /></a>
 </p>
 
-把 TAR 拷贝到装有 Docker 的目标机器，再执行 `docker load`。以下示例导入 `nginx:latest` 的 `linux/amd64` 归档。
-
-```sh
-docker load -i nginx_latest_linux_amd64.tar
-```
+把 TAR 拷贝到装有 Docker 的目标机器，再执行 `docker load`。
 
 ### 03. 分享镜像下载队列
 

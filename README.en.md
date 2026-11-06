@@ -6,7 +6,7 @@
 
 **Install Docker, generate pull commands, and take images offline.**
 
-[Live demo](https://docker.coolcat.win/) · [Workflow comparisons](#use-cases) · [Run locally](#local-development) · [Deploy](#deployment) · [Documentation](#documentation)
+[Live demo](https://docker.coolcat.win/) · [Workflow comparisons](#use-cases) · [Local development](#local-development) · [Deploy](#deployment) · [Documentation](#documentation)
 
 </div>
 
@@ -51,11 +51,7 @@ Each pair shows the traditional workflow on the left and DockerBoost on the righ
   <a href="docs/assets/workflow-demos/offline-image-transfer-our-en.gif"><img src="docs/assets/workflow-demos/offline-image-transfer-our-en.gif" width="49%" alt="DockerBoost — Select nginx and linux/amd64 in the browser, assemble the TAR locally, and import it on the target" /></a>
 </p>
 
-Copy the TAR to the target machine running Docker and import it. For example, to import `nginx:latest` for `linux/amd64`, run the following command.
-
-```sh
-docker load -i nginx_latest_linux_amd64.tar
-```
+Copy the TAR to the target machine running Docker and import it with `docker load`.
 
 ### 03. Share an image download queue
 
