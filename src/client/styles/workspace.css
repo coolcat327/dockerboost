@@ -161,3 +161,11 @@
 /* Hide partially initialized controls after a tool fails. */
 .tool-panel.feature-failed > :not(.feature-error-status) { display: none; }
 .feature-error-status { padding: 24px 0; color: var(--muted); }
+
+/* Related links share the same hierarchy across tool panels. */
+.resource-section { margin-top:30px; padding-top:24px; border-top:1px solid var(--line); }
+.resource-section h4 { margin:0 0 12px; color:var(--ink); font:700 16px/1.5 Manrope,'PingFang SC','Microsoft YaHei',sans-serif; }
+.resource-links { display:flex; flex-wrap:wrap; gap:12px 24px; font-size:14px; line-height:1.8; }
+.resource-links a { color:var(--cyan); text-decoration:none; overflow-wrap:anywhere; }
+.resource-links a:hover { text-decoration:underline; }
+.resource-links a:focus-visible { outline:2px solid var(--cyan); outline-offset:3px; border-radius:2px; }
