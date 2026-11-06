@@ -39,7 +39,9 @@ pnpm run dev
 
 ## React Bits MCP
 
-本项目将 React Bits MCP 作为必备开发工具，用于组件浏览和搜索。React Bits 通过 shadcn MCP 接入，支持 Claude Code、Codex、Cursor 等 MCP 客户端。请按照所用客户端的 [shadcn MCP 配置说明](https://ui.shadcn.com/docs/mcp) 添加一个名为 `shadcn` 的 STDIO 服务，启动命令与参数为：
+React Bits MCP 是可选开发工具，用于浏览和搜索组件示例。安装依赖、启动本地服务、构建和测试均可跳过本节。
+
+需要使用时，在客户端添加名为 `shadcn` 的 STDIO 服务，使用以下启动命令。客户端配置方法见 [shadcn MCP 配置说明](https://ui.shadcn.com/docs/mcp)。
 
 ```sh
 npx -y shadcn@latest mcp
@@ -49,5 +51,5 @@ npx -y shadcn@latest mcp
 
 项目根目录的 [`components.json`](../components.json) 已配置 `@react-bits` 注册表，无需重复添加；配置方式见 [React Bits 官方说明](https://reactbits.dev/get-started/mcp)。
 
-在客户端中重新加载 MCP 服务或重启客户端后，在该项目中请求浏览或搜索 `@react-bits` 组件。首次启动时 `npx` 会联网下载 shadcn CLI；克隆项目或运行 `pnpm install --frozen-lockfile` 不会自动注册 MCP，每位开发者需在所用客户端中完成配置。普通网站用户无需安装。当前前端使用原生 JavaScript，采用 React 组件前需评估框架与依赖适配。
+配置后，重新加载 MCP 服务或重启客户端，即可在项目中请求浏览或搜索 `@react-bits` 组件。首次启动时 `npx` 会联网下载 shadcn CLI。当前前端使用原生 JavaScript，采用 React 组件前需评估框架与依赖适配。
 
