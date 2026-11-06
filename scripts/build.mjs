@@ -1,14 +1,14 @@
 import { config } from '../config.js';
 import { build } from 'esbuild';
 import { createHash } from 'node:crypto';
-import { cp, mkdir, readFile, readdir, rm, stat, writeFile } from 'node:fs/promises';
+import { cp, mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import { basename, dirname, resolve, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 // Resolve paths from the project, even when invoked from another directory.
 const root = fileURLToPath(new URL('../', import.meta.url));
-const dist = new URL('../dist/', import.meta.url);
-const publicDir = resolve(fileURLToPath(new URL('../public/', import.meta.url)));
+const dist = resolve(root, 'dist');
+const publicDir = resolve(root, 'public');
 const sourceHtml = await readFile(new URL('../src/client/index.html', import.meta.url), 'utf8');
 const heroTag = sourceHtml.match(/<img\b[^>]*\bclass="[^"]*\bboost-art\b[^"]*"[^>]*>/)?.[0];
 const heroSource = heroTag?.match(/\bsrc="(\/hero-[a-z0-9-]+\.svg)"/)?.[1];
@@ -16,10 +16,12 @@ if (!heroSource) throw new Error('Hero image must reference a root-level hero-*.
 
 await rm(dist, { recursive: true, force: true });
 await mkdir(dist, { recursive: true });
-await cp(new URL('../public/', import.meta.url), dist, {
-  recursive: true,
-  filter: async (source) => (await stat(source)).isDirectory() || basename(source).startsWith('_') || /\.html?$/i.test(basename(source)),
-});
+const hasFixedPath = (name) => name.startsWith('_') || /\.html?$/i.test(name);
+for (const entry of await readdir(publicDir, { recursive: true, withFileTypes: true })) {
+  if (entry.isDirectory() || !hasFixedPath(entry.name)) continue;
+  const source = resolve(entry.parentPath, entry.name);
+  await cp(source, resolve(dist, relative(publicDir, source)));
+}
 
 // Include server templates as well as browser code in the download cache version.
 const versionHash = createHash('sha256');
@@ -37,14 +39,14 @@ for (const path of ['config.js', 'package.json', 'pnpm-lock.yaml', 'wrangler.jso
 const version = Array.from(versionHash.digest().subarray(0, 8), byte => String.fromCharCode(97 + byte % 26)).join('');
 
 // Publish static resources under the versioned namespace.
-const assetDir = resolve(root, 'dist/assets', version);
+const assetDir = resolve(dist, 'assets', version);
 await mkdir(assetDir, { recursive: true });
 await cp(publicDir, assetDir, {
   recursive: true,
   filter: (source) => {
     const path = relative(publicDir, source);
     const name = basename(source);
-    return !path || (!name.startsWith('_') && !/\.html?$/i.test(name) &&
+    return !path || (!hasFixedPath(name) &&
       (dirname(source) !== publicDir || !/^hero-[a-z0-9-]+\.svg$/.test(name) || `/${name}` === heroSource));
   },
 });

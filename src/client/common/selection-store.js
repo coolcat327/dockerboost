@@ -1,6 +1,6 @@
 // Shares user choices. Each tab still resolves its own source and available platforms.
 export function createSelectionStore() {
-  let state = { image: '', source: 'auto', platform: '' };
+  let state = { image: '', source: 'auto', platform: '', platformIntent: '' };
   let platformLookup;
   let sourcesLookup;
   const listeners = new Set();
@@ -26,14 +26,16 @@ export function createSelectionStore() {
         source: response.headers.get('x-dockerboost-source')
       }));
       platformLookup = { url, promise };
-      promise.catch(() => {
+      promise.then(result => {
+        if (!result.ok && platformLookup?.promise === promise) platformLookup = undefined;
+      }, () => {
         if (platformLookup?.promise === promise) platformLookup = undefined;
       });
       return promise;
     },
     update(patch, origin) {
       const next = { ...state, ...patch };
-      if (next.image === state.image && next.source === state.source && next.platform === state.platform) return;
+      if (next.image === state.image && next.source === state.source && next.platform === state.platform && next.platformIntent === state.platformIntent) return;
       if (next.image !== state.image || next.source !== state.source) platformLookup = undefined;
       state = next;
       listeners.forEach((listener) => listener({ ...state }, origin));

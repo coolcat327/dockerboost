@@ -14,6 +14,7 @@ test('installation switches all labels and command hints without losing versions
   t.mock.method(globalThis,'fetch',async () => Response.json({ docker:['28.1.1'], compose:'2.35.1' }));
   const instance = feature.init({ panel });
   assert.equal(panel.querySelector('#install-download').disabled, true);
+  assert.equal(panel.querySelector('[data-copy="install-command"]').disabled, true);
   await panel.querySelector('#install-arch').listeners.change();
   await new Promise(resolve => setImmediate(resolve));
   instance.setLanguage(feature.messages.en);
@@ -23,6 +24,7 @@ test('installation switches all labels and command hints without losing versions
   assert.match(panel.querySelector('#install-package-tree').textContent,/readme.md/);
   assert.equal(panel.querySelector('#install-package-name').textContent, 'docker-offline-x86_64-docker-28.1.1-compose-2.35.1.tar');
   assert.match(labels[4].innerHTML, /Download on an online Linux host/);
+  assert.equal(panel.querySelector('[data-copy="install-command"]').disabled, false);
   assert.match(panel.querySelector('#install-command').textContent, /^curl /);
   assert.match(panel.querySelector('#install-command').textContent, /\/assets\/development\/download-docker\.sh/);
   assert.match(panel.querySelector('#install-command').textContent, /&& sh \.download-docker\.sh/);

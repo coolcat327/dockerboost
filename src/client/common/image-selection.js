@@ -1,5 +1,6 @@
-import { pastedImage } from './image-input.js';
+import { parsePastedPull } from './image-input.js';
 import { imageReference } from './image-reference.js';
+import { matchBatchPlatform } from './batch-platform.js';
 
 function platformsFromManifest(manifest) {
   const descriptors = Array.isArray(manifest?.manifests) ? manifest.manifests : [];
@@ -22,9 +23,12 @@ export function createImageSelection({ panel, locale, messages, flash, store, on
   let requestController;
   let requestToken = 0;
   let inputTimer;
+  let composing = false;
   let disposed = false;
   let unsubscribe;
   let architectureState = 'waiting';
+  let localPlatform = '';
+  let localIntent = '';
   const storeOrigin = Symbol('image-selection');
   const platformListeners = new Set();
   const notifyPlatformChange = () => platformListeners.forEach((listener) => listener());
@@ -52,6 +56,8 @@ export function createImageSelection({ panel, locale, messages, flash, store, on
     if (configuredSources.length) setSources(configuredSources);
     if (architectureState === 'waiting') architecture.options[0].textContent = locale().waitingPlatforms;
     if (architectureState === 'loading') architecture.options[0].textContent = locale().loadingPlatforms;
+    if (architectureState === 'error') architecture.options[0].textContent = locale().failedPlatforms;
+    if (architectureState === 'unsupported') architecture.options[0].textContent = locale().unsupportedPlatforms;
     if (architectureState === 'none') architecture.options[0].textContent = locale().noPlatforms;
   };
   const reset = () => {
@@ -74,14 +80,27 @@ export function createImageSelection({ panel, locale, messages, flash, store, on
       architecture.replaceChildren(new Option(locale().noPlatforms, ''));
       return;
     }
-    const preferred = store?.snapshot().platform;
-    architecture.value = platforms.includes(preferred) ? preferred
+    const snapshot = store?.snapshot();
+    const preferred = snapshot ? snapshot.platform : localPlatform;
+    const intent = snapshot ? snapshot.platformIntent : localIntent;
+    const intended = intent && matchBatchPlatform(platforms, intent);
+    const matched = preferred && matchBatchPlatform(platforms, preferred);
+    if (intent && !intended) {
+      architectureState = 'unsupported';
+      const placeholder = new Option(locale().unsupportedPlatforms, '');
+      placeholder.disabled = true;
+      architecture.replaceChildren(placeholder, ...platforms.map(platform => new Option(platform, platform)));
+      architecture.value = '';
+      return;
+    }
+    architecture.value = intended || matched || (platforms.includes(preferred) ? preferred
       : platforms.includes(previous) ? previous
-        : platforms.includes('linux/amd64') ? 'linux/amd64' : platforms[0];
+        : platforms.includes('linux/amd64') ? 'linux/amd64' : platforms[0]);
+    localPlatform = architecture.value;
     store?.update({ platform: architecture.value }, storeOrigin);
   };
   const inspect = async ({ refresh = false } = {}) => {
-    if (disposed) return;
+    if (disposed || composing) return;
     requestController?.abort();
     const controller = new AbortController();
     requestController = controller;
@@ -117,9 +136,9 @@ export function createImageSelection({ panel, locale, messages, flash, store, on
       onReady?.(parsed);
     } catch (error) {
       if (controller.signal.aborted || requestToken !== token) return;
-      architectureState = 'none';
+      architectureState = 'error';
       architecture.disabled = true;
-      architecture.replaceChildren(new Option(locale().noPlatforms, ''));
+      architecture.replaceChildren(new Option(locale().failedPlatforms, ''));
       onError?.(error);
     } finally {
       if (requestController === controller) requestController = undefined;
@@ -139,16 +158,40 @@ export function createImageSelection({ panel, locale, messages, flash, store, on
   const init = () => {
     reset();
     if (store) {
-      const initial = store.snapshot();
+      let initial = store.snapshot();
+      try {
+        const pasted = parsePastedPull(initial.image);
+        if (pasted !== null) { const platform = initial.platform || pasted.platform || ''; store.update({ image: pasted.image, platform, platformIntent: initial.platformIntent || platform }, storeOrigin); initial = store.snapshot(); }
+      } catch { /* Invalid shared input remains visible for correction. */ }
       image.value = initial.image;
       unsubscribe = store.subscribe((snapshot, origin) => {
         if (origin === storeOrigin) return;
         const imageChanged = image.value !== snapshot.image;
         const sourceChanged = source.value !== snapshot.source;
         if (!imageChanged && !sourceChanged) {
-          if (architectureState === 'ready' && [...architecture.options].some((item) => item.value === snapshot.platform)
+          if (['ready', 'unsupported'].includes(architectureState) && snapshot.platformIntent) {
+            const platforms = [...architecture.options].map(option => option.value).filter(Boolean);
+            const selected = matchBatchPlatform(platforms, snapshot.platformIntent);
+            if (!selected) {
+              if (architectureState !== 'unsupported') { setPlatforms(platforms); notifyPlatformChange(); }
+              return;
+            }
+            if (architecture.value !== selected) {
+              architecture.value = selected;
+              architectureState = 'ready';
+              notifyPlatformChange();
+            }
+            return;
+          }
+          if (architectureState === 'unsupported' && !snapshot.platformIntent) {
+            setPlatforms([...architecture.options].map(option => option.value).filter(Boolean));
+            notifyPlatformChange();
+            return;
+          }
+          if (['ready', 'unsupported'].includes(architectureState) && [...architecture.options].some((item) => item.value === snapshot.platform)
             && architecture.value !== snapshot.platform) {
             architecture.value = snapshot.platform;
+            architectureState = 'ready';
             notifyPlatformChange();
           }
           return;
@@ -172,35 +215,46 @@ export function createImageSelection({ panel, locale, messages, flash, store, on
       invalidate();
       inspect();
     });
-    image.addEventListener('input', () => {
+    const updateImage = () => {
       clearTimeout(inputTimer);
-      store?.update({ image: image.value }, storeOrigin);
       invalidate();
+      if (composing) return;
+      localIntent = '';
+      store?.update({ image: image.value, platformIntent: '' }, storeOrigin);
       inputTimer = setTimeout(inspect, INPUT_IDLE_MS);
-    });
+    };
+    image.addEventListener('compositionstart', () => { composing = true; clearTimeout(inputTimer); invalidate(); });
+    image.addEventListener('compositionend', () => { composing = false; updateImage(); });
+    image.addEventListener('input', updateImage);
     image.addEventListener('paste', (event) => {
       try {
-        const pasted = pastedImage(event.clipboardData?.getData('text') || '');
+        const pasted = parsePastedPull(event.clipboardData?.getData('text') || '');
         if (pasted === null) return;
         event.preventDefault();
-        image.value = pasted;
+        image.value = pasted.image;
+        localIntent = pasted.platform || '';
+        if (pasted.platform) localPlatform = pasted.platform;
         clearTimeout(inputTimer);
-        store?.update({ image: image.value }, storeOrigin);
+        store?.update({ image: image.value, platformIntent: localIntent, ...(pasted.platform ? { platform: pasted.platform } : {}) }, storeOrigin);
         invalidate();
         inputTimer = setTimeout(inspect, INPUT_IDLE_MS);
       } catch (error) { event.preventDefault(); flash(error.message); }
     });
     architecture.addEventListener('change', () => {
-      store?.update({ platform: architecture.value }, storeOrigin);
+      architectureState = 'ready';
+      localPlatform = architecture.value;
+      localIntent = '';
+      store?.update({ platform: architecture.value, platformIntent: '' }, storeOrigin);
       notifyPlatformChange();
     });
   };
   return {
     init,
     reloadSources: () => loadSources(true),
+    recheck: () => inspect({ refresh: true }),
     dispose: () => { disposed = true; unsubscribe?.(); clearTimeout(inputTimer); requestController?.abort(); requestToken++; },
     setLanguage,
-    current: () => ({ image: image.value, source: requestedSource(), platform: architecture.value, resolvedSource }),
+    current: () => ({ image: image.value, source: requestedSource(), platform: architecture.value, platformUnsupported: architectureState === 'unsupported', resolvedSource }),
     resolve: () => normalise(image.value, effectiveSource()),
     onPlatformChange: (listener) => platformListeners.add(listener)
   };

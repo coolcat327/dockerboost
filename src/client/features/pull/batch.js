@@ -1,4 +1,5 @@
 import { batchInputIssue } from '../../common/batch-input-issue.js';
+import { pullCommand } from './pull-command.js';
 import { parseBatchImages } from '../../common/batch-images.js';
 import { bindComposeInput } from '../../common/compose-input.js';
 import { matchBatchPlatform } from '../../common/batch-platform.js';
@@ -45,7 +46,7 @@ export function initBatchPull({ panel, locale, messages, selectionStore }) {
     limitations: ['支持范围与使用提示', 'Supported configuration & tips'], note: ['仅支持公开镜像；变量与多文件配置请先使用 docker compose config 展开；不会执行 build。', 'Public images only. Expand variables and multiple files with docker compose config first; build is not executed.'],
     input: ['批量输入', 'Batch input'], inputHint: ['粘贴或拖入镜像信息', 'Paste or drop image information'], upload: ['上传文件', 'Upload file'], placeholder: ['支持 Compose 配置或每行一个镜像的列表', 'Supports Compose configuration or one image per line'],
     selection: ['选择镜像', 'Select images'], selectionHint: ['将需要的镜像加入解析队列', 'Add images to the resolution queue'], selectionEmpty: ['解析后，镜像会显示在这里。', 'Parsed images appear here.'], addAll: ['全部加入', 'Add all'], add: ['加入解析队列', 'Add to queue'], remove: ['移除解析队列', 'Remove from queue'], queue: ['解析队列', 'Resolution queue'], queueHint: ['自动解析镜像源与架构，生成拉取命令', 'Resolve sources and architectures to generate pull commands'], queueEmpty: ['从上方选择镜像并加入队列。', 'Add images from above to the queue.'], imageName: ['镜像名', 'Image name'], platform: ['选择架构', 'Architecture'], reparse: ['重新解析', 'Reparse all'], retry: ['重新解析', 'Retry'], removeJob: ['移除', 'Remove'],
-    commandStep: ['拉取命令', 'Pull commands'], command: ['拉取 + 标签', 'Pull + tag'], copy: ['复制全部', 'Copy all'], empty: ['将镜像加入队列后显示拉取命令', 'Add images to the queue to show pull commands'], loading: ['正在解析镜像…', 'Resolving image…'], unsupported: ['该镜像不支持所选架构', 'Selected architecture is not supported'], error: ['解析失败', 'Resolution failed']
+    commandStep: ['拉取命令', 'Pull commands'], command: ['拉取命令', 'Pull commands'], copy: ['复制全部', 'Copy all'], empty: ['将镜像加入队列后显示拉取命令', 'Add images to the queue to show pull commands'], loading: ['正在解析镜像…', 'Resolving image…'], unsupported: ['该镜像不支持所选架构', 'Selected architecture is not supported'], error: ['解析失败', 'Resolution failed']
   };
   const text = key => words[key][english ? 1 : 0];
   const issueText = value => batchInputIssue(value, english);
@@ -55,7 +56,7 @@ export function initBatchPull({ panel, locale, messages, selectionStore }) {
     const ready = jobs.filter(job => job.ready);
     const commands = ready.map(job => {
       const image = job.selection.resolve();
-      return `docker pull --platform ${job.platform.value} ${image.accelerated} &&\ndocker tag ${image.accelerated} ${image.original} &&\ndocker image rm ${image.accelerated}`;
+      return pullCommand(image, job.platform.value);
     });
     $('#pull-batch-command').textContent = commands.join('\n\n') || text('empty');
     $('[data-copy]').disabled = !commands.length;
@@ -105,7 +106,7 @@ export function initBatchPull({ panel, locale, messages, selectionStore }) {
     const reset = () => { job.ready = false; job.resolving = true; job.error = ''; job.platforms = []; update(); };
     job.selection = createImageSelection({ panel: controls, locale, messages, store, flash: error => { job.ready = false; job.resolving = false; job.error = error; update(); }, onLoading: reset, onReset: reset,
       onError: error => { job.ready = false; job.resolving = false; job.error = error.message; update(); },
-      onReady: () => { job.resolving = false; job.platforms = [...platform.options].map(option => option.value).filter(Boolean); for (const option of platform.options) option.textContent = option.value.replace(/^linux\//, ''); if (!job.platforms.length) { job.error = locale().noPlatforms; update(); return; } applyPlatform(job); }
+      onReady: () => { job.resolving = false; job.platforms = [...platform.options].map(option => option.value).filter(Boolean); for (const option of platform.options) if (option.value) option.textContent = option.value.replace(/^linux\//, ''); if (!job.platforms.length) { job.error = locale().noPlatforms; update(); return; } applyPlatform(job); }
     });
     job.selection.onPlatformChange(() => { job.preferredPlatform = platform.value; applyPlatform(job); });
     retry.addEventListener('click', () => { void job.selection.reloadSources(); });
@@ -129,7 +130,7 @@ export function initBatchPull({ panel, locale, messages, selectionStore }) {
         button.addEventListener('click', () => { const job = jobs.find(item => item.key === row.key); if (job) remove(job); else add(row); });
       });
       update();
-    } catch (error) { $('[data-errors]').textContent = issueText(error.message); }
+    } catch (error) { issues = [error.message]; $('[data-errors]').textContent = issues.map(issueText).join('\n'); }
   }
   bindComposeInput({ input: $('#pull-batch-input'), upload: $('input[type=file]'), onChange: clear, onParse: parse, onError: error => { clear(); issues = [error.message]; $('[data-errors]').textContent = issues.map(issueText).join('\n'); } });
   $('[data-action=add-all]').addEventListener('click', () => rows.forEach(add));

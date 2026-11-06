@@ -65,6 +65,36 @@ test('OCI image names normalize shorthand and preserve namespaces and explicit r
   }
 });
 
+test('digest references do not create invalid Docker tags in archive metadata', async () => {
+  const manifest = { config: { digest: `sha256:${'a'.repeat(64)}` }, layers: [] };
+  const digest = `sha256:${'b'.repeat(64)}`;
+  for (const [image, expectedTag] of [[`nginx@${digest}`, null], [`nginx:stable@${digest}`, 'nginx:stable']]) {
+    const entries = await archiveEntries(manifest, 'library/nginx', digest, image);
+    const get = name => JSON.parse(new TextDecoder().decode(entries.find(([key]) => key === name)[1]));
+    assert.deepEqual(get('manifest.json')[0].RepoTags, expectedTag ? [expectedTag] : []);
+    const annotation = get('index.json').manifests[0].annotations;
+    if (expectedTag) {
+      assert.equal(annotation['io.containerd.image.name'], 'docker.io/library/nginx:stable');
+      assert.equal(annotation['org.opencontainers.image.ref.name'], 'stable');
+      assert.ok(get('repositories')['library/nginx'].stable);
+    } else {
+      assert.equal(annotation['io.containerd.image.name'], `docker.io/library/nginx@${get('index.json').manifests[0].digest}`);
+      assert.equal(annotation['org.opencontainers.image.ref.name'], undefined);
+      assert.deepEqual(get('repositories'), {});
+    }
+  }
+});
+
+test('archive preserves upstream manifest bytes and their digest', async () => {
+  const bytes = new TextEncoder().encode(`{ "schemaVersion": 2, "config": {"digest":"sha256:${'a'.repeat(64)}"}, "layers": [] }\n`);
+  const manifest = JSON.parse(new TextDecoder().decode(bytes));
+  const entries = await archiveEntries(manifest, 'library/nginx', `sha256:${sha256(bytes)}`, 'nginx:stable', bytes);
+  const index = JSON.parse(new TextDecoder().decode(entries.find(([name]) => name === 'index.json')[1]));
+  const digest = index.manifests[0].digest;
+  assert.equal(digest, `sha256:${sha256(bytes)}`);
+  assert.deepEqual(entries.find(([name]) => name === `blobs/sha256/${digest.slice(7)}`)[1], bytes);
+});
+
 test('library TAR encoding preserves Unicode long paths, empty files and block boundaries', async () => {
   const names = ['empty', 'one', 'before-block', 'block', 'after-block', `${'目录/'.repeat(40)}镜像层.bin`];
   const sizes = [0, 1, 511, 512, 513, 3];

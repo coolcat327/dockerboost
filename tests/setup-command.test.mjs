@@ -120,3 +120,21 @@ test('setup command orders default mirrors and preserves other existing mirrors'
     rmSync(dir, { recursive: true, force: true });
   }
 });
+
+test('setup command treats quotes and shell syntax in values as literal data', t => {
+  if (spawnSync('jq', ['--version']).status !== 0) { t.skip('jq is not installed'); return; }
+  const dir = mkdtempSync(join(tmpdir(), 'dockerboost-setup-quote-'));
+  try {
+    const config = join(dir, "daemon '$(touch PWNED).json");
+    const origin = "https://a'b.example/$(touch PWNED)";
+    writeFileSync(config, '{}\n');
+    writeFileSync(join(dir, 'systemctl'), '#!/bin/sh\nexit 0\n');
+    chmodSync(join(dir, 'systemctl'), 0o755);
+    const result = spawnSync('/bin/sh', ['-c', createSetupCommand(origin, config)], {
+      cwd: dir, encoding: 'utf8', env: { ...process.env, PATH: `${dir}:${process.env.PATH}` }
+    });
+    assert.equal(result.status, 0, result.stderr);
+    assert.deepEqual(JSON.parse(readFileSync(config, 'utf8'))['registry-mirrors'], setupMirrors(origin));
+    assert.equal(existsSync(join(dir, 'PWNED')), false);
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});

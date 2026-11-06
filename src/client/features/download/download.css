@@ -26,7 +26,7 @@
 :is([data-panel="download"],[data-panel="pull"]) .compose-batch .batch-share-button::before { display:block }
 @container workspace (max-width:480px) {
   :is([data-panel="download"],[data-panel="pull"]) .batch-queue-section h4 { min-width:0; font-size:15px; gap:6px }
-  :is([data-panel="download"],[data-panel="pull"]) .batch-queue-section h4 [data-text="queue"] { overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
+  :is([data-panel="download"],[data-panel="pull"]) .batch-queue-section h4 [data-text="queue"] { min-width:0; overflow-wrap:anywhere }
   :is([data-panel="download"],[data-panel="pull"]) .compose-batch .batch-share-button { width:36px; padding:0; flex-shrink:0; justify-content:center }
   :is([data-panel="download"],[data-panel="pull"]) .batch-share-button > span { display:none }
 }

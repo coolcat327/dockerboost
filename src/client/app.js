@@ -5,10 +5,12 @@ import { createSelectionStore } from './common/selection-store.js';
 import { restoreSharedState, queueSharePrefix } from './common/share-link.js';
 
 const toast = document.querySelector('#toast');
+let toastTimer;
 const flash = (message) => {
+  clearTimeout(toastTimer);
   toast.textContent = message;
   toast.classList.add('show');
-  setTimeout(() => toast.classList.remove('show'), 1800);
+  toastTimer = setTimeout(() => toast.classList.remove('show'), 1800);
 };
 const language = createLanguage();
 const sharedState = restoreSharedState(window.location.hash);
@@ -20,7 +22,7 @@ const registrations = features.map((feature) => {
   if (!tab || !panel) throw new Error(`缺少 ${feature.id} 标签或面板`);
   if (feature.selectionGroup && !selectionGroups.has(feature.selectionGroup)) {
     const store = createSelectionStore();
-    if (feature.selectionGroup === 'image' && sharedState) store.update(sharedState);
+    if (feature.selectionGroup === 'image' && sharedState) store.update({ ...sharedState, platformIntent: sharedState.platform });
     selectionGroups.set(feature.selectionGroup, store);
   }
   const selectionStore = selectionGroups.get(feature.selectionGroup);
@@ -70,7 +72,7 @@ const activate = (registration) => {
   try {
     registration.instance = feature.init({ panel, locale: language.locale, messages: () => language.messages(feature), flash, selectionStore: registration.selectionStore, sharedBatchHash });
     registration.instance?.setLanguage?.(language.messages(feature));
-    if (sharedState && feature.id === sharedState.tab) window.history.replaceState(window.history.state, '', '/');
+    if (sharedState && feature.id === sharedState.tab) window.history.replaceState(window.history.state, '', window.location.pathname + window.location.search);
     registration.instance?.onActivate?.();
   } catch (error) {
     console.error(`Failed to initialize feature ${feature.id}`, error);
@@ -122,8 +124,15 @@ document.addEventListener('click', async (event) => {
   if (!button) return;
   const target = document.getElementById(button.dataset.copy);
   try {
-    await navigator.clipboard.writeText(target instanceof HTMLTextAreaElement ? target.value : target.innerText);
     clearTimeout(copyTimers.get(button));
+    button.classList.remove('is-copied');
+    const text = () => target instanceof HTMLTextAreaElement ? target.value : target.innerText;
+    const copied = text();
+    await navigator.clipboard.writeText(copied);
+    if (!button.isConnected || !target.isConnected || text() !== copied) {
+      flash(document.documentElement.lang === 'en' ? 'Content changed. Copy it again.' : '内容已变化，请重新复制');
+      return;
+    }
     button.classList.add('is-copied');
     copyTimers.set(button, setTimeout(() => button.classList.remove('is-copied'), 1800));
     flash(document.documentElement.lang === 'en' ? 'Full command copied' : '完整命令已复制');

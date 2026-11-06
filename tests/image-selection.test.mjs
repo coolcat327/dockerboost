@@ -29,6 +29,142 @@ function panel() {
   return { image, source, architecture, querySelector: (selector) => controls.get(selector) };
 }
 
+test('pasted platform is retained and an unsupported choice is not silently changed', async t => {
+  const original = { Option: globalThis.Option, fetch: globalThis.fetch, window: globalThis.window };
+  t.after(() => Object.assign(globalThis, original));
+  globalThis.Option = class { constructor(textContent, value) { this.textContent = textContent; this.value = value; } };
+  globalThis.window = { location: { host: 'proxy.test' } };
+  globalThis.fetch = async url => url === '/api/sources'
+    ? { ok: true, json: async () => ({ sources: [{ id: 'mirror-gcr', label: 'Docker Hub' }] }) }
+    : { ok: true, headers: { get: () => 'mirror-gcr' }, json: async () => ({ platforms: ['linux/amd64', 'linux/arm64/v8'] }) };
+  const store = createSelectionStore(), controls = panel();
+  const locale = () => ({ waitingPlatforms: 'Waiting', loadingPlatforms: 'Loading', noPlatforms: 'None', unsupportedPlatforms: 'Unsupported' });
+  const selection = createImageSelection({ panel: controls, locale, messages: () => ({ automatic: 'Auto' }), flash() {}, store });
+  selection.init(); await new Promise(setImmediate);
+  const paste = command => controls.image.listeners.get('paste')({ clipboardData: { getData: () => command }, preventDefault() {} });
+  paste('docker pull --platform linux/arm64 nginx');
+  await new Promise(resolve => setTimeout(resolve, 1050));
+  assert.equal(selection.current().platform, 'linux/arm64/v8');
+  assert.equal(store.snapshot().platform, 'linux/arm64/v8');
+  paste('docker pull --platform linux/arm/v7 nginx');
+  await new Promise(resolve => setTimeout(resolve, 1050));
+  assert.equal(selection.current().platform, '');
+  assert.equal(selection.current().platformUnsupported, true);
+  assert.equal(controls.architecture.disabled, false);
+  assert.equal(controls.architecture.options[0].textContent, 'Unsupported');
+  controls.architecture.value = 'linux/amd64'; controls.architecture.listeners.get('change')();
+  assert.equal(selection.current().platform, 'linux/amd64');
+  assert.equal(selection.current().platformUnsupported, false);
+  selection.dispose();
+});
+
+test('a same-image paste immediately invalidates the other tab when the platform is unsupported', async t => {
+  const original = { Option: globalThis.Option, fetch: globalThis.fetch, window: globalThis.window };
+  t.after(() => Object.assign(globalThis, original));
+  globalThis.Option = class { constructor(textContent, value) { this.textContent = textContent; this.value = value; } };
+  globalThis.window = { location: { host: 'proxy.test' } };
+  globalThis.fetch = async url => url === '/api/sources'
+    ? { ok: true, json: async () => ({ sources: [{ id: 'mirror-gcr', label: 'Docker Hub' }] }) }
+    : { ok: true, headers: { get: () => 'mirror-gcr' }, json: async () => ({ platforms: ['linux/amd64'] }) };
+  const store = createSelectionStore(); store.update({ image: 'nginx', source: 'auto' });
+  const first = panel(), second = panel();
+  const options = { locale: () => ({ waitingPlatforms: 'Waiting', loadingPlatforms: 'Loading', noPlatforms: 'None', unsupportedPlatforms: 'Unsupported' }), messages: () => ({ automatic: 'Auto' }), flash() {}, store };
+  const a = createImageSelection({ panel: first, ...options }), b = createImageSelection({ panel: second, ...options });
+  let notifications = 0; b.onPlatformChange(() => { notifications++; });
+  a.init(); b.init(); await new Promise(setImmediate);
+  assert.equal(b.current().platform, 'linux/amd64');
+  first.image.listeners.get('paste')({ clipboardData: { getData: () => 'docker pull --platform linux/arm64 nginx' }, preventDefault() {} });
+  assert.equal(b.current().platform, '');
+  assert.equal(b.current().platformUnsupported, true);
+  assert.equal(notifications, 1);
+  second.architecture.value = 'linux/amd64'; second.architecture.listeners.get('change')();
+  assert.equal(b.current().platform, 'linux/amd64');
+  assert.equal(store.snapshot().platformIntent, '');
+  a.dispose(); b.dispose();
+});
+
+test('an explicitly shared unsupported platform stays unselected until the user chooses', async t => {
+  const original = { Option: globalThis.Option, fetch: globalThis.fetch, window: globalThis.window };
+  t.after(() => Object.assign(globalThis, original));
+  globalThis.Option = class { constructor(textContent, value) { this.textContent = textContent; this.value = value; } };
+  globalThis.window = { location: { host: 'proxy.test' } };
+  globalThis.fetch = async url => url === '/api/sources'
+    ? { ok: true, json: async () => ({ sources: [{ id: 'mirror-gcr', label: 'Docker Hub' }] }) }
+    : { ok: true, headers: { get: () => 'mirror-gcr' }, json: async () => ({ platforms: ['linux/amd64'] }) };
+  const store = createSelectionStore();
+  store.update({ image: 'nginx', platform: 'linux/arm64/v8', platformIntent: 'linux/arm64/v8' });
+  const controls = panel();
+  const selection = createImageSelection({ panel: controls, locale: () => ({ waitingPlatforms: 'Waiting', loadingPlatforms: 'Loading', noPlatforms: 'None', unsupportedPlatforms: 'Unsupported' }), messages: () => ({ automatic: 'Auto' }), flash() {}, store });
+  selection.init(); await new Promise(setImmediate);
+  assert.equal(selection.current().platform, '');
+  assert.equal(selection.current().platformUnsupported, true);
+  assert.equal(store.snapshot().platform, 'linux/arm64/v8');
+  controls.architecture.value = 'linux/amd64'; controls.architecture.listeners.get('change')();
+  assert.equal(store.snapshot().platformIntent, '');
+  assert.equal(store.snapshot().platform, 'linux/amd64');
+  selection.dispose();
+});
+
+test('failed platform lookup remains distinct from no platforms when the language changes', async t => {
+  const original = { Option: globalThis.Option, fetch: globalThis.fetch, window: globalThis.window };
+  t.after(() => Object.assign(globalThis, original));
+  globalThis.Option = class { constructor(textContent, value) { this.textContent = textContent; this.value = value; } };
+  globalThis.window = { location: { host: 'proxy.test' } };
+  globalThis.fetch = async url => url === '/api/sources'
+    ? { ok: true, json: async () => ({ sources: [{ id: 'mirror-gcr', label: 'Docker Hub' }] }) }
+    : { ok: false, headers: { get: () => 'mirror-gcr' }, json: async () => ({ error: 'unavailable' }) };
+  let lang = { waitingPlatforms: 'Waiting', loadingPlatforms: 'Loading', noPlatforms: 'None', failedPlatforms: 'Failed' };
+  const controls = panel();
+  const selection = createImageSelection({ panel: controls, locale: () => lang, messages: () => ({ automatic: 'Auto' }), flash() {} });
+  selection.init();
+  await new Promise(setImmediate);
+  controls.image.value = 'nginx';
+  controls.source.listeners.get('change')();
+  await new Promise(setImmediate);
+  assert.equal(controls.architecture.options[0].textContent, 'Failed');
+  lang = { waitingPlatforms: '等待', loadingPlatforms: '加载中', noPlatforms: '无架构', failedPlatforms: '查询失败' };
+  selection.setLanguage();
+  assert.equal(controls.architecture.options[0].textContent, '查询失败');
+  assert.equal(controls.architecture.disabled, true);
+  selection.dispose();
+});
+
+test('composition waits for confirmation before sharing or querying an image', async () => {
+  const original = { Option: globalThis.Option, fetch: globalThis.fetch, window: globalThis.window };
+  globalThis.Option = class { constructor(textContent, value) { this.textContent = textContent; this.value = value; } };
+  globalThis.window = { location: { host: 'proxy.test' } };
+  const requests = [];
+  globalThis.fetch = async url => {
+    if (url === '/api/sources') return { ok: true, json: async () => ({ sources: [{ id: 'mirror-gcr', label: 'Docker Hub' }] }) };
+    requests.push(url);
+    return { ok: true, headers: { get: () => 'mirror-gcr' }, json: async () => ({ platforms: ['linux/amd64'] }) };
+  };
+  const store = createSelectionStore();
+  const options = { locale: () => ({ waitingPlatforms: 'Waiting', loadingPlatforms: 'Loading', noPlatforms: 'None' }), messages: () => ({ automatic: 'Auto' }), flash: () => {}, store };
+  const first = panel(), second = panel();
+  const firstSelection = createImageSelection({ panel: first, ...options });
+  const secondSelection = createImageSelection({ panel: second, ...options });
+  try {
+    firstSelection.init(); secondSelection.init();
+    await new Promise(setImmediate);
+    first.image.listeners.get('compositionstart')();
+    first.image.value = 'ngin';
+    first.image.listeners.get('input')();
+    await new Promise(resolve => setTimeout(resolve, 1050));
+    assert.equal(requests.length, 0);
+    assert.equal(second.image.value, '');
+    first.image.value = 'nginx:latest';
+    first.image.listeners.get('compositionend')();
+    assert.equal(second.image.value, 'nginx:latest');
+    await new Promise(resolve => setTimeout(resolve, 1050));
+    assert.equal(requests.length, 1);
+    assert.equal(new URL(requests[0], 'https://proxy.test').searchParams.get('image'), 'nginx:latest');
+  } finally {
+    firstSelection.dispose(); secondSelection.dispose();
+    Object.assign(globalThis, original);
+  }
+});
+
 test('shared image waits one second after typing and sends one platform request', async () => {
   const original = { Option: globalThis.Option, fetch: globalThis.fetch, window: globalThis.window };
   globalThis.Option = class { constructor(textContent, value) { this.textContent = textContent; this.value = value; } };
@@ -269,6 +405,30 @@ test('initial shared state restores a nondefault source and platform after async
   } finally { Object.assign(globalThis, original); }
 });
 
+test('shared docker pull commands resolve the image and synchronize its normalized value', async t => {
+  const original = { Option: globalThis.Option, fetch: globalThis.fetch, window: globalThis.window };
+  t.after(() => Object.assign(globalThis, original));
+  globalThis.Option = class { constructor(textContent, value) { this.textContent = textContent; this.value = value; } };
+  globalThis.window = { location: { host: 'proxy.test' } };
+  const requests = [];
+  globalThis.fetch = async url => {
+    if (url === '/api/sources') return { ok: true, json: async () => ({ sources: [{ id: 'mirror-gcr', label: 'Docker Hub' }] }) };
+    requests.push(url);
+    return { ok: true, headers: { get: () => 'mirror-gcr' }, json: async () => ({ platforms: ['linux/amd64', 'linux/arm64/v8'] }) };
+  };
+  const store = createSelectionStore();
+  store.update({ image: 'docker pull --platform linux/arm64 nginx:latest', source: 'auto', platform: '' });
+  const controls = panel();
+  const selection = createImageSelection({ panel: controls, locale: () => ({ waitingPlatforms: 'Waiting', loadingPlatforms: 'Loading', noPlatforms: 'None' }), messages: () => ({ automatic: 'Auto' }), flash() {}, store });
+  selection.init();
+  await new Promise(setImmediate);
+  assert.equal(controls.image.value, 'nginx:latest');
+  assert.equal(store.snapshot().image, 'nginx:latest');
+  assert.equal(new URL(requests[0], 'https://proxy.test').searchParams.get('image'), 'nginx:latest');
+  assert.equal(selection.current().platform, 'linux/arm64/v8');
+  selection.dispose();
+});
+
 
 test('source catalog shares pending and successful requests and retries after failure', async t => {
   let calls = 0, resolveResponse;
@@ -358,4 +518,23 @@ test('reparsing refetches platforms after success or failure while preserving ca
   assert.ok(requests.slice(1).every(request => request.options.cache === 'no-store'));
   assert.deepEqual(controls.architecture.options.map(option => option.value), ['linux/arm64/v8', 'linux/arm64/v9']);
   assert.equal(controls.architecture.value, 'linux/arm64/v8');
+});
+
+
+test('platform lookup shares in-flight requests but retries HTTP failures without evicting newer results', async t => {
+  const pending = [];
+  t.mock.method(globalThis, 'fetch', () => new Promise(resolve => pending.push(resolve)));
+  const store = createSelectionStore();
+  const first = store.lookupPlatforms('/api/platforms?image=nginx');
+  assert.equal(store.lookupPlatforms('/api/platforms?image=nginx'), first);
+  pending[0](Response.json({ error: 'Unavailable' }, { status: 503 }));
+  assert.equal((await first).ok, false);
+  const retry = store.lookupPlatforms('/api/platforms?image=nginx');
+  assert.equal(pending.length, 2);
+  const newer = store.lookupPlatforms('/api/platforms?image=nginx', { refresh: true });
+  pending[2](Response.json({ platforms: ['linux/amd64'] }));
+  assert.equal((await newer).ok, true);
+  pending[1](Response.json({ error: 'Unavailable' }, { status: 503 }));
+  assert.equal((await retry).ok, false);
+  assert.equal(store.lookupPlatforms('/api/platforms?image=nginx'), newer);
 });

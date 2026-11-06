@@ -69,11 +69,24 @@ download_image() {
     exit 1
   fi
   printf '%s\n' 'Invalid image metadata returned by the server.' > "$job_dir/reason"
-  jq -e '(.image|type=="string") and (.repository|type=="string") and (.source|type=="string") and ([.config] + .layers | all(.digest | test("^sha256:[a-f0-9]{64}$"))) and ([.config] + .layers | all(.size | type == "number" and . >= 0 and floor == .))' "$work/plan.json" >/dev/null
+  jq -e '(.image|type=="string") and (.repository|type=="string") and (.source|type=="string") and (.platform == null or (.platform | type == "string" and test("^[a-z0-9][a-z0-9._-]*/[a-z0-9][a-z0-9._-]*(/[a-z0-9][a-z0-9._-]*)?$"; "i"))) and ([.config] + .layers | all(.digest | test("^sha256:[a-f0-9]{64}$"))) and ([.config] + .layers | all(.size | type == "number" and . >= 0 and . <= 9007199254740991 and floor == .)) and ([.config] + .layers | group_by(.digest) | all(map(.size) | unique | length == 1)) and ([.config] + .layers | unique_by(.digest) | map(.size) | add <= 9007199254740991)' "$work/plan.json" >/dev/null
   display=$(jq -r '.image' "$work/plan.json")
   repository=$(jq -r '.repository' "$work/plan.json")
   resolved=$(jq -r '.source' "$work/plan.json")
-  filename=$(printf '%s_%s' "${display#library/}" "$platform" | tr '/:@' '___').tar
+  resolved_platform=$(jq -r '.platform // empty' "$work/plan.json")
+  if [ -n "$resolved_platform" ]; then
+    platform=$resolved_platform
+    printf '%s' "$platform" > "$job_dir/platform"
+  fi
+  filename=$(jq -r 'if (.filename | type) == "string" then .filename | select(length <= 240 and test("^[a-zA-Z0-9._-]+[.]tar$")) else empty end' "$work/plan.json")
+  if [ -z "$filename" ]; then
+    filename=$(printf '%s_%s' "${display#library/}" "$platform" | LC_ALL=C tr -c 'a-zA-Z0-9._-' '_')
+    if [ "${#filename}" -gt 236 ]; then
+      checksum=$(printf '%s\n%s' "$display" "$platform" | cksum | tr ' ' '_')
+      filename=$(printf '%.200s_%s' "$filename" "$checksum")
+    fi
+    filename=$filename.tar
+  fi
   output="$PWD/$filename"
   if [ -e "$output" ]; then
     printf 'Output already exists: %s\n' "$output" > "$job_dir/reason"
@@ -82,7 +95,7 @@ download_image() {
   printf '%s\n' 'Unable to download or verify image blobs after retries.' > "$job_dir/reason"
   mkdir "$job_dir/errors"
   mkdir -p "$work/blobs/sha256"
-  jq '[{Config: ("blobs/sha256/" + (.config.digest | ltrimstr("sha256:"))), RepoTags: (if .image | contains("@") then [] else [.image] end), Layers: [.layers[].digest | "blobs/sha256/" + ltrimstr("sha256:")]}]' "$work/plan.json" > "$work/manifest.json"
+  jq '[{Config: ("blobs/sha256/" + (.config.digest | ltrimstr("sha256:"))), RepoTags: (.image | split("@") as $parts | $parts[0] as $name | if ($parts | length) == 1 or ($name | split("/") | last | contains(":")) then [$name] else [] end), Layers: [.layers[].digest | "blobs/sha256/" + ltrimstr("sha256:")]}]' "$work/plan.json" > "$work/manifest.json"
   jq -r '[.config] + .layers | unique_by(.digest) | .[] | [.digest, (.size|tostring)] | @tsv' "$work/plan.json" > "$work/blobs.list"
   jq '[.config] + .layers | unique_by(.digest) | map(.size) | add // 0' "$work/plan.json" > "$job_dir/total"
   jq -r '[.layers[].digest] | unique | .[]' "$work/plan.json" > "$job_dir/layers"
@@ -143,7 +156,10 @@ download_image() {
   tar -cf "$work/image.tar" -C "$work" manifest.json blobs &
   pids="$!"
   wait_batch
-  ln "$work/image.tar" "$output"
+  if ! ln "$work/image.tar" "$output"; then
+    if [ -e "$output" ]; then printf 'Output already exists: %s\n' "$output" > "$job_dir/reason"; fi
+    exit 1
+  fi
   echo "Saved: $output"
   cleanup_image
   trap - 0

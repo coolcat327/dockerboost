@@ -29,6 +29,13 @@ test('explicit worker errors retain their diagnostic message', async () => {
   await assert.rejects(pending, /镜像层下载不完整/);
 });
 
+test('non-retryable worker failures retain their retry policy', async () => {
+  const worker = new WorkerStub();
+  const pending = runExport(worker, {}, () => {});
+  worker.send({ ok: false, error: '架构不匹配', code: 'PLATFORM_CHANGED', retryable: false });
+  await assert.rejects(pending, error => error.message === '架构不匹配' && error.code === 'PLATFORM_CHANGED' && error.retryable === false);
+});
+
 test('aborting a download settles the pending export and ignores later progress', async () => {
   const worker = new WorkerStub();
   const controller = new AbortController();
@@ -66,4 +73,16 @@ test('worker availability check respects stop requests', async t => {
   const pending = resolveImageExportWorker('/assets/oldbuild/image-export-worker.js', { signal: controller.signal });
   controller.abort();
   await assert.rejects(pending, { name: 'AbortError' });
+});
+
+
+test('a worker that rejects the initial message removes listeners before failing', async () => {
+  const worker = new WorkerStub();
+  const controller = new AbortController();
+  let progress = 0;
+  worker.postMessage = () => { throw new Error('cannot clone payload'); };
+  await assert.rejects(runExport(worker, {}, () => { progress++; }, { signal: controller.signal }), /cannot clone payload/);
+  worker.send({ phase: 'download' });
+  controller.abort();
+  assert.equal(progress, 0);
 });

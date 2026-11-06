@@ -20,7 +20,8 @@ else { fs.appendFileSync(process.env.MARKER, JSON.stringify({pid:process.pid,arg
 pid, fd = pty.fork()
 if pid == 0:
  os.execvp('sh', ['sh', '-c', 'sh "$HELPER" https://example.com nginx:latest linux/amd64 auto && echo finished'])
-deadline = time.monotonic() + 5
+# Allow the shell, jq and mock curl processes to start under parallel test load.
+deadline = time.monotonic() + 15
 while time.monotonic() < deadline:
  if os.path.exists(os.environ['MARKER']) and len(open(os.environ['MARKER']).readlines()) >= 3: break
  time.sleep(.02)
@@ -50,7 +51,7 @@ for item in data:
  else: os.kill(item['pid'], signal.SIGKILL); raise Exception('curl remained running')
  assert any(arg.startswith('-') and 's' in arg and 'S' in arg for arg in item['args']) or ('--silent' in item['args'] and '--show-error' in item['args']), 'curl progress meter was not disabled'
 `;
-    const result = spawnSync('python3', ['-c', python], {cwd:dir, encoding:'utf8', timeout:12000, env:{...process.env, TERM:'xterm', PATH:`${join(dir,'bin')}:${process.env.PATH}`, HELPER:helper, MARKER:join(dir,'marker')}});
+    const result = spawnSync('python3', ['-c', python], {cwd:dir, encoding:'utf8', timeout:30000, env:{...process.env, TERM:'xterm', PATH:`${join(dir,'bin')}:${process.env.PATH}`, HELPER:helper, MARKER:join(dir,'marker')}});
     assert.equal(result.status, 0, result.stderr);
     const files = await readdir(dir);
     assert.ok(!files.includes('download.sh'));

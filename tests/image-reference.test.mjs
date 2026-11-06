@@ -50,7 +50,30 @@ test('qualified registry hosts select their source and reject conflicting select
   assert.throws(() => imageReference('docker.io/nginx', { ...context, source: 'k8s' }), /不一致/);
 });
 
+test('rejects incomplete references and invalid repository path segments', () => {
+  for (const image of [':latest', 'nginx:', 'nginx@', 'owner//image', 'owner/../image', 'owner/./image', 'nginx@sha256:abc/extra']) {
+    assert.throws(() => imageReference(image, { ...context, source: 'auto' }), /有效的镜像名/, image);
+  }
+  assert.equal(imageReference('owner/image@sha256:abc', { ...context, source: 'auto' }).reference, 'sha256:abc');
+});
+
+test('splits a tagged digest without putting the tag into the registry repository', () => {
+  const image = imageReference('owner/image:stable@sha256:abc', { ...context, source: 'auto' });
+  assert.equal(image.original, 'owner/image:stable@sha256:abc');
+  assert.equal(image.repository, 'owner/image');
+  assert.equal(image.reference, 'sha256:abc');
+  assert.equal(image.upstream, 'owner/image@sha256:abc');
+  assert.throws(() => imageReference('owner/image:@sha256:abc', { ...context, source: 'auto' }), /有效的镜像名/);
+});
+
 test('creates safe archive filenames', () => {
   assert.equal(archiveFilename('owner/image:1.0', 'linux/arm64'), 'owner_image_1.0_linux_arm64.tar');
   assert.equal(archiveFilename('library/postgres:18', 'linux/arm64/v8'), 'postgres_18_linux_arm64_v8.tar');
+  const image = `${'a'.repeat(200)}/${'b'.repeat(40)}:${'t'.repeat(40)}`;
+  const long = archiveFilename(image, 'linux/amd64');
+  assert.ok(Buffer.byteLength(long) <= 240);
+  assert.match(long, /^[a-zA-Z0-9._-]+\.tar$/);
+  assert.equal(archiveFilename(image, 'linux/amd64'), long);
+  assert.notEqual(archiveFilename(`${'a'.repeat(200)}/${'b'.repeat(39)}c:${'t'.repeat(40)}`, 'linux/amd64'), long);
+  assert.notEqual(archiveFilename(image, 'linux/arm64'), long);
 });

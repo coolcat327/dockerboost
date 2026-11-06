@@ -1,3 +1,4 @@
+import { shellQuote } from '../../common/shell-quote.js';
 import { retryDownload } from '../../common/download-retry.js';
 import { buildVersion, downloadRequestUrl, staticAssetUrl } from '../../common/download-cache-policy.js';
 import { writeOpfsFile, writeOpfsStream } from '../../common/opfs-file-writer.js';
@@ -38,6 +39,7 @@ export const feature = {
     const download = panel.querySelector('#install-download');
     const status = panel.querySelector('#install-status');
     const command = panel.querySelector('#install-command');
+    const copyCommand = panel.querySelector('[data-copy="install-command"]');
     const progressTrack = panel.querySelector('#install-progress');
     const progress = createDownloadProgress({
       row: panel.querySelector('.install-progress-row'), status,
@@ -47,7 +49,7 @@ export const feature = {
     let controller;
     let generation = 0, busy = false, text = translations['zh-CN'], state = 'chooseArch', downloadCommand = '';
     const setStatus = (key) => { state = key; progress.info(text[key]); };
-    const renderCommand = () => { command.textContent = downloadCommand || text.waiting; };
+    const renderCommand = () => { command.textContent = downloadCommand || text.waiting; copyCommand.disabled = !downloadCommand; };
     const bundleName = () => `docker-offline-${selectedArch}-docker-${docker.value}-compose-${composeVersion}`;
     const renderPackage = () => {
       panel.querySelector('#install-package-name').textContent = docker.value ? `${bundleName()}.tar` : text.package;
@@ -59,8 +61,7 @@ export const feature = {
     const invalidate = () => {
       downloadCommand = '';
       if (docker.value && composeVersion) {
-        const quote = value => "'" + String(value).replaceAll("'", "'\"'\"'") + "'";
-        downloadCommand = `curl -fsSL -o .download-docker.sh ${quote(`${window.location.origin}${staticAssetUrl('download-docker.sh')}`)} && sh .download-docker.sh ${[window.location.origin, selectedArch, docker.value, composeVersion, version].map(quote).join(' ')}`;
+        downloadCommand = `curl -fsSL -o .download-docker.sh ${shellQuote(`${window.location.origin}${staticAssetUrl('download-docker.sh')}`)} && sh .download-docker.sh ${[window.location.origin, selectedArch, docker.value, composeVersion, version].map(shellQuote).join(' ')}`;
       }
       renderCommand(); renderPackage();
     };
@@ -183,7 +184,7 @@ export const feature = {
       }
     });
     void clearDownloadCaches().catch(() => {});
-    ready(); renderArch(); setStatus('chooseArch');
+    ready(); renderArch(); renderCommand(); setStatus('chooseArch');
     return { setLanguage(message) {
       text = translations[message === messages.en ? 'en' : 'zh-CN'];
       panel.querySelectorAll('[data-install-text]').forEach(node => { node.innerHTML = text[node.dataset.installText]; });

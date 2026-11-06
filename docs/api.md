@@ -31,6 +31,11 @@
 
 `image` 必填，可用 `nginx:latest`、`owner/image:tag` 或已配置源的域名引用（如 `ghcr.io/owner/image:tag`）。带域名的引用固定对应源，不可与其他 `source` 混用；`docker.io/...` 固定 `mirror-gcr`。元数据接口的 `source` 默认 `auto`，并发选择首个成功源；Docker Hub 简写补全 `library/`，其他源保留原生路径。路径中的源与查询参数必须一致。
 
+支持 `name@digest` 与 `name:tag@digest`；后一种形式按摘要查询，仓库路径不包含标签。
+终端下载接口保留用户显式输入的已配置镜像源域名和标签，用于归档名称与导入标签；Registry 请求仍使用该源对应的仓库路径。
+
+单架构清单的配置读取失败时，`/api/platforms` 返回原始清单，让客户端按需重试配置读取；请求取消仍会终止上游读取。
+
 Registry 只读请求返回成功的 sha256 blob（200 或 206）时，浏览器缓存策略为 `private, max-age=86400`；上游明确设置 `no-store` 或 `no-cache` 时不覆盖。其他 Registry 响应沿用上游缓存策略。
 
 分享链接如 `/#download?image=nginx&source=auto&platform=linux/amd64`，参数存于 URL 片段，不保存到服务端。`/v2/*` 按 Registry 请求方法透传，不受 API 的 GET 限制；不绕过上游鉴权。
@@ -39,12 +44,14 @@ Registry 只读请求返回成功的 sha256 blob（200 或 206）时，浏览器
 
 | 路径 | 参数 | 返回与用途 |
 | --- | --- | --- |
-| `/api/inspect` | `image`、`source`、`platform` | JSON：`image`、`layers`、`sizeBytes`、`platform`、`source`；大小为配置与压缩镜像层总字节数，未知时为 null |
-| `/api/download-plan` | `image`、`source`、`platform` | JSON `{ image, repository, source, config, layers }`：镜像显示名、实际仓库和镜像源，以及配置与各层的 blob 描述信息；不缓存 |
+| `/api/inspect` | `image`、`source`、`platform` | JSON：`image`、`layers`、`sizeBytes`、`platform`、`source`；大小为去重后配置与压缩镜像层的总字节数，未知或相同 `digest` 的描述符大小冲突时为 null |
+| `/api/download-plan` | `image`、`source`、`platform` | JSON `{ image, repository, source, platform, filename, config, layers }`：镜像显示名、实际仓库、镜像源、解析后的平台和建议归档名，以及配置与各层的 blob 描述信息；不缓存 |
 | `/api/download-script` | `image`、`source`、`platform` | 兼容旧命令的镜像终端下载脚本，返回纯文本；不缓存 |
 | `/api/save` | 无 | 已停用，返回 410；使用浏览器或终端下载 |
 
-inspect、download-plan 和 download-script 的 `image`、`source` 规则同拉取接口；`platform` 默认 `linux/amd64`，也可指定 `linux/arm64/v8` 等平台。
+inspect、download-plan 和 download-script 的 `image`、`source` 规则同拉取接口；`platform` 默认 `linux/amd64`，也可指定 `linux/arm64/v8` 等平台。未指定变体时优先匹配无变体的平台，再匹配同一操作系统与架构的变体；指定变体时须精确匹配。可确定实际平台时，inspect 和 download-plan 返回包含变体的实际值；无法确定时 inspect 保留请求值，终端下载接口返回错误，避免将未验证的平台写入归档名。
+
+download-plan 和 download-script 要求配置与层的 blob 描述符使用有效的 SHA-256、非负安全整数大小，且相同 digest 的大小一致；清单不满足要求时返回 502，不生成下载计划或脚本。
 
 ### 通用
 

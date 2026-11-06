@@ -27,8 +27,12 @@ export const feature = {
   const browserDownload = panel.querySelector('#browser-download');
   const shareButton = panel.querySelector('#download-share');
   const loadCommand = panel.querySelector('#load-command');
+  const copyCommand = panel.querySelector('[data-copy="load-command"]');
+  let commandState = 'waitingPlatforms';
+  const showCommandStatus = state => { commandState = state; loadCommand.textContent = locale()[state]; copyCommand.disabled = true; };
   lookupResult.classList.remove('hidden');
   let activeExport;
+  let needsReparse = false;
   let selection;
   let inspectionController;
   let inspectionToken = 0;
@@ -37,12 +41,13 @@ export const feature = {
   let inspectionVisible = false;
 
   const buildDownload = () => {
-    const { image: input, platform, resolvedSource } = selection.current();
-    if (!input.trim()) { loadCommand.textContent = locale().waitingPlatforms; return; }
-    if (!platform) { loadCommand.textContent = locale().loadingPlatforms; return; }
+    const { image: input, platform, platformUnsupported, resolvedSource } = selection.current();
+    if (!input.trim()) { showCommandStatus('waitingPlatforms'); return; }
+    if (!platform) { showCommandStatus(platformUnsupported ? 'unsupportedPlatforms' : 'noPlatforms'); if (!activeExport) browserDownload.setAttribute('aria-disabled', 'true'); return; }
     const image = selection.resolve();
     browserDownload.removeAttribute('aria-disabled');
-    loadCommand.textContent = batchCommands([{ image: image.upstream, platform, source: resolvedSource }], window.location.origin);
+    commandState = ''; copyCommand.disabled = false;
+    loadCommand.textContent = batchCommands([{ image: image.original, platform, source: resolvedSource }], window.location.origin);
   };
   const cancelInspection = () => {
     inspectionController?.abort();
@@ -80,18 +85,19 @@ export const feature = {
     event.preventDefault();
     if (activeExport) {
       activeExport.controller.abort();
-      activeExport.worker?.terminate();
       return;
     }
+    if (needsReparse) { needsReparse = false; browserDownload.textContent = messages().browser; browserDownload.setAttribute('aria-disabled', 'true'); void selection.recheck(); return; }
     if (browserDownload.getAttribute('aria-disabled') === 'true') return;
     cancelInspection();
-    const exportTask = { controller: new AbortController(), worker: undefined };
+    const exportTask = { controller: new AbortController() };
+    const exportSelection = selection.current();
     activeExport = exportTask;
     browserDownload.classList.add('is-stoppable');
     browserDownload.textContent = messages().stop;
     progress.start();
     try {
-      const { platform, resolvedSource } = selection.current();
+      const { platform, resolvedSource } = exportSelection;
       const image = selection.resolve();
       const filename = archiveFilename(image.original, platform);
       const result = await retryDownload(attempt => {
@@ -100,34 +106,39 @@ export const feature = {
       }, { signal: exportTask.controller.signal, onRetry: (error, retry) => progress.retry(error, retry) });
       progress.complete({ filename: result.filename, size: result.archive.size });
     } catch (error) {
+      const current = selection.current();
+      if (error?.code === 'PLATFORM_CHANGED' && current.image === exportSelection.image && current.source === exportSelection.source && current.platform === exportSelection.platform) {
+        needsReparse = true; showCommandStatus('failedPlatforms');
+      }
       progress.fail(error, exportTask.controller.signal.aborted);
       if (!exportTask.controller.signal.aborted) flash(lookupStatus.textContent);
     } finally {
-      exportTask.worker?.terminate();
       activeExport = undefined;
       browserDownload.classList.remove('is-stoppable');
-      browserDownload.textContent = messages().browser;
-      if (selection.current().platform) browserDownload.removeAttribute('aria-disabled');
+      browserDownload.textContent = needsReparse ? messages().reparse : messages().browser;
+      if (needsReparse || selection.current().platform) browserDownload.removeAttribute('aria-disabled');
       else browserDownload.setAttribute('aria-disabled', 'true');
     }
   });
   selection = createImageSelection({
     panel, locale, messages, flash, store: selectionStore,
-    onLoading: () => { cancelInspection(); if (!activeExport) progress.clear(); },
+    onLoading: () => { needsReparse = false; cancelInspection(); showCommandStatus('loadingPlatforms'); if (!activeExport) progress.clear(); },
     onReady: () => {
       buildDownload();
-      if (!activeExport) showInspection();
+      if (!activeExport && selection.current().platform) showInspection();
     },
     onError: (error) => {
       cancelInspection();
-      loadCommand.textContent = locale().waitingPlatforms;
+      showCommandStatus('failedPlatforms');
       if (!activeExport) {
         progress.info(error instanceof Error ? error.message : locale().waitingPlatforms);
       }
     },
     onReset: () => {
+      needsReparse = false;
+      if (!activeExport) browserDownload.textContent = messages().browser;
       cancelInspection();
-      loadCommand.textContent = locale().waitingPlatforms;
+      showCommandStatus('waitingPlatforms');
       if (!activeExport) {
         progress.clear();
         browserDownload.setAttribute('aria-disabled', 'true');
@@ -139,6 +150,7 @@ export const feature = {
   selection.onPlatformChange(() => {
     try {
       buildDownload();
+      if (!selection.current().platform) { cancelInspection(); if (!activeExport) progress.clear(); return; }
       if (activeExport) return;
       showInspection();
     } catch { /* wait for a valid name */ }
@@ -147,7 +159,8 @@ export const feature = {
   return { setLanguage: (message) => {
     batch.setLanguage(message === feature.messages.en);
     selection.setLanguage();
-    browserDownload.textContent = activeExport ? message.stop : message.browser;
+    if (commandState) showCommandStatus(commandState);
+    browserDownload.textContent = activeExport ? message.stop : needsReparse ? message.reparse : message.browser;
     shareButton.textContent = message.share;
     progress.setLanguage(message === feature.messages.en ? 'en' : 'zh-CN');
     renderInspection();

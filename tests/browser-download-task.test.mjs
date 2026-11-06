@@ -92,3 +92,22 @@ test('concurrent cache sweeps tolerate an abandoned directory already removed by
   root.removeEntry = async () => { throw new Error('permission denied'); };
   await assert.rejects(clearCacheDirectories(root, { locks:null }), /permission denied/);
 });
+
+
+test('failed lock requests release the in-memory cleanup protection', async () => {
+  const removed = [];
+  const root = { async *entries() { yield ['failed-lock', {}]; }, async removeEntry(name) { removed.push(name); } };
+  await assert.rejects(protectCacheJob('failed-lock', { request() { throw new Error('lock unavailable'); } }), /lock unavailable/);
+  await clearCacheDirectories(root, { locks: null });
+  assert.deepEqual(removed, ['failed-lock']);
+  await assert.rejects(protectCacheJob('failed-lock', { request: async () => { throw new Error('lock rejected'); } }), /lock rejected/);
+  await clearCacheDirectories(root, { locks: null });
+  assert.deepEqual(removed, ['failed-lock', 'failed-lock']);
+
+  const release = await protectCacheJob('failed-lock', { request(_name, callback) {
+    return callback().then(() => { throw new Error('lock release failed'); });
+  } });
+  await assert.rejects(release(), /lock release failed/);
+  await clearCacheDirectories(root, { locks: null });
+  assert.deepEqual(removed, ['failed-lock', 'failed-lock', 'failed-lock']);
+});

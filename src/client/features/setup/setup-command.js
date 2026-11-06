@@ -1,3 +1,5 @@
+import { shellQuote } from '../../common/shell-quote.js';
+
 export const setupMirrors = (origin) => [
   'https://docker.1ms.run',
   'https://docker.xuanyuan.me',
@@ -6,7 +8,7 @@ export const setupMirrors = (origin) => [
 ];
 
 export const createSetupCommand = (origin, daemonJsonPath = '/etc/docker/daemon.json') => `(
-  daemon_json="${daemonJsonPath}"
+  daemon_json=${shellQuote(daemonJsonPath)}
   if ! command -v jq >/dev/null 2>&1; then
     echo "jq is required" >&2
     exit 1
@@ -23,7 +25,7 @@ export const createSetupCommand = (origin, daemonJsonPath = '/etc/docker/daemon.
   }
   trap 'rm -f "$daemon_json_tmp"' EXIT
   cp -p "$daemon_json" "$daemon_json_tmp" || exit 1
-  jq -e --argjson mirrors '${JSON.stringify(setupMirrors(origin))}'  '
+  jq -e --argjson mirrors ${shellQuote(JSON.stringify(setupMirrors(origin)))}  '
     ."registry-mirrors" = (
       $mirrors[:-1] + [(."registry-mirrors" // [])[] | select(. as $item | $mirrors | index($item) | not)] + $mirrors[-1:]
     )

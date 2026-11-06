@@ -1,6 +1,5 @@
 import { staticAssetUrl } from '../../common/download-cache-policy.js';
-
-const shellQuote = value => "'" + String(value).replaceAll("'", "'\"'\"'") + "'";
+import { shellQuote } from '../../common/shell-quote.js';
 
 export function batchCommands(entries, origin) {
   const unique = [...new Map(entries.map(({ image, platform, source = 'auto' }) => [JSON.stringify([image, platform, source]), { image, platform, source }])).values()];

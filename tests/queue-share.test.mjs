@@ -9,7 +9,8 @@ test('short queue shares preserve explicit variants, digest references and unsel
   const entries = [
     { image: 'busybox:latest', platform: 'linux/arm64/v8' },
     { image: 'busybox:latest', platform: 'linux/amd64' },
-    { image: `org/image@sha256:${'a'.repeat(64)}`, platform: '' }
+    { image: `org/image@sha256:${'a'.repeat(64)}`, platform: '' },
+    { image: `ghcr.io/org/image:stable@sha256:${'b'.repeat(64)}`, platform: 'linux/amd64' }
   ];
   const hash = await encodeQueueShare(entries);
   assert.match(hash, /^#download-batch\?v=1&queue=/);
@@ -34,13 +35,14 @@ test('duplicate entries collapse without merging different platforms', async () 
 
 test('invalid or unsupported shares are rejected before any entries can be applied', async () => {
   assert.equal(await restoreQueueShare('#download?image=nginx'), null);
-  for (const queue of [[], {}, [['nginx']], [['nginx', 'linux/arm64/v8/extra']], [['nginx', 64]], [['nginx', ''], ['bad;curl', '']], [['nginx', '', 'extra']], [['x'.repeat(513), '']]]) {
+  for (const queue of [[], {}, [['nginx']], [['nginx', 'linux/arm64/v8/extra']], [['nginx', 64]], [['nginx', ''], ['bad;curl', '']], [['nginx', ''], ['owner//image', '']], [['nginx:', '']], [['owner/../image', '']], [['nginx', '', 'extra']], [['x'.repeat(513), '']]]) {
     await assert.rejects(restoreQueueShare(readable(queue)), /SHARE_INVALID/);
   }
   for (const hash of ['#download-batch?v=2&queue=[]', '#download-batch?v=1&queue=[]&gzip=abc', '#download-batch?v=1&queue=[]&queue=[]', '#download-batch?v=1&v=1&queue=[]', '#download-batch?v=1&gzip=not+base64', '#download-batch?v=1&gzip=AAAA']) {
     await assert.rejects(restoreQueueShare(hash));
   }
   await assert.rejects(encodeQueueShare([]), /SHARE_INVALID/);
+  await assert.rejects(encodeQueueShare([{ image: 'owner//image', platform: '' }]), /SHARE_INVALID/);
 });
 
 test('fragment and decompressed payload limits reject oversized input', async () => {

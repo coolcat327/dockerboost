@@ -2,12 +2,16 @@ const common = {
   'zh-CN': {
     heroTitle: '镜像拉取，更快一点',
     loadingPlatforms: '正在读取镜像架构…',
+    failedPlatforms: '镜像架构查询失败',
+    unsupportedPlatforms: '所选架构不可用，请重新选择',
     noPlatforms: '未找到可用架构',
     waitingPlatforms: '待获取'
   },
   en: {
     heroTitle: 'Pull images. Move faster.',
     loadingPlatforms: 'Loading image architectures…',
+    failedPlatforms: 'Image architecture lookup failed',
+    unsupportedPlatforms: 'Selected architecture unavailable; choose another',
     noPlatforms: 'No architecture available',
     waitingPlatforms: 'Awaiting lookup'
   }
@@ -36,7 +40,9 @@ function renderPanel(panel, message) {
 }
 
 export function createLanguage() {
-  const detected = localStorage.getItem('dockerboost-language') || localStorage.getItem('dockwave-language') || (navigator.language.toLowerCase().startsWith('zh') ? 'zh-CN' : 'en');
+  let saved;
+  try { saved = localStorage.getItem('dockerboost-language') || localStorage.getItem('dockwave-language'); } catch { /* Language still works without persistent storage. */ }
+  const detected = saved || (navigator.language.toLowerCase().startsWith('zh') ? 'zh-CN' : 'en');
   let language = common[detected] ? detected : 'zh-CN';
   const buttons = [...document.querySelectorAll('.language')];
   let registrations = [];
@@ -53,7 +59,7 @@ export function createLanguage() {
       instance?.setLanguage?.(message);
     });
     buttons.forEach((button) => button.classList.toggle('active', button.dataset.language === language));
-    localStorage.setItem('dockerboost-language', language);
+    try { localStorage.setItem('dockerboost-language', language); } catch { /* Keep the current language for this page. */ }
   };
   const bind = (items) => {
     registrations = items;

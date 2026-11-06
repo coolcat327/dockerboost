@@ -1,17 +1,30 @@
+import { archiveFilename } from '../../../common/archive-filename.js';
+import { localImageTag } from '../../../common/image-syntax.js';
+import { HttpError } from '../../common/errors';
+
 type BlobDescriptor = { digest: string; size: number };
 
 const quote = (value: string) => "'" + value.replaceAll("'", "'\"'\"'") + "'";
 
-export function downloadScript(origin: string, repository: string, image: string, config: BlobDescriptor, layers: BlobDescriptor[], platform = 'linux/amd64', source?: string) {
-  const blobs = [...new Map([config, ...layers].map((blob) => [blob.digest, blob])).values()];
-  for (const blob of blobs) {
-    if (!/^sha256:[a-f0-9]{64}$/.test(blob.digest) || !Number.isSafeInteger(blob.size) || blob.size < 0) {
-      throw new Error('Invalid image blob descriptor');
+export function validatedBlobs(config: BlobDescriptor, layers: BlobDescriptor[]) {
+  const blobs = new Map<string, BlobDescriptor>();
+  for (const blob of [config, ...layers]) {
+    if (!blob || typeof blob.digest !== 'string' || !/^sha256:[a-f0-9]{64}$/.test(blob.digest) || !Number.isSafeInteger(blob.size) || blob.size < 0 || (blobs.has(blob.digest) && blobs.get(blob.digest)!.size !== blob.size)) {
+      throw new HttpError('镜像清单包含无效或大小冲突的 blob 描述符', 502);
     }
+    blobs.set(blob.digest, blob);
   }
+  const result = [...blobs.values()];
+  if (!Number.isSafeInteger(result.reduce((sum, blob) => sum + blob.size, 0))) throw new HttpError('镜像清单中的 blob 总大小超出支持范围', 502);
+  return result;
+}
+
+export function downloadScript(origin: string, repository: string, image: string, config: BlobDescriptor, layers: BlobDescriptor[], platform = 'linux/amd64', source?: string) {
+  const blobs = validatedBlobs(config, layers);
   const path = (blob: BlobDescriptor) => `blobs/sha256/${blob.digest.slice(7)}`;
-  const filename = `${image.replace(/^library\//, '')}_${platform}`.replaceAll(/[/:@]/g, '_') + '.tar';
-  const metadata = JSON.stringify([{ Config: path(config), RepoTags: image.includes('@') ? [] : [image], Layers: layers.map(path) }]);
+  const filename = archiveFilename(image, platform);
+  const tag = localImageTag(image);
+  const metadata = JSON.stringify([{ Config: path(config), RepoTags: tag ? [tag] : [], Layers: layers.map(path) }]);
   const totalBytes = blobs.reduce((sum, blob) => sum + blob.size, 0);
   const base = `${origin}/v2/${repository}`;
   const sourceQuery = source ? `?source=${encodeURIComponent(source)}` : '';
@@ -49,7 +62,10 @@ printf '%s\\n' ${quote(metadata)} > "$work/manifest.json"
 ${download}
 printf '%s\\n' 'Creating archive…'
 tar -cf "$work/image.tar" -C "$work" manifest.json blobs
-mv -n "$work/image.tar" "$output"
+if ! ln "$work/image.tar" "$output"; then
+  if [ -e "$output" ]; then printf '%s\\n' "File already exists: $output" >&2; fi
+  exit 1
+fi
 printf '%s\\n' "Saved: $output"
 `;
 }

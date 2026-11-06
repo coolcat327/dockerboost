@@ -5,6 +5,80 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { batchCommands } from '../src/client/features/download/terminal-commands.js';
+import { archiveFilename } from '../src/common/archive-filename.js';
+
+test('terminal archives use a valid tag for tagged digest references', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'dockerboost-digest-tag-'));
+  try {
+    await mkdir(join(dir, 'bin'));
+    const digest = `sha256:${'b'.repeat(64)}`;
+    const helper = join(dir, 'download.sh');
+    await writeFile(join(dir, 'bin/curl'), `#!${process.execPath}
+const fs = require('node:fs');
+const a = process.argv.slice(2), out = a[a.indexOf('-o') + 1], url = a.at(-1);
+if (url.endsWith('/api/download-plan')) fs.writeFileSync(out, JSON.stringify({image:process.env.IMAGE,repository:'library/nginx',source:'auto',config:{digest:'sha256:'+'a'.repeat(64),size:3},layers:[]}));
+else fs.writeFileSync(out, 'abc');
+`, { mode: 0o755 });
+    for (const [image, expected] of [[`nginx:stable@${digest}`, ['nginx:stable']], [`nginx@${digest}`, []]]) {
+      await writeFile(helper, await readFile(resolve('public/download-images.sh')));
+      const result = spawnSync('sh', [helper, 'https://example.com', image, 'linux/amd64', 'auto'], { cwd: dir, encoding: 'utf8', env: { ...process.env, PATH: `${join(dir, 'bin')}:${process.env.PATH}`, IMAGE: image } });
+      assert.equal(result.status, 0, result.stderr);
+      const archive = (await readdir(dir)).find(name => name.endsWith('.tar'));
+      const metadata = spawnSync('tar', ['-xOf', join(dir, archive), 'manifest.json'], { encoding: 'utf8' });
+      assert.deepEqual(JSON.parse(metadata.stdout)[0].RepoTags, expected);
+      await rm(join(dir, archive));
+    }
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('an older download plan with conflicting blob sizes fails before downloading blobs', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'dockerboost-invalid-plan-'));
+  try {
+    await mkdir(join(dir, 'bin'));
+    const helper = join(dir, 'download.sh');
+    await writeFile(helper, await readFile(resolve('public/download-images.sh')));
+    await writeFile(join(dir, 'bin/curl'), `#!${process.execPath}
+const fs = require('node:fs');
+const a = process.argv.slice(2), out = a[a.indexOf('-o') + 1], url = a.at(-1);
+if (!url.endsWith('/api/download-plan')) { fs.writeFileSync(process.env.BLOB_REQUEST, 'unexpected'); process.exit(1); }
+const blob = {digest:'sha256:'+'a'.repeat(64),size:3};
+fs.writeFileSync(out, JSON.stringify({image:'nginx:latest',repository:'library/nginx',source:'auto',config:blob,layers:[{...blob,size:4}]}));
+`, { mode: 0o755 });
+    const blobRequest = join(dir, 'blob-request');
+    const result = spawnSync('sh', [helper, 'https://example.com', 'nginx:latest', 'linux/amd64', 'auto'], { cwd: dir, encoding: 'utf8', env: { ...process.env, PATH: `${join(dir, 'bin')}:${process.env.PATH}`, BLOB_REQUEST: blobRequest } });
+    assert.equal(result.status, 1);
+    assert.match(result.stdout, /Invalid image metadata/);
+    await assert.rejects(readFile(blobRequest), { code: 'ENOENT' });
+    assert.ok(!(await readdir(dir)).some(name => name.endsWith('.tar')));
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
+
+test('long image names save with the plan filename and with an older plan fallback', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'dockerboost-long-name-'));
+  try {
+    await mkdir(join(dir, 'bin'));
+    const image = `${'a'.repeat(200)}/${'b'.repeat(40)}:${'t'.repeat(40)}`;
+    const filename = archiveFilename(image, 'linux/amd64');
+    await writeFile(join(dir, 'bin/curl'), `#!${process.execPath}
+const fs = require('node:fs');
+const a = process.argv.slice(2), out = a[a.indexOf('-o') + 1], url = a.at(-1);
+if (url.endsWith('/api/download-plan')) fs.writeFileSync(out, JSON.stringify({image:process.env.IMAGE,repository:'library/nginx',source:'auto',platform:'linux/amd64',...(process.env.FILENAME ? {filename:process.env.FILENAME} : {}),config:{digest:'sha256:'+'a'.repeat(64),size:3},layers:[]}));
+else fs.writeFileSync(out, 'abc');
+`, { mode: 0o755 });
+    for (const name of [filename, '']) {
+      const helper = join(dir, 'download.sh');
+      await writeFile(helper, await readFile(resolve('public/download-images.sh')));
+      const result = spawnSync('sh', [helper, 'https://example.com', image, 'linux/amd64', 'auto'], { cwd: dir, encoding: 'utf8', env: { ...process.env, PATH: `${join(dir, 'bin')}:${process.env.PATH}`, IMAGE: image, FILENAME: name } });
+      assert.equal(result.status, 0, result.stderr);
+      const archives = (await readdir(dir)).filter(file => file.endsWith('.tar'));
+      assert.equal(archives.length, 1);
+      assert.ok(Buffer.byteLength(archives[0]) <= 240);
+      if (name) assert.equal(archives[0], filename);
+      assert.equal(spawnSync('tar', ['-tf', join(dir, archives[0])]).status, 0);
+      await rm(join(dir, archives[0]));
+    }
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});
 
 test('static image helper downloads plans and blobs without requesting dynamic scripts', async () => {
   const dir = await mkdtemp(join(tmpdir(), 'dockerboost-batch-'));
@@ -15,15 +89,16 @@ const fs = require('node:fs');
 const a = process.argv.slice(2), out = a[a.indexOf('-o') + 1], url = a.at(-1);
 fs.appendFileSync(process.env.LOG, JSON.stringify(a) + '\\n');
 if (url.endsWith('/download-images.sh')) fs.copyFileSync(process.env.HELPER, out);
-else if (url.endsWith('/api/download-plan')) fs.writeFileSync(out, JSON.stringify({image:'nginx:latest',repository:'library/nginx',source:'auto',config:{digest:'sha256:'+ 'a'.repeat(64),size:3},layers:[]}));
+else if (url.endsWith('/api/download-plan')) fs.writeFileSync(out, JSON.stringify({image:'nginx:latest',repository:'library/nginx',source:'auto',platform:'linux/arm64/v8',config:{digest:'sha256:'+ 'a'.repeat(64),size:3},layers:[]}));
 else fs.writeFileSync(out, 'abc');
 `, { mode: 0o755 });
-    const result = spawnSync('sh', ['-c', batchCommands([{ image: 'nginx:latest', platform: 'linux/arm64/v8', source: 'auto' }], 'https://example.com')], { cwd: dir, encoding: 'utf8', env: { ...process.env, PATH: `${join(dir, 'bin')}:${process.env.PATH}`, LOG: join(dir, 'log'), HELPER: resolve('public/download-images.sh') } });
+    const result = spawnSync('sh', ['-c', batchCommands([{ image: 'nginx:latest', platform: 'linux/arm64', source: 'auto' }], 'https://example.com')], { cwd: dir, encoding: 'utf8', env: { ...process.env, PATH: `${join(dir, 'bin')}:${process.env.PATH}`, LOG: join(dir, 'log'), HELPER: resolve('public/download-images.sh') } });
     assert.equal(result.status, 0, result.stderr);
     const requests = (await readFile(join(dir, 'log'), 'utf8')).trim().split('\n').map(JSON.parse);
     assert.ok(requests.some(args => args.at(-1).endsWith('/api/download-plan')));
     assert.ok(requests.every(args => !args.at(-1).endsWith('/api/download-script')));
     assert.ok((await readdir(dir)).includes('nginx_latest_linux_arm64_v8.tar'));
+    assert.match(result.stdout, /linux\/arm64\/v8/);
     assert.ok(!(await readdir(dir)).includes('.download-images.sh'));
     assert.equal(spawnSync('tar', ['-tf', join(dir, 'nginx_latest_linux_arm64_v8.tar')]).status, 0);
   } finally { await rm(dir, { recursive: true, force: true }); }
@@ -188,3 +263,27 @@ fs.writeFileSync(out, JSON.stringify({image:'nginx:latest',repository:'library/n
     } finally { await rm(dir,{recursive:true,force:true}); }
   });
 }
+
+test('concurrent requests resolving to one platform never overwrite the archive', async () => {
+  const dir = await mkdtemp(join(tmpdir(), 'dockerboost-platform-collision-'));
+  try {
+    await mkdir(join(dir, 'bin'));
+    const helper = join(dir, 'download.sh');
+    await writeFile(helper, await readFile(resolve('public/download-images.sh')));
+    await writeFile(join(dir, 'bin/curl'), `#!${process.execPath}
+const fs = require('node:fs');
+const args = process.argv.slice(2), out = args[args.indexOf('-o') + 1], url = args.at(-1);
+if (url.endsWith('/api/download-plan')) fs.writeFileSync(out, JSON.stringify({image:'nginx:latest',repository:'library/nginx',source:'auto',platform:'linux/arm64/v8',config:{digest:'sha256:'+'a'.repeat(64),size:3},layers:[]}));
+else { Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 300); fs.writeFileSync(out, 'abc'); }
+`, { mode: 0o755 });
+    const result = spawnSync('sh', [helper, 'https://example.com', 'nginx:latest', 'linux/arm64', 'auto', 'nginx:latest', 'linux/arm64/v8', 'auto'], {
+      cwd: dir, encoding: 'utf8', env: { ...process.env, PATH: `${join(dir, 'bin')}:${process.env.PATH}` }
+    });
+    assert.equal(result.status, 1, result.stderr);
+    const archives = (await readdir(dir)).filter(name => name.endsWith('.tar'));
+    assert.deepEqual(archives, ['nginx_latest_linux_arm64_v8.tar']);
+    assert.equal(spawnSync('tar', ['-tf', join(dir, archives[0])]).status, 0);
+    assert.match(result.stdout, /Succeeded \(1\)  Failed \(1\)/);
+    assert.match(result.stdout, /Output already exists:/);
+  } finally { await rm(dir, { recursive: true, force: true }); }
+});

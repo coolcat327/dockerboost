@@ -27,6 +27,16 @@ test('retry starts only after failed attempt cleanup and stops immediately on su
   assert.equal(calls, 2);
 });
 
+test('non-retryable errors fail immediately without scheduling a retry', async () => {
+  const error = Object.assign(new Error('architecture changed'), { retryable: false });
+  let attempts = 0, notices = 0;
+  await assert.rejects(retryDownload(async () => { attempts++; throw error; }, {
+    signal: new AbortController().signal, onRetry: () => notices++, wait: async () => assert.fail('unexpected wait')
+  }), thrown => thrown === error);
+  assert.equal(attempts, 1);
+  assert.equal(notices, 0);
+});
+
 test('stopping during the real backoff cancels the timer without another attempt', async () => {
   const controller = new AbortController();
   let notify, calls = 0;
