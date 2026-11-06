@@ -27,8 +27,10 @@
 | `src/common/` | 前端和 API 共同使用的纯逻辑，例如镜像引用解析与镜像归档命名 |
 | `public/` | 静态资源与托管配置 |
 | `scripts/` | 构建、发布标识和架构检查 |
+| `tools/workflow-demos/` | 独立 Remotion 工程，预览与渲染 README 的流程对比，使用自己的依赖和锁文件 |
 | `tests/` | 接口、安装脚本、归档及浏览器下载等回归测试 |
 | `docs/` | 当前架构、开发、接口、下载与视觉专题 |
+| `docs/assets/workflow-demos/` | 中英文 README 引用的 GIF，由动画工程导出并随仓库版本管理 |
 | `docs/decisions/` | 选型与决策依据 |
 | `docs/archive/` | 已完成计划与历史验证 |
 | `docs/plans/` | 待执行或仍在验收的计划；完成记录移至 docs/archive/plans |
@@ -45,3 +47,16 @@
 - `edge-functions/` 只保留平台要求的文件路由重导出，不承载业务逻辑。
 
 `pnpm run check:architecture` 自动检查 API 依赖边界；它不检查前端依赖，也不替代 TypeScript 和接口测试。
+
+## 主站与流程演示
+
+DockerBoost 主站定义实际操作、功能契约和使用条件。`tools/workflow-demos/` 使用独立的依赖、示意画面和示例数据还原这些流程，渲染独立于主站运行、构建和部署。导出的 `docs/assets/workflow-demos/` GIF 供两份根 README 展示。画面可以压缩等待时间、简化界面细节，实际的操作顺序、前置条件和结果应表达准确。
+
+| 演示场景 | 对应的主站流程 | 优先核对的内容 |
+| --- | --- | --- |
+| `offline` | [安装页版本选择](frontend.md#数据加载)与[离线安装包](api.md#安装) | 架构和版本选择、Compose 匹配规则、包内文件、解包及安装步骤 |
+| `browser` | [浏览器镜像下载](downloads.md#任务生命周期)与[本地归档](downloads.md#哈希与归档实现) | 镜像和平台选择、校验、TAR 生成及目标机导入 |
+| `share` | [队列分享](downloads.md#队列分享)与[分享恢复](frontend.md#分享恢复) | 链接携带的参数、接收方恢复的内容、开始下载的时机 |
+| `batch` | [Compose 批量输入](frontend.md#批量输入与镜像选择)与[镜像终端下载](downloads.md#镜像终端下载) | 镜像提取、平台选择、复制的命令、终端依赖及每镜像归档 |
+
+修改这些流程时，用上表检查所有受影响的场景。用户操作、前置条件、命令或产出发生变化，导致动画画面或字幕过时，就在同一变更中更新相关动画源码，重新导出受影响的中英文 GIF，并核对两份根 README 的场景说明、图片链接和替代文本。仅调整内部实现或画面未呈现的细节时，核对现有演示仍准确即可。
