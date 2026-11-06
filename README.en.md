@@ -16,13 +16,13 @@ DockerBoost is a lightweight Docker toolkit for Cloudflare Workers and EdgeOne P
 
 | Feature | Usage |
 | --- | --- |
-| Install Docker Engine | Generate online installation commands or download an offline bundle containing Docker, Compose, configuration, and install/uninstall scripts |
+| Install&nbsp;Docker | Generate online install commands or download an offline bundle with Docker and Compose |
 | Configure registry mirrors | Generate configuration, backup, and recovery commands |
-| Pull images | Enter an image name, paste a `docker pull` command, or import Compose / image lists to generate pull and tagging commands for a selected architecture |
-| Download images | Export individual TAR archives in the browser or copy terminal download commands; batch mode supports per-image selection, cancellation, retry, and removal, with up to 5 concurrent image downloads by default |
-| Convert commands | Convert between `docker run` and Compose locally in the browser, with notices for options and orchestration that need manual handling |
-| Search the manual | Search common Docker and Docker Compose commands, options, and examples, with links to the full official reference |
-| Share selections | Share one image selection or a complete download queue; recipients automatically resolve queued images without starting downloads |
+| Pull images | Generate pull and tag commands by architecture. Import image lists or Compose in batches |
+| Download images | Download image TARs in the browser or terminal, with batch downloads, cancellation, and retries |
+| Convert commands | Convert between `docker run` commands and Compose configurations in the browser |
+| Search the manual | Search Docker and Docker Compose commands, options, and examples |
+| Share selections | Share image parameters or a download queue via a link that restores them |
 
 Pull and Download share single-image selections. Choose an image source automatically or manually; batch queues select sources automatically and allow bulk or per-image architecture choices. Expand Compose variables and multiple files with `docker compose config` first; `build` is not executed.
 
