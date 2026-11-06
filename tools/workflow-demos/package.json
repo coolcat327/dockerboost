@@ -1,0 +1,25 @@
+{
+  "name": "dockerboost-workflow-demos",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Render DockerBoost's bilingual workflow comparisons as GIFs.",
+  "scripts": {
+    "check": "tsc --noEmit",
+    "studio": "remotion studio src/index.ts",
+    "render": "node render.mjs"
+  },
+  "dependencies": {
+    "@remotion/cli": "4.0.541",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "remotion": "4.0.541"
+  },
+  "devDependencies": {
+    "@types/react": "19.2.14",
+    "typescript": "5.9.3"
+  },
+  "packageManager": "pnpm@12.14.0",
+  "engines": {
+    "node": ">=22"
+  }
+}
