@@ -4,7 +4,7 @@ import { spawnSync } from 'node:child_process';
 import { chmodSync, existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { createSetupCommand, setupMirrors } from '../src/client/features/setup/setup-command.js';
+import { createSetupCommand } from '../src/client/features/setup/setup-command.js';
 
 test('pasting setup command without jq leaves the current shell open', () => {
   const dir = mkdtempSync(join(tmpdir(), 'dockerboost-setup-'));
@@ -98,15 +98,15 @@ test('existing daemon.json.tmp is never overwritten', () => {
 });
 
 
-test('setup command orders default mirrors and preserves other existing mirrors', (t) => {
+test('setup command only adds the current site and preserves existing mirrors in order', (t) => {
   const jq = spawnSync('jq', ['--version']);
   if (jq.status !== 0) { t.skip('jq is not installed'); return; }
   const dir = mkdtempSync(join(tmpdir(), 'dockerboost-setup-'));
   try {
     const config = join(dir, 'daemon.json');
     const origin = 'https://mirror.example';
-    const existing = 'https://existing.example';
-    writeFileSync(config, JSON.stringify({ debug: true, 'registry-mirrors': [origin, existing, 'https://docker.1ms.run'] }));
+    const existing = ['https://existing.example', 'https://docker.1ms.run'];
+    writeFileSync(config, JSON.stringify({ debug: true, 'registry-mirrors': [origin, ...existing, origin] }));
     writeFileSync(join(dir, 'systemctl'), '#!/bin/sh\nexit 0\n');
     chmodSync(join(dir, 'systemctl'), 0o755);
     const result = spawnSync('/bin/sh', ['-c', createSetupCommand(origin, config)], {
@@ -114,7 +114,7 @@ test('setup command orders default mirrors and preserves other existing mirrors'
     });
     assert.equal(result.status, 0, result.stderr);
     const updated = JSON.parse(readFileSync(config, 'utf8'));
-    assert.deepEqual(updated['registry-mirrors'], [...setupMirrors(origin).slice(0, -1), existing, origin]);
+    assert.deepEqual(updated['registry-mirrors'], [...existing, origin]);
     assert.equal(updated.debug, true);
   } finally {
     rmSync(dir, { recursive: true, force: true });
@@ -134,7 +134,7 @@ test('setup command treats quotes and shell syntax in values as literal data', t
       cwd: dir, encoding: 'utf8', env: { ...process.env, PATH: `${dir}:${process.env.PATH}` }
     });
     assert.equal(result.status, 0, result.stderr);
-    assert.deepEqual(JSON.parse(readFileSync(config, 'utf8'))['registry-mirrors'], setupMirrors(origin));
+    assert.deepEqual(JSON.parse(readFileSync(config, 'utf8'))['registry-mirrors'], [origin]);
     assert.equal(existsSync(join(dir, 'PWNED')), false);
   } finally { rmSync(dir, { recursive: true, force: true }); }
 });

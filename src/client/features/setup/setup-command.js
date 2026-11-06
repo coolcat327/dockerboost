@@ -1,11 +1,6 @@
 import { shellQuote } from '../../common/shell-quote.js';
 
-export const setupMirrors = (origin) => [
-  'https://docker.1ms.run',
-  'https://docker.xuanyuan.me',
-  'https://docker.m.daocloud.io',
-  origin
-];
+export const setupMirrors = (origin) => [origin];
 
 export const createSetupCommand = (origin, daemonJsonPath = '/etc/docker/daemon.json') => `(
   daemon_json=${shellQuote(daemonJsonPath)}
@@ -27,7 +22,7 @@ export const createSetupCommand = (origin, daemonJsonPath = '/etc/docker/daemon.
   cp -p "$daemon_json" "$daemon_json_tmp" || exit 1
   jq -e --argjson mirrors ${shellQuote(JSON.stringify(setupMirrors(origin)))}  '
     ."registry-mirrors" = (
-      $mirrors[:-1] + [(."registry-mirrors" // [])[] | select(. as $item | $mirrors | index($item) | not)] + $mirrors[-1:]
+      [(."registry-mirrors" // [])[] | select(. as $item | $mirrors | index($item) | not)] + $mirrors
     )
   ' "$daemon_json" > "$daemon_json_tmp" || exit 1
   cp -p "$daemon_json" "$daemon_json.bak" || exit 1
