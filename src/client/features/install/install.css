@@ -18,7 +18,6 @@
 #install-package-tree { white-space:pre; overflow-x:auto; }
 @media (max-width:800px) { .install-package-grid { grid-template-columns:1fr; } }
 
-.install-resource-links { display:flex; flex-wrap:wrap; gap:12px 24px; font-size:14px; line-height:1.8; }
 
 @container workspace (min-width:540px) {
   .install-fields { grid-template-columns:repeat(2,minmax(0,1fr)); }
