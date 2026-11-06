@@ -1,3 +1,10 @@
+export const setupMirrors = (origin) => [
+  'https://docker.1ms.run',
+  'https://docker.xuanyuan.me',
+  'https://docker.m.daocloud.io',
+  origin
+];
+
 export const createSetupCommand = (origin, daemonJsonPath = '/etc/docker/daemon.json') => `(
   daemon_json="${daemonJsonPath}"
   if ! command -v jq >/dev/null 2>&1; then
@@ -16,9 +23,9 @@ export const createSetupCommand = (origin, daemonJsonPath = '/etc/docker/daemon.
   }
   trap 'rm -f "$daemon_json_tmp"' EXIT
   cp -p "$daemon_json" "$daemon_json_tmp" || exit 1
-  jq -e --arg mirror "${origin}" '
+  jq -e --argjson mirrors '${JSON.stringify(setupMirrors(origin))}'  '
     ."registry-mirrors" = (
-      (."registry-mirrors" // []) + [$mirror] | unique
+      $mirrors[:-1] + [(."registry-mirrors" // [])[] | select(. as $item | $mirrors | index($item) | not)] + $mirrors[-1:]
     )
   ' "$daemon_json" > "$daemon_json_tmp" || exit 1
   cp -p "$daemon_json" "$daemon_json.bak" || exit 1

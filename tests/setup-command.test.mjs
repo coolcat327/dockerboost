@@ -4,7 +4,7 @@ import { spawnSync } from 'node:child_process';
 import { chmodSync, existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { createSetupCommand } from '../src/client/features/setup/setup-command.js';
+import { createSetupCommand, setupMirrors } from '../src/client/features/setup/setup-command.js';
 
 test('pasting setup command without jq leaves the current shell open', () => {
   const dir = mkdtempSync(join(tmpdir(), 'dockerboost-setup-'));
@@ -92,6 +92,30 @@ test('existing daemon.json.tmp is never overwritten', () => {
     assert.equal(readFileSync(temp, 'utf8'), 'keep me\n');
     assert.equal(readFileSync(config, 'utf8'), '{}\n');
     assert.equal(existsSync(`${config}.bak`), false);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+
+test('setup command orders default mirrors and preserves other existing mirrors', (t) => {
+  const jq = spawnSync('jq', ['--version']);
+  if (jq.status !== 0) { t.skip('jq is not installed'); return; }
+  const dir = mkdtempSync(join(tmpdir(), 'dockerboost-setup-'));
+  try {
+    const config = join(dir, 'daemon.json');
+    const origin = 'https://mirror.example';
+    const existing = 'https://existing.example';
+    writeFileSync(config, JSON.stringify({ debug: true, 'registry-mirrors': [origin, existing, 'https://docker.1ms.run'] }));
+    writeFileSync(join(dir, 'systemctl'), '#!/bin/sh\nexit 0\n');
+    chmodSync(join(dir, 'systemctl'), 0o755);
+    const result = spawnSync('/bin/sh', ['-c', createSetupCommand(origin, config)], {
+      encoding: 'utf8', env: { ...process.env, PATH: `${dir}:${process.env.PATH}` },
+    });
+    assert.equal(result.status, 0, result.stderr);
+    const updated = JSON.parse(readFileSync(config, 'utf8'));
+    assert.deepEqual(updated['registry-mirrors'], [...setupMirrors(origin).slice(0, -1), existing, origin]);
+    assert.equal(updated.debug, true);
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
