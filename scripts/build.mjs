@@ -64,7 +64,7 @@ const buildOptions = {
 const result = await build({
   ...buildOptions,
   entryPoints: {
-    tools: 'src/client/app.js',
+    'tools.bundle': 'src/client/app.js',
     app: 'src/client/styles/index.css',
   },
   external: ['./fonts/*'],
