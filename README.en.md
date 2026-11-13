@@ -12,6 +12,10 @@
 
 DockerBoost is a Docker toolkit for Cloudflare Workers and EdgeOne Pages. Generate installation and pull commands, configure registry mirrors, and prepare offline archives from one page. The server streams image data while your browser or terminal builds TAR archives locally. The download machine can run without Docker.
 
+<p align="center">
+  <a href="docs/assets/workflow-demos/project-architecture-our-en.gif"><img src="docs/assets/workflow-demos/project-architecture-our-en.gif" width="100%" alt="DockerBoost architecture and download flow: a browser or terminal requests Registry data through the API on Cloudflare Workers or EdgeOne Pages; the server streams config and layers back for local TAR assembly, then the archive is copied to a Docker host for import" /></a>
+</p>
+
 ## What you can do
 
 | Tab | What it does |

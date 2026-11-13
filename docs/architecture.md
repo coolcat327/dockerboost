@@ -27,7 +27,7 @@
 | `src/common/` | 前端和 API 共同使用的纯逻辑，例如镜像引用解析与镜像归档命名 |
 | `public/` | 静态资源与托管配置 |
 | `scripts/` | 构建、发布标识和架构检查 |
-| `tools/workflow-demos/` | 独立 Remotion 工程，预览与渲染 README 的流程对比，使用自己的依赖和锁文件 |
+| `tools/workflow-demos/` | 独立 Remotion 工程，预览与渲染 README 的架构与流程对比动画，使用自己的依赖和锁文件 |
 | `tests/` | 接口、安装脚本、归档及浏览器下载等回归测试 |
 | `docs/` | 当前架构、开发、接口、下载与视觉专题 |
 | `docs/assets/workflow-demos/` | 中英文 README 引用的 GIF，由动画工程导出并随仓库版本管理 |
@@ -54,6 +54,7 @@ DockerBoost 主站定义实际操作、功能契约和使用条件。`tools/work
 
 | 演示场景 | 对应的主站流程 | 优先核对的内容 |
 | --- | --- | --- |
+| `architecture` | [系统组成](#系统组成)、[本地归档](downloads.md#哈希与归档实现)与[镜像终端下载](downloads.md#镜像终端下载) | 平台部署、Registry 请求与流式返回方向、下载端组装 TAR、目标机导入条件 |
 | `offline` | [安装页版本选择](frontend.md#数据加载)与[离线安装包](api.md#安装) | 架构和版本选择、Compose 匹配规则、包内文件、解包及安装步骤 |
 | `browser` | [浏览器镜像下载](downloads.md#任务生命周期)与[本地归档](downloads.md#哈希与归档实现) | 镜像和平台选择、校验、TAR 生成及目标机导入 |
 | `share` | [队列分享](downloads.md#队列分享)与[分享恢复](frontend.md#分享恢复) | 链接携带的参数、接收方恢复的内容、开始下载的时机 |

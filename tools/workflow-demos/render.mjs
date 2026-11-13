@@ -19,6 +19,9 @@ const filenames = new Map(Object.entries(sceneSlugs).flatMap(([scene, slug]) =>
     ]),
   ),
 ));
+for (const language of ['zh', 'en']) {
+  filenames.set(`architecture-boost-${language}`, `project-architecture-our-${language}.gif`);
+}
 const requested = process.argv.slice(2);
 const ids = requested.length ? [...new Set(requested)] : [...filenames.keys()];
 const selected = ids.map(id => {
@@ -33,6 +36,9 @@ const work = mkdtempSync(join(tmpdir(), 'dockerboost-animations-'));
 const bundle = join(work, 'bundle');
 
 function remotion(...args) {
+  if (process.env.REMOTION_BROWSER_EXECUTABLE) {
+    args.push(`--browser-executable=${process.env.REMOTION_BROWSER_EXECUTABLE}`);
+  }
   const result = spawnSync('pnpm', ['exec', 'remotion', ...args, '--log=error'], {cwd, stdio: 'inherit'});
   if (result.error) throw result.error;
   if (result.status !== 0) throw new Error(`Remotion failed: ${args.join(' ')} (${result.signal ?? result.status})`);

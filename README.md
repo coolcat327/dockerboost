@@ -12,6 +12,10 @@
 
 DockerBoost 把 Docker 安装、镜像加速、拉取命令和离线归档集中在一个页面，可部署在 Cloudflare Workers 和 EdgeOne Pages。下载镜像时，服务端流式转发，浏览器或终端在本地组装 TAR。下载端无需安装 Docker。
 
+<p align="center">
+  <a href="docs/assets/workflow-demos/project-architecture-our-zh.gif"><img src="docs/assets/workflow-demos/project-architecture-our-zh.gif" width="100%" alt="DockerBoost 架构与下载数据流：浏览器或终端经 Cloudflare Workers 或 EdgeOne Pages 上的 API 请求 Registry，服务端流式转发配置与镜像层，下载端本地组装 TAR，再拷贝到目标 Docker 主机导入" /></a>
+</p>
+
 ## 你可以用它做什么
 
 | 站内标签 | 用途 |

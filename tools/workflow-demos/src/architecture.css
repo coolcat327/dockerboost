@@ -1,0 +1,33 @@
+.architecture { --flow-data: #9de7bd; }
+.architecture .architecture-stage { height: 426px; }
+.architecture-map text { fill: var(--text); }
+.architecture-map .map-title { font-size: 14px; font-weight: 750; }
+.architecture-map .map-label { font-size: 12px; font-weight: 650; }
+.architecture-map .map-small { font-size: 11px; fill: var(--muted); }
+.architecture-map .map-mono { font: 11px "SF Mono", Menlo, Consolas, monospace; }
+.architecture-map .map-boundary { fill: #111c314d; stroke: var(--edge); stroke-dasharray: 5 5; }
+.architecture-map .edge-boundary { fill: #16385638; }
+.architecture-map .map-card { fill: var(--surface); stroke: var(--edge); }
+.architecture-map .map-inset { fill: var(--tint); }
+.architecture-map .map-button { fill: var(--tint); stroke: var(--accent); }
+.architecture-map .map-divider { stroke: var(--edge); }
+.architecture-map .map-user > circle, .architecture-map .map-user > path { fill: var(--surface); stroke: var(--accent); stroke-width: 2; }
+.architecture-map .map-route { color: var(--accent); }
+.architecture-map .map-route.response { color: var(--flow-data); }
+.architecture-map .map-route polyline { fill: none; stroke: currentColor; stroke-width: 1.5; opacity: .6; stroke-linejoin: round; }
+.architecture-map .map-route circle { fill: currentColor; }
+.architecture-map .map-progress-track { fill: var(--edge); }
+.architecture-map .map-progress-data { fill: var(--flow-data); }
+.architecture-map .data-label { fill: var(--flow-data); }
+.architecture .caption { padding-top: 15px; }
+.architecture .caption p { max-width: none; font-size: 13px; margin-top: 10px; }
+.architecture-legend { display: flex; gap: 28px; font-size: 13px; font-weight: 650; }
+.architecture-legend span { display: flex; align-items: center; gap: 8px; }
+.architecture-legend i { width: 22px; height: 3px; background: var(--accent); border-radius: 2px; }
+.architecture-legend .data i { background: var(--flow-data); }
+.architecture-map .map-highlight { fill: var(--accent); fill-opacity: .035; stroke: var(--accent); stroke-width: 1.8; }
+.architecture-map .data-highlight { fill: var(--flow-data); stroke: var(--flow-data); }
+.architecture-map .map-parcel { fill: var(--surface-2); stroke: var(--flow-data); stroke-width: 1.3; }
+.architecture-footer-row { display: flex; justify-content: space-between; align-items: center; gap: 20px; }
+.architecture-status { display: flex; align-items: center; gap: 9px; color: var(--accent); font-size: 13px; }
+.architecture-status i { width: 6px; height: 6px; border-radius: 50%; background: currentColor; box-shadow: 0 0 0 4px #75e6ff12; }

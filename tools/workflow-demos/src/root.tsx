@@ -1,10 +1,12 @@
 import {AbsoluteFill, Composition, Folder, useCurrentFrame} from 'remotion';
 import {Icon, type IconName} from './graphics';
+import {Architecture, ARCHITECTURE_DURATION, ARCHITECTURE_HEIGHT, ARCHITECTURE_WIDTH} from './architecture';
 import {Batch, Share} from './handoff';
 import {BEATS, CROSSFADE, DURATION, FPS, HEIGHT, LOOP_FADE, WIDTH, ease, linear, type BeatFrame} from './motion';
 import {Browser, Offline} from './offline';
 import {localize, stories, type Clip, type Language, type Scene, type Variant} from './story';
 import './stage.css';
+import './architecture.css';
 
 const scenes = {offline: Offline, browser: Browser, batch: Batch};
 const languages: Language[] = ['zh', 'en'];
@@ -103,7 +105,10 @@ function SceneArt(props: Clip) {
   </AbsoluteFill>;
 }
 
-export const Root = () => <>{(Object.keys(stories) as Scene[]).map(scene =>
+export const Root = () => <><Folder name="architecture">{languages.map(language =>
+  <Composition key={language} id={`architecture-boost-${language}`} component={Architecture}
+    defaultProps={{language}} durationInFrames={ARCHITECTURE_DURATION} fps={FPS} width={ARCHITECTURE_WIDTH} height={ARCHITECTURE_HEIGHT}/>
+)}</Folder>{(Object.keys(stories) as Scene[]).map(scene =>
   <Folder key={scene} name={scene}>
     {variants.flatMap(variant => languages.map(language => {
       const id = `${scene}-${variant}-${language}`;
