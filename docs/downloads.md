@@ -38,9 +38,9 @@
 
 ## 下载状态与进度展示
 
-安装包与镜像下载复用 `src/client/common/download-progress.js` 和 `src/client/styles/download-progress.css`。展示模块接收现有任务的阶段、累计字节和总字节，管理文案、速率采样、ARIA 进度属性、文件详情及布局，不管理请求、取消、OPFS 或保存生命周期。
+安装包与镜像下载复用 `src/client/common/download-progress.js` 和 `src/client/styles/download-progress.css`。展示模块接收现有任务的阶段、累计字节和总字节，管理文案、速率采样、原生 `<progress>` 的 value / max 与可访问描述、文件详情及布局，不管理请求、取消、OPFS 或保存生命周期。
 
-- `start(name)` 清除旧任务的速度和进度；准备、解析和未知总大小的下载保持零填充，新任务及零字节进度立即归零，不从上一状态回退过渡；`update({ phase, completed, total, name })` 更新阶段。准备、解析、打包和保存交接为不定进度；未知总大小的下载显示已接收字节，不提供百分比或 `aria-valuenow`。
+- `start(name)` 清除旧任务的速度和进度；准备、解析和未知总大小的下载不提供定值，新任务以不定态开始，不从上一状态回退过渡；已知总量的零字节进度以 value=0 立即归零；`update({ phase, completed, total, name })` 更新阶段。准备、解析、打包和保存交接为不定进度；未知总大小的下载显示已接收字节，不提供百分比或 `value`。
 - 下载阶段使用真实累计字节 / 总字节百分比，文字和进度条一致。达到 100% 仅代表下载字节收齐，随后显示独立的本地打包阶段，不再使用固定 90% / 95% 模拟整体进度。
 - Worker 的 `done` 仅表示归档已就绪，展示映射为保存交接。调用 `task.save()` 成功后才调用 `complete({ filename, size })`，显示“已保存”（表示已交给浏览器保存）、归档大小与从任务启动到交接的总耗时。浏览器不提供最终磁盘保存完成通知。
 - 速度只用于下载阶段；打包与交接不沿用旧速度。完成摘要不再把归档大小除以包含打包的总耗时称为下载均速。
@@ -79,3 +79,5 @@ Compose 内容不上传，下载仅发送选中的镜像参数。浏览器可能
 链接使用 URL fragment，格式为 `#download-batch?v=1&queue=<URL 编码的 JSON 二元数组>`；数组中的每项为 `[image, platform]`，空平台表示自动选择。编码长度超过 2048 字符时优先尝试浏览器原生 gzip，并在更短时改用 `#download-batch?v=1&gzip=<Base64URL>`。完全无状态，不调用分享 API、不在服务端保存队列。压缩格式参考 [Compression Streams API](https://developer.mozilla.org/en-US/docs/Web/API/Compression_Streams_API)。不支持压缩的浏览器使用可读格式；不支持解压时明确提示使用新版浏览器。
 
 接收方打开链接即进入下载页的批量模式，完整校验后去重、入队并通过现有 createImageSelection 逐项解析；不自动开始下载，也不会静默切换指定架构。成功恢复后清除 URL 片段。版本、条目、镜像引用基础格式、平台及重复参数经过校验，错误链接不部分导入。每个分享最多 1000 项，片段上限 64 KiB，解压后的载荷上限 1 MiB，流式读取时执行限制；超限时明确提示。分享快照在点击时固定，不受之后的队列变化影响。
+
+进度展示使用原生 `<progress max="100">`；未知总量、解析、打包或保存交接时不设 `value`，避免伪造百分比。定值填充分别适配 WebKit / Blink 和 Firefox 伪元素，不混合为同一选择器；强制颜色使用系统高亮，减少动态效果时放慢不定进度。紧凑队列保存后同时显示文件名和完成指标，不依赖循环动画。

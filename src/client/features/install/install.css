@@ -1,14 +1,14 @@
 /* Match the shared workspace typography; command blocks retain their shared style. */
 .install-card { margin:30px 0 0; padding:0; }
 .install-card + .install-card { padding-top:24px; border-top:1px solid var(--line); }
-.install-card h4 { margin:0 0 12px; color:var(--ink); font:700 16px/1.5 Manrope,'PingFang SC','Microsoft YaHei',sans-serif; }
-.install-card > p { margin:0 0 16px; color:var(--muted); font-size:14px; line-height:1.8; }
+.install-card h3 { margin:0 0 12px; color:var(--ink); font:700 1rem/1.5 Manrope,'PingFang SC','Microsoft YaHei',sans-serif; }
+.install-card > p { margin:0 0 16px; color:var(--muted); font-size:0.875rem; line-height:1.8; }
 .install-card > p:last-child { margin:16px 0 0; }
 .install-card > p code { color:var(--code); font-family:'DM Mono',monospace; }
 .install-card a { color:var(--cyan); text-decoration:none; }
 .install-card a:hover { text-decoration:underline; }
 .install-fields { display: grid; grid-template-columns: minmax(0, 1fr); align-items:end; gap:18px; margin:30px 0 24px; }
-.install-fields label { display:block; margin:0; color:var(--ink); font-size:15px; font-weight:700; line-height:1.5; }
+.install-fields label { display:block; margin:0; color:var(--ink); font-size:0.9375rem; font-weight:700; line-height:1.5; }
 .install-actions { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; margin:0; min-width:0; }
 .install-actions button { width:100%; padding-inline:10px; }
 
@@ -19,11 +19,11 @@
 @media (max-width:800px) { .install-package-grid { grid-template-columns:1fr; } }
 
 
-@container workspace (min-width:540px) {
+@container workspace (min-width:33.75rem) {
   .install-fields { grid-template-columns:repeat(2,minmax(0,1fr)); }
   .install-actions { grid-column:1 / -1;gap:18px; }
 }
-@container workspace (min-width:920px) {
+@container workspace (min-width:57.5rem) {
   .install-fields { grid-template-columns:repeat(2,minmax(0,1fr)) 280px; }
   .install-actions { grid-column:auto;gap:12px; }
 }

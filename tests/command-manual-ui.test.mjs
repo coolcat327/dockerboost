@@ -41,4 +41,16 @@ test('manual waits for activation, shows failures and retries with the current s
   assert.equal(panel.querySelector('[data-manual-list]').children[0].children[0].textContent, 'docker logs');
   await instance.onActivate();
   assert.equal(calls, 2);
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  const search = panel.querySelector('#manual-search');
+  search.value = 'no-match';
+  search.listeners.compositionstart();
+  search.listeners.input();
+  t.mock.timers.tick(1000);
+  assert.equal(panel.querySelector('[data-manual-count]').textContent, '1 条命令', 'IME composition must not rebuild the results');
+  search.listeners.compositionend();
+  t.mock.timers.tick(179);
+  assert.equal(panel.querySelector('[data-manual-count]').textContent, '1 条命令');
+  t.mock.timers.tick(1);
+  assert.equal(panel.querySelector('[data-manual-count]').textContent, '0 条命令');
 });

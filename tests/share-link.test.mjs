@@ -36,3 +36,24 @@ test('shared clipboard helper reports a successful copy to both share entry poin
   assert.equal(await copyLink('https://example.com/#download-batch?v=1', () => ({})), true);
   assert.equal(copied, 'https://example.com/#download-batch?v=1');
 });
+
+
+test('legacy link copying restores focus after removing its temporary field', async t => {
+  const { copyLink } = await import('../src/client/common/share-link.js');
+  const clipboard = Object.getOwnPropertyDescriptor(navigator, 'clipboard');
+  const previousDocument = globalThis.document;
+  const operations = [];
+  Object.defineProperty(navigator, 'clipboard', { configurable: true, value: undefined });
+  globalThis.document = {
+    activeElement: { focus() { operations.push('focus'); } },
+    createElement() { return { style: {}, setAttribute() {}, select() { operations.push('select'); }, remove() { operations.push('remove'); } }; },
+    body: { append() {} },
+    execCommand(command) { assert.equal(command, 'copy'); operations.push('copy'); return true; }
+  };
+  t.after(() => {
+    if (clipboard) Object.defineProperty(navigator, 'clipboard', clipboard); else delete navigator.clipboard;
+    if (previousDocument) globalThis.document = previousDocument; else delete globalThis.document;
+  });
+  assert.equal(await copyLink('https://example.com/#download', () => ({})), true);
+  assert.deepEqual(operations, ['select', 'copy', 'remove', 'focus']);
+});

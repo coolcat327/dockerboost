@@ -17,6 +17,7 @@ export async function copyLink(url, messages) {
   if (navigator.clipboard?.writeText) {
     try { await navigator.clipboard.writeText(url); return true; } catch { /* use the browser fallback */ }
   }
+  const previousFocus = document.activeElement;
   const field = document.createElement('textarea');
   field.value = url;
   field.setAttribute('readonly', '');
@@ -27,7 +28,7 @@ export async function copyLink(url, messages) {
   let copied = false;
   try { copied = document.execCommand('copy'); }
   catch { /* show a selectable link below */ }
-  finally { field.remove(); }
+  finally { field.remove(); previousFocus?.focus(); }
   if (copied) return true;
   const manual = window.prompt(messages().shareCopyManually, url);
   if (manual === null) throw new Error(messages().shareCopyFailed);

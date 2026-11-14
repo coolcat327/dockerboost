@@ -6,11 +6,14 @@ import { restoreSharedState, queueSharePrefix } from './common/share-link.js';
 
 const toast = document.querySelector('#toast');
 let toastTimer;
+let lastToast = '';
 const flash = (message) => {
   clearTimeout(toastTimer);
-  toast.textContent = message;
+  const announcement = message === lastToast ? `${message}\u00a0` : message;
+  lastToast = announcement;
+  toast.textContent = announcement;
   toast.classList.add('show');
-  toastTimer = setTimeout(() => toast.classList.remove('show'), 1800);
+  toastTimer = setTimeout(() => { toast.classList.remove('show'); toast.textContent = ''; }, 4000);
 };
 const language = createLanguage();
 const sharedState = restoreSharedState(window.location.hash);
@@ -88,6 +91,7 @@ const selectTab = (id) => {
     tab.setAttribute('aria-selected', String(active));
     tab.tabIndex = active ? 0 : -1;
     panel.classList.toggle('active', active);
+    panel.hidden = active ? false : 'until-found';
     if (active) activate(registration);
   });
   positionIndicator();
@@ -98,6 +102,7 @@ registrations.forEach(({ feature, tab, panel }, index) => {
   tab.setAttribute('aria-controls', panel.id);
   panel.setAttribute('aria-labelledby', tab.id);
   tab.addEventListener('click', () => selectTab(feature.id));
+  panel.addEventListener('beforematch', () => selectTab(feature.id));
   tab.addEventListener('keydown', (event) => {
     let target;
     if (event.key === 'ArrowRight') target = (index + 1) % registrations.length;
@@ -123,6 +128,7 @@ document.addEventListener('click', async (event) => {
   const button = event.target.closest('.copy-all[data-copy]');
   if (!button) return;
   const target = document.getElementById(button.dataset.copy);
+  if (!target || button.disabled) return;
   try {
     clearTimeout(copyTimers.get(button));
     button.classList.remove('is-copied');

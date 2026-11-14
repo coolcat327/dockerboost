@@ -25,19 +25,19 @@ export function initBatch({ panel, locale, messages, flash, singleBusy, selectio
   batch.innerHTML = `<div class="batch-notices"><details class="batch-help"><summary data-text="limitations"></summary><p data-text="note"></p></details><p data-errors role="status"></p></div>
 
   <section class="batch-section" aria-labelledby="compose-title">
-    <div class="batch-section-heading"><h4 id="compose-title"><span class="batch-step">01</span><span data-text="input"></span></h4></div>
+    <div class="batch-section-heading"><h3 id="compose-title"><span class="batch-step">01</span><span data-text="input"></span></h3></div>
     <div class="batch-input-toolbar"><label class="batch-input-label" for="compose-input" data-text="inputHint"></label><label class="batch-upload"><span data-text="upload"></span><input type="file" accept=".yaml,.yml,.txt" aria-label="Compose YAML"></label></div>
-    <textarea id="compose-input" rows="6" wrap="off" spellcheck="false" placeholder="支持 Compose 配置或每行一个镜像的列表"></textarea>
+    <textarea id="compose-input" rows="6" wrap="off" spellcheck="false" autocorrect="off" autocapitalize="none" autocomplete="off" placeholder="支持 Compose 配置或每行一个镜像的列表"></textarea>
   </section>
   <section class="batch-section" aria-labelledby="batch-selection-title">
-    <div class="batch-section-heading"><h4 id="batch-selection-title"><span class="batch-step">02</span><span data-text="selection"></span></h4></div>
+    <div class="batch-section-heading"><h3 id="batch-selection-title"><span class="batch-step">02</span><span data-text="selection"></span></h3></div>
     <div class="batch-selection-toolbar"><p class="batch-selection-hint" data-text="selectionHint"></p><button type="button" class="generate-button button-secondary" data-action="add-all" data-text="addAll" hidden disabled></button></div>
     <div class="batch-selection-content"><p class="batch-empty" data-selection-empty data-text="selectionEmpty"></p>
     <div data-list role="group" aria-labelledby="batch-selection-title" tabindex="0"></div></div>
 
   </section>
   <section class="batch-section batch-queue-section" aria-labelledby="batch-queue-title">
-    <div class="batch-section-heading"><h4 id="batch-queue-title" tabindex="-1"><span class="batch-step">03</span><span data-text="queue"></span><span class="batch-queue-count" data-queue-count>0</span></h4><button type="button" class="generate-button button-secondary share-button batch-share-button" data-action="share" disabled><span data-text="share"></span></button></div>
+    <div class="batch-section-heading"><h3 id="batch-queue-title" tabindex="-1"><span class="batch-step">03</span><span data-text="queue"></span><span class="batch-queue-count" data-queue-count>0</span></h3><button type="button" class="generate-button button-secondary share-button batch-share-button" data-action="share" disabled><span data-text="share"></span></button></div>
     <p class="batch-queue-hint" data-text="queueHint"></p>
     <div class="batch-queue-table" role="table" aria-labelledby="batch-queue-title">
       <div class="batch-table-heading" role="row">
@@ -51,7 +51,7 @@ export function initBatch({ panel, locale, messages, flash, singleBusy, selectio
     <p class="batch-platform-notice" data-platform-feedback role="status" aria-live="polite"></p>
     <p class="batch-empty" data-queue-empty data-text="queueEmpty"></p>
     <p class="batch-hint" data-summary role="status" aria-live="polite"></p>
-    <div class="command-block batch-terminal"><div class="command-meta"><span data-text="terminal"></span><button type="button" class="copy-all" data-action="copy" data-copy="batch-load-command" data-text="copy" disabled></button></div><code id="batch-load-command" data-command></code></div>
+    <div class="command-block batch-terminal"><div class="command-meta"><span id="batch-terminal-label" data-text="terminal"></span><button type="button" id="batch-terminal-copy" aria-labelledby="batch-terminal-copy batch-terminal-label" class="copy-all" data-action="copy" data-copy="batch-load-command" data-text="copy" disabled></button></div><code id="batch-load-command" data-command tabindex="0" role="region" aria-labelledby="batch-terminal-label"></code></div>
   </section>`;
   const header = document.createElement('div');
   header.className = 'download-header';
@@ -309,7 +309,7 @@ export function initBatch({ panel, locale, messages, flash, singleBusy, selectio
       actions.append(action, remove);
       const progressRow = single.querySelector('.download-progress-row').cloneNode(true);
       const progressStatus = progressRow.querySelector('[role="status"]');
-      const track = progressRow.querySelector('[role="progressbar"]');
+      const track = progressRow.querySelector('.transfer-track');
       progressRow.querySelectorAll('[id]').forEach(node => node.removeAttribute('id'));
       progressRow.classList.add('transfer-compact');
       const progress = createDownloadProgress({ compact: true, row: progressRow, status: progressStatus, detail: progressRow.querySelector('.transfer-detail'), metrics: progressRow.querySelector('.transfer-metrics'), track, fill: track.querySelector('.download-progress-fill'), icon: track.querySelector('.download-progress-icon') });

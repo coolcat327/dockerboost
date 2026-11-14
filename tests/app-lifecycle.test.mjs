@@ -77,13 +77,15 @@ function environment(t, { hash = '', pathname = '/', search = '', failId, failLa
     t.after(() => { if (previous) Object.defineProperty(globalThis, name, previous); else delete globalThis[name]; });
   }
   t.mock.method(console, 'error', () => {});
-  return { tabs, panels, contexts, instances, features, initCalls, historyWrites, window, english, reloads: () => reloads };
+  return { tabs, panels, contexts, instances, features, initCalls, historyWrites, window, chinese, english, reloads: () => reloads };
 }
 
 test('tab activation is synchronous and instances, state and shared selection survive switching', async t => {
   const e = environment(t);
   await startApp();
   assert.deepEqual(e.initCalls, ['install']);
+  assert.equal(e.chinese.getAttribute('aria-pressed'), 'true');
+  assert.equal(e.english.getAttribute('aria-pressed'), 'false');
   e.tabs.get('setup').emit('click');
   assert.deepEqual(e.initCalls, ['install', 'setup'], 'no promise or loading phase before init');
   e.instances.get('setup').value = 'keep this input';
@@ -93,6 +95,8 @@ test('tab activation is synchronous and instances, state and shared selection su
   assert.equal(e.instances.get('setup').activations, 2);
   assert.deepEqual(e.initCalls, ['install', 'setup']);
   e.english.emit('click');
+  assert.equal(e.chinese.getAttribute('aria-pressed'), 'false');
+  assert.equal(e.english.getAttribute('aria-pressed'), 'true');
   assert.equal(e.instances.get('setup').languages.at(-1), e.features[1].messages.en);
   let prevented = false;
   e.tabs.get('setup').emit('keydown', { key: 'ArrowRight', preventDefault() { prevented = true; } });
@@ -102,6 +106,12 @@ test('tab activation is synchronous and instances, state and shared selection su
   e.tabs.get('download').emit('click');
   assert.equal(e.contexts.get('pull').selectionStore, e.contexts.get('download').selectionStore);
   assert.equal(e.initCalls.includes('manual'), false);
+  assert.equal(e.panels.get('download').hidden, false);
+  assert.equal(e.panels.get('install').hidden, 'until-found');
+  e.panels.get('manual').emit('beforematch');
+  assert.equal(e.panels.get('manual').hidden, false);
+  assert.equal(e.tabs.get('manual').getAttribute('aria-selected'), 'true');
+  assert.equal(e.initCalls.filter(id => id === 'manual').length, 1);
   assert.ok([...e.panels.values()].every(panel => panel.children.length === 0), 'successful tools need no loading or error nodes');
 });
 

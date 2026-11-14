@@ -17,17 +17,17 @@ export function initBatchPull({ panel, locale, messages, selectionStore }) {
   const batch = document.createElement('div'); batch.className = 'compose-batch pull-batch'; batch.hidden = true;
   batch.innerHTML = `<div class="batch-notices"><details class="batch-help"><summary data-text="limitations"></summary><p data-text="note"></p></details><p data-errors role="status"></p></div>
     <section class="batch-section" aria-labelledby="pull-compose-title">
-      <div class="batch-section-heading"><h4 id="pull-compose-title"><span class="batch-step">01</span><span data-text="input"></span></h4></div>
+      <div class="batch-section-heading"><h3 id="pull-compose-title"><span class="batch-step">01</span><span data-text="input"></span></h3></div>
       <div class="batch-input-toolbar"><label class="batch-input-label" for="pull-batch-input" data-text="inputHint"></label><label class="batch-upload"><span data-text="upload"></span><input type="file" accept=".yaml,.yml,.txt"></label></div>
-      <textarea id="pull-batch-input" rows="6" wrap="off" spellcheck="false"></textarea>
+      <textarea id="pull-batch-input" rows="6" wrap="off" spellcheck="false" autocorrect="off" autocapitalize="none" autocomplete="off"></textarea>
     </section>
     <section class="batch-section" aria-labelledby="pull-selection-title">
-      <div class="batch-section-heading"><h4 id="pull-selection-title"><span class="batch-step">02</span><span data-text="selection"></span></h4></div>
+      <div class="batch-section-heading"><h3 id="pull-selection-title"><span class="batch-step">02</span><span data-text="selection"></span></h3></div>
       <div class="batch-selection-toolbar"><p class="batch-selection-hint" data-text="selectionHint"></p><button type="button" class="generate-button button-secondary" data-action="add-all" data-text="addAll" hidden></button></div>
       <div class="batch-selection-content"><p class="batch-empty" data-selection-empty data-text="selectionEmpty"></p><div data-list role="group" aria-labelledby="pull-selection-title" tabindex="0"></div></div>
     </section>
     <section class="batch-section batch-queue-section" aria-labelledby="pull-queue-title">
-      <div class="batch-section-heading"><h4 id="pull-queue-title" tabindex="-1"><span class="batch-step">03</span><span data-text="queue"></span><span class="batch-queue-count" data-count>0</span></h4></div>
+      <div class="batch-section-heading"><h3 id="pull-queue-title" tabindex="-1"><span class="batch-step">03</span><span data-text="queue"></span><span class="batch-queue-count" data-count>0</span></h3></div>
       <p class="batch-queue-hint" data-text="queueHint"></p>
       <div class="batch-queue-table pull-queue-table" role="table" aria-labelledby="pull-queue-title">
         <div class="batch-table-heading pull-queue-heading" role="row"><span role="columnheader" data-text="imageName"></span><div role="columnheader" class="architecture-fields"><select data-platform><option value="" disabled selected data-text="platform"></option><option value="linux/amd64">amd64</option><option value="linux/arm64">arm64</option></select></div><div class="pull-queue-heading-actions" role="columnheader"><button type="button" class="generate-button button-secondary" data-action="reparse" data-text="reparse"></button></div></div>
@@ -36,8 +36,8 @@ export function initBatchPull({ panel, locale, messages, selectionStore }) {
       <p class="batch-empty" data-queue-empty data-text="queueEmpty"></p>
     </section>
     <section class="batch-section pull-command-section" aria-labelledby="pull-command-title">
-      <div class="batch-section-heading"><h4 id="pull-command-title"><span class="batch-step">04</span><span data-text="commandStep"></span></h4></div>
-      <div class="command-block batch-terminal"><div class="command-meta"><span data-text="command"></span><button type="button" class="copy-all" data-copy="pull-batch-command" data-text="copy" disabled></button></div><code id="pull-batch-command"></code></div>
+      <div class="batch-section-heading"><h3 id="pull-command-title"><span class="batch-step">04</span><span data-text="commandStep"></span></h3></div>
+      <div class="command-block batch-terminal"><div class="command-meta"><span id="pull-batch-terminal-label" data-text="command"></span><button type="button" id="pull-batch-terminal-copy" aria-labelledby="pull-batch-terminal-copy pull-batch-terminal-label" class="copy-all" data-copy="pull-batch-command" data-text="copy" disabled></button></div><code tabindex="0" role="region" aria-labelledby="pull-batch-terminal-label" id="pull-batch-command"></code></div>
     </section>`;
   panel.append(single, batch);
   const $ = selector => batch.querySelector(selector);

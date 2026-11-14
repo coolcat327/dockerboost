@@ -10,6 +10,20 @@ test('built page image references resolve to emitted assets, including both down
   execFileSync(process.execPath, ['scripts/build.mjs'], { cwd: root, stdio: 'pipe' });
   const html = await readFile(new URL('dist/index.html', root), 'utf8');
   assert.doesNotMatch(html, /__CONFIG_[A-Za-z]+__/);
+  const identifiers = [...html.matchAll(/\bid="([^"]+)"/g)].map(match => match[1]);
+  assert.equal(new Set(identifiers).size, identifiers.length, 'page IDs must be unique');
+  for (const [, references] of html.matchAll(/aria-labelledby="([^"]+)"/g)) {
+    for (const id of references.split(/\s+/)) assert.ok(identifiers.includes(id), `Missing accessible label: ${id}`);
+  }
+  assert.equal([...html.matchAll(/<progress\b/g)].length, 2, 'single download and installation use native progress');
+  assert.doesNotMatch(html, /role="progressbar"/);
+  for (const id of ['setup', 'pull', 'download', 'convert', 'manual']) {
+    assert.match(html, new RegExp(`data-panel="${id}"[^>]* hidden`), 'inactive tools are hidden before JavaScript starts');
+  }
+  const font = html.match(/as="font"[^>]*href="([^"]+)"[^>]*crossorigin/)?.[1];
+  assert.ok(font?.endsWith('.woff2'), 'preload only the critical compressed font');
+  await assert.doesNotReject(access(new URL(`dist${font}`, root)));
+
   for (const url of Object.values(config.site.links)) assert.ok(html.includes(url), `Missing page link: ${url}`);
   assert.ok(html.includes(`class="footer-author">${config.site.author}`));
   const sources = [...html.matchAll(/<img\b[^>]*\bsrc="(\/[^\"]+)"/g)].map(match => match[1]);
@@ -49,6 +63,21 @@ test('versioned resources use the intended cache rules', async () => {
   const headers = await readFile(new URL('dist/_headers', root), 'utf8');
   assert.match(headers, /\/assets\/\*\n\s+Cache-Control: public, max-age=31536000, immutable/);
   const edge = JSON.parse(await readFile(new URL('edgeone.json', root), 'utf8'));
+  for (const path of ['/', '/index.html']) {
+    const pageRule = edge.headers.find(rule => rule.source === path);
+    for (const [key, value] of Object.entries({
+      'X-Content-Type-Options': 'nosniff',
+      'Referrer-Policy': 'strict-origin-when-cross-origin',
+      'Permissions-Policy': 'camera=(), geolocation=(), microphone=()',
+      'Content-Security-Policy': "object-src 'none'; base-uri 'none'; frame-ancestors 'self'",
+      'X-Frame-Options': 'SAMEORIGIN'
+    })) {
+      assert.equal(pageRule.headers.find(header => header.key === key)?.value, value);
+      const block = headers.split('\n\n').find(block => block.startsWith(`${path}\n`));
+      assert.ok(block?.includes(`${key}: ${value}`), `Cloudflare ${path} must match ${key}`);
+    }
+  }
+
   for (const path of ['/assets/*']) {
     const value = edge.headers.find(rule => rule.source === path)?.headers.find(header => header.key === 'Cache-Control')?.value;
     assert.equal(value, 'public, max-age=31536000, immutable');
@@ -62,7 +91,7 @@ test('page groups tool interfaces within the request budget and defers the conve
   const app = await readFile(new URL(`dist${appPath}`, root), 'utf8');
   assert.doesNotMatch(app, /docker logs --tail 100 -f web/, 'manual entries must not be bundled in the app');
   assert.doesNotMatch(app, /command-manual\.json/);
-  const appImport = app.match(/import\("(\.\/tools\.js)"\)/)?.[1];
+  const appImport = app.match(/import\("(\.\/tools\.bundle\.js)"\)/)?.[1];
   assert.ok(appImport, 'the lightweight hero entry must load the tool app dynamically');
   assert.doesNotMatch(app, /\/install-|\/download-/, 'tool registrations must stay out of the hero entry');
   const appUrl = new URL(`dist${appPath}`, root);

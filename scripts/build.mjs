@@ -139,6 +139,7 @@ const html = sourceHtml
     if (!Object.hasOwn(pageConfig, key)) throw new Error(`Unknown page config: ${key}`);
     return escapeHtml(pageConfig[key]);
   })
+  .replaceAll('/fonts/', `/assets/${version}/fonts/`)
   .replaceAll('/app.css', outputFor('src/client/styles/index.css'))
   .replaceAll('/app.bundle.js', outputFor('src/client/bootstrap.js'))
   .replaceAll('/image-export-worker.js', outputFor('src/client/features/download/image-export-worker.js'))

@@ -44,7 +44,7 @@ export const feature = {
     const progress = createDownloadProgress({
       row: panel.querySelector('.install-progress-row'), status,
       detail: panel.querySelector('#install-detail'), metrics: panel.querySelector('#install-speed'),
-      track: progressTrack, fill: progressTrack.querySelector('span'), icon: progressTrack.querySelector('img')
+      track: progressTrack, fill: progressTrack.querySelector('progress'), icon: progressTrack.querySelector('img')
     });
     let controller;
     let generation = 0, busy = false, text = translations['zh-CN'], state = 'chooseArch', downloadCommand = '';

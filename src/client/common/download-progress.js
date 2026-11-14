@@ -61,20 +61,13 @@ export function createDownloadProgress({ row, status, detail, metrics, track, fi
     const retained = phase === 'retry' || (compact && phase === 'error');
     track.hidden = !active && phase !== 'done' && !retained;
     track.classList.toggle('is-indeterminate', indeterminate);
-    track.setAttribute('aria-label', text.label);
-    track.setAttribute('aria-valuetext', [status.textContent, summary].filter(Boolean).join(' · '));
+    fill.setAttribute('aria-label', text.label);
+    fill.setAttribute('aria-valuetext', [status.textContent, summary].filter(Boolean).join(' · '));
     const value = phase === 'done' ? 100 : (percent ?? 0);
-    if (indeterminate || track.hidden || (retained && !known)) track.removeAttribute('aria-valuenow');
-    else track.setAttribute('aria-valuenow', String(value));
-    const packing = phase === 'export' || phase === 'handoff';
-    fill.style.width = `${indeterminate ? (packing ? 35 : 0) : value}%`;
+    if (indeterminate || track.hidden || (retained && !known)) fill.removeAttribute('value');
+    else fill.setAttribute('value', String(value));
+    fill.setAttribute('max', '100');
     icon.style.left = `clamp(4px, calc(${value}% - 30px), calc(100% - 34px))`;
-    if (compact && phase === 'done') {
-      // CSS animations normally start per task. Use the document timeline origin for every completed row.
-      for (const animation of row.getAnimations?.({ subtree: true }) || []) {
-        if (['batch-complete-metrics', 'batch-complete-detail'].includes(animation.animationName)) animation.startTime = 0;
-      }
-    }
   }
 
   return {

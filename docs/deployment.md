@@ -76,3 +76,9 @@ pnpm run deploy:edgeone
 ## 发布检查
 
 发布前运行 `pnpm run validate`；确认平台入口、`dist` 静态资源目录、环境变量和目标项目一致。发布后检查首页、`/api/health`、镜像架构查询和下载。真实平台的大文件传输、限额及网络表现需在对应部署中验证，本地检查不能替代。
+
+## 主站静态页面响应头
+
+Cloudflare 的 `public/_headers` 与 EdgeOne 的 `edgeone.json` 为 `/`、`/index.html` 保持一致的基础页面策略：禁止 MIME 嗅探、跨站只发送来源、禁用未使用的摄像头 / 麦克风 / 定位、禁止 object 和 base 注入、只允许同源框架嵌入。版本化静态缓存与 Registry / API 传输规则保持原有契约。
+
+当前 CSP 只限制 object、base 与嵌入，不能视为完整的脚本注入防护。现有 HTML 模板与富文本翻译均为仓库内受控常量，镜像、服务名和外部错误以 textContent / 表单 value 渲染。严格 script-src 哈希策略、Trusted Types、报告收集及跨源隔离需要独立验证动态导入、模板、Worker 与平台响应头后再部署；不在未知依赖条件下直接启用。页面不依赖第三方运行脚本、账号 cookie 或跨站窗口消息；不需要 SharedArrayBuffer 隔离，也不修改公开 Registry 的 CORS。

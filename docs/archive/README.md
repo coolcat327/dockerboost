@@ -4,6 +4,7 @@
 
 | 已完成计划 | 范围 |
 | --- | --- |
+| [Modern Web Guidance 前端调整](plans/modern-web-guidance.md) | 语义、字号缩放、原生进度、颜色、字体与浏览器基础策略 |
 | [转换与命令手册](plans/command-tools.md) | 本地双向转换、Docker / Compose 命令查询与移动端适配 |
 | [固定脚本与参数统一](plans/fixed-parameter-scripts.md) | 镜像及离线安装包终端下载改为静态脚本加参数 |
 | [统一下载信息与进度](plans/unified-download-progress.md) | 下载展示、真实进度与状态重置 |

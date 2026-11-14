@@ -8,8 +8,7 @@
 html { scrollbar-gutter:stable; }
 
 /* Chromium / WebKit support rounded thumbs; other engines use the standard properties above. */
-@supports selector(::-webkit-scrollbar) {
-  * { scrollbar-width:auto; scrollbar-color:auto; }
+@supports not (scrollbar-color:auto) {
   ::-webkit-scrollbar { width:10px; height:10px; }
   ::-webkit-scrollbar-track, ::-webkit-scrollbar-corner { background:var(--scrollbar-track); }
   ::-webkit-scrollbar-thumb { min-height:32px; min-width:32px; border:2px solid var(--scrollbar-track); border-radius:999px; background:var(--scrollbar-thumb); background-clip:padding-box; }
@@ -27,3 +26,5 @@ html { scrollbar-gutter:stable; }
   ::-webkit-scrollbar-thumb { border-color:Canvas; background-color:ButtonText; }
   ::-webkit-scrollbar-thumb:hover, ::-webkit-scrollbar-thumb:active { background-color:Highlight; }
 }
+
+@media(prefers-contrast:more) { :root { --scrollbar-thumb:var(--ink);--scrollbar-thumb-hover:var(--cyan); } * { scrollbar-width:auto; } }
